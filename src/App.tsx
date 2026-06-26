@@ -1,14 +1,14 @@
-/* Main App Component - Handles routing (using react-router-dom), query client and other providers - use this file to add all routes */
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import Index from './pages/Index'
-import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
-
-// ONLY IMPORT AND RENDER WORKING PAGES, NEVER ADD PLACEHOLDER COMPONENTS OR PAGES IN THIS FILE
-// AVOID REMOVING ANY CONTEXT PROVIDERS FROM THIS FILE (e.g. TooltipProvider, Toaster, Sonner)
+import Index from './pages/Index'
+import Diagnosticos from './pages/Diagnosticos'
+import PlanoDeAcao from './pages/PlanoDeAcao'
+import Modelos from './pages/Modelos'
+import Resultados from './pages/Resultados'
+import NotFound from './pages/NotFound'
 
 const App = () => (
   <BrowserRouter>
@@ -18,7 +18,10 @@ const App = () => (
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES MUST BE ADDED HERE */}
+          <Route path="/diagnosticos" element={<Diagnosticos />} />
+          <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
+          <Route path="/modelos" element={<Modelos />} />
+          <Route path="/resultados" element={<Resultados />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
