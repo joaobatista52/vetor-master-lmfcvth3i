@@ -1,4 +1,4 @@
-import { Trophy, TrendingUp, CalendarDays, Target } from 'lucide-react'
+import { Trophy, TrendingUp, CalendarDays, Target, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import {
