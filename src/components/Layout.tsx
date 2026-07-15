@@ -26,6 +26,7 @@ const routeNames: Record<string, string> = {
   '/diagnosticos': 'Central de Diagnósticos',
   '/plano-de-acao': 'Plano de Ação Estratégico',
   '/modelos': 'Modelos & Templates',
+  '/notas': 'Notas do Projeto',
   '/resultados': 'Avaliação de Resultados',
 }
 

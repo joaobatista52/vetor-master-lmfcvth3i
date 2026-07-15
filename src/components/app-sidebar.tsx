@@ -7,6 +7,7 @@ import {
   LineChart,
   Settings,
   Compass,
+  StickyNote,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -27,6 +28,7 @@ const navItems = [
   { title: 'Diagnósticos', path: '/diagnosticos', icon: Stethoscope },
   { title: 'Plano de Ação', path: '/plano-de-acao', icon: ListTodo },
   { title: 'Modelos de Negócio', path: '/modelos', icon: FileText },
+  { title: 'Notas', path: '/notas', icon: StickyNote },
   { title: 'Resultados', path: '/resultados', icon: LineChart },
 ]
 
@@ -40,8 +42,8 @@ export function AppSidebar() {
       <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-border/50">
         <div className="flex items-center gap-2 w-full font-bold text-xl text-primary overflow-hidden whitespace-nowrap">
           <Compass className="w-8 h-8 shrink-0 text-primary" />
-          {!isCollapsed && <span>Caminho Livre</span>}
-        </div>
+          {!isCollapsed && <span>Vetor Master</span>}
+        </div>{' '}
       </SidebarHeader>
 
       <SidebarContent>

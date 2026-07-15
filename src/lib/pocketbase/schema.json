@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13T21:46:06.001Z",
+  "generatedAt": "2026-07-15T22:58:45.557Z",
   "collections": [
     {
       "name": "users",
@@ -43,6 +43,53 @@
         "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
         "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
       ]
+    },
+    {
+      "name": "notas_projeto",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id = user.id",
+        "view": "@request.auth.id = user.id",
+        "create": "@request.auth.id = user.id",
+        "update": "@request.auth.id = user.id",
+        "delete": "@request.auth.id = user.id"
+      },
+      "fields": [
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_notas_projeto_user ON notas_projeto (user)"]
     }
   ]
 }
