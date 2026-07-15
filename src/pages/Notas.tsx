@@ -1,10 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Plus, Pencil, Trash2, StickyNote, Save, X } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Plus, Search, StickyNote, Save, X } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -33,16 +40,22 @@ import {
   deleteNota,
   type NotaProjeto,
 } from '@/services/notas_projeto'
+import { PRIORITIES } from '@/lib/notes-constants'
+import { NoteCard } from '@/components/notes/note-card'
+import { TagsInput } from '@/components/notes/tags-input'
 import { toast } from 'sonner'
 
 export default function Notas() {
   const { user } = useAuth()
   const [notas, setNotas] = useState<NotaProjeto[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [priority, setPriority] = useState('Média')
+  const [tags, setTags] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -66,10 +79,23 @@ export default function Notas() {
     loadNotas()
   })
 
+  const filteredNotas = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    if (!q) return notas
+    return notas.filter(
+      (n) =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q) ||
+        (n.tags || []).some((t) => t.toLowerCase().includes(q)),
+    )
+  }, [notas, search])
+
   const openCreate = () => {
     setEditingId(null)
     setTitle('')
     setContent('')
+    setPriority('Média')
+    setTags([])
     setDialogOpen(true)
   }
 
@@ -77,6 +103,8 @@ export default function Notas() {
     setEditingId(nota.id)
     setTitle(nota.title)
     setContent(nota.content)
+    setPriority(nota.priority || 'Média')
+    setTags(nota.tags || [])
     setDialogOpen(true)
   }
 
@@ -88,10 +116,21 @@ export default function Notas() {
     setSaving(true)
     try {
       if (editingId) {
-        await updateNota(editingId, { title: title.trim(), content: content.trim() })
+        await updateNota(editingId, {
+          title: title.trim(),
+          content: content.trim(),
+          priority,
+          tags,
+        })
         toast.success('Nota atualizada com sucesso!')
       } else {
-        await createNota({ title: title.trim(), content: content.trim(), user: user.id })
+        await createNota({
+          title: title.trim(),
+          content: content.trim(),
+          user: user.id,
+          priority,
+          tags,
+        })
         toast.success('Nota criada com sucesso!')
       }
       setDialogOpen(false)
@@ -116,15 +155,6 @@ export default function Notas() {
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -140,73 +170,53 @@ export default function Notas() {
         </Button>
       </div>
 
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por título, conteúdo ou tags..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-48 w-full rounded-xl" />
+            <Skeleton key={i} className="h-52 w-full rounded-xl" />
           ))}
         </div>
-      ) : notas.length === 0 ? (
+      ) : filteredNotas.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <div className="p-4 rounded-full bg-secondary mb-4">
               <StickyNote className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold mb-1">Nenhuma nota ainda</h3>
+            <h3 className="text-lg font-semibold mb-1">
+              {search ? 'Nenhuma nota encontrada' : 'Nenhuma nota ainda'}
+            </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Crie sua primeira nota para começar a registrar suas decisões.
+              {search
+                ? 'Tente outro termo de busca.'
+                : 'Crie sua primeira nota para começar a registrar suas decisões.'}
             </p>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Criar Primeira Nota
-            </Button>
+            {!search && (
+              <Button onClick={openCreate} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Criar Primeira Nota
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {notas.map((nota) => (
-            <Card
+          {filteredNotas.map((nota) => (
+            <NoteCard
               key={nota.id}
-              className="flex flex-col h-full hover:shadow-md transition-all hover:-translate-y-1 duration-300 group"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                      <StickyNote className="w-5 h-5" />
-                    </div>
-                    <CardTitle className="text-lg leading-tight truncate">{nota.title}</CardTitle>
-                  </div>
-                </div>
-                <Badge variant="outline" className="font-normal text-xs w-fit">
-                  {formatDate(nota.created)}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col justify-between">
-                <p className="text-sm text-muted-foreground line-clamp-4 whitespace-pre-wrap">
-                  {nota.content}
-                </p>
-                <div className="flex gap-2 mt-4 pt-4 border-t border-border/50">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1"
-                    onClick={() => openEdit(nota)}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setDeleteId(nota.id)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              nota={nota}
+              onEdit={() => openEdit(nota)}
+              onDelete={() => setDeleteId(nota.id)}
+            />
           ))}
         </div>
       )}
@@ -217,13 +227,13 @@ export default function Notas() {
             <DialogTitle>{editingId ? 'Editar Nota' : 'Nova Nota'}</DialogTitle>
             <DialogDescription>
               {editingId
-                ? 'Atualize o título ou conteúdo da sua nota.'
-                : 'Preencha as informações abaixo para criar uma nova nota.'}
+                ? 'Atualize as informações da sua nota.'
+                : 'Preencha as informações para criar uma nova nota.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Título</label>
+              <Label>Título</Label>
               <Input
                 placeholder="Digite o título da nota..."
                 value={title}
@@ -232,14 +242,33 @@ export default function Notas() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Conteúdo</label>
+              <Label>Prioridade</Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Conteúdo</Label>
               <Textarea
                 placeholder="Escreva o conteúdo da nota..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                rows={6}
+                rows={5}
                 className="resize-none"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <TagsInput tags={tags} onChange={setTags} />
             </div>
           </div>
           <DialogFooter>

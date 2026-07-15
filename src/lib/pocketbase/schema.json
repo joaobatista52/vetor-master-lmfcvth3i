@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-15T22:58:45.557Z",
+  "generatedAt": "2026-07-15T23:22:27.853Z",
   "collections": [
     {
       "name": "users",
@@ -87,9 +87,26 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "priority",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Alta", "Média", "Baixa"]
+        },
+        {
+          "name": "tags",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
-      "indexes": ["CREATE INDEX idx_notas_projeto_user ON notas_projeto (user)"]
+      "indexes": [
+        "CREATE INDEX idx_notas_projeto_user ON notas_projeto (user)",
+        "CREATE INDEX `idx_notas_projeto_priority` ON `notas_projeto` (priority)",
+        "CREATE INDEX `idx_notas_projeto_tags` ON `notas_projeto` (tags)"
+      ]
     }
   ]
 }
