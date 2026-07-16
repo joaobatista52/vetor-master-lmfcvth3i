@@ -21,7 +21,7 @@ export function Logo({
       alt="Vetor Master"
       className={cn(
         'shrink-0 object-contain',
-        variant === 'icon' || !showText ? 'w-8' : 'w-auto',
+        variant === 'icon' || !showText ? 'w-12' : 'w-auto',
         className,
       )}
     />

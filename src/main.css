@@ -36,13 +36,13 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 215 28% 17%;
+    --sidebar-background: 215 28% 17%;
+    --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 215 28% 17%;
-    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-accent: 215 28% 25%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 28% 25%;
     --sidebar-ring: 217 91% 60%;
 
     --chart-1: 217 91% 60%; /* Strategic Blue */
@@ -116,5 +116,26 @@
   }
   .animate-slide-in-right {
     animation: slide-in-right 0.4s ease-out forwards;
+  }
+
+  .brand-shadow {
+    box-shadow:
+      0 1px 3px 0 rgba(0, 0, 0, 0.05),
+      0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  .brand-shadow-lg {
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+}
+
+@layer components {
+  .brand-input-focus {
+    @apply transition-all duration-200;
+  }
+  .brand-input-focus:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
   }
 }

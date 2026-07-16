@@ -49,18 +49,18 @@ export default function PlanoDeAcao() {
   const [activeTab, setActiveTab] = useState('board')
 
   return (
-    <div className="space-y-6 animate-fade-in h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-8 animate-fade-in h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Plano de Ação Estratégico</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-2 text-lg">
             Transforme diagnósticos em execução prática e previsível.
           </p>
         </div>
       </div>
 
       <Tabs defaultValue="todo" className="w-full flex-1 flex flex-col">
-        <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
+        <TabsList className="grid w-full max-w-md grid-cols-3 mb-10">
           <TabsTrigger value="todo" className="data-[state=active]:bg-background">
             A Fazer (1)
           </TabsTrigger>
@@ -80,7 +80,7 @@ export default function PlanoDeAcao() {
 
         {['todo', 'doing', 'done'].map((status) => (
           <TabsContent key={status} value={status} className="flex-1 mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {mockTasks
                 .filter((t) => t.status === status)
                 .map((task) => (
@@ -91,7 +91,7 @@ export default function PlanoDeAcao() {
                     <div
                       className={`absolute top-0 left-0 w-1 h-full ${status === 'todo' ? 'bg-gray-300' : status === 'doing' ? 'bg-primary' : 'bg-green-500'}`}
                     />
-                    <CardContent className="p-5">
+                    <CardContent className="p-6">
                       <div className="flex justify-between items-start mb-3">
                         <Badge variant="outline" className="text-xs bg-secondary/50 font-medium">
                           {task.area}

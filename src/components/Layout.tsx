@@ -47,18 +47,23 @@ export default function Layout() {
       <div className="flex min-h-screen bg-background w-full">
         <AppSidebar />
         <SidebarInset className="flex flex-col flex-1 w-full overflow-hidden">
-          <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card z-10 sticky top-0">
+          <header className="h-16 flex items-center justify-between px-6 border-b border-sidebar-border bg-sidebar z-10 sticky top-0">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-              <Logo className="h-8 shrink-0" showText={false} />
+              <SidebarTrigger className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors" />
+              <Logo className="h-12 shrink-0" showText={false} />
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
                   <BreadcrumbItem>
-                    <BreadcrumbLink href="/">Início</BreadcrumbLink>
+                    <BreadcrumbLink
+                      href="/"
+                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+                    >
+                      Início
+                    </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator />
+                  <BreadcrumbSeparator className="text-sidebar-foreground/40" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="font-medium text-foreground">
+                    <BreadcrumbPage className="font-medium text-sidebar-foreground">
                       {currentPage}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -68,22 +73,26 @@ export default function Layout() {
 
             <div className="flex items-center gap-4">
               <div className="relative hidden md:flex items-center">
-                <Search className="w-4 h-4 absolute left-3 text-muted-foreground" />
+                <Search className="w-4 h-4 absolute left-3 text-sidebar-foreground/50" />
                 <Input
                   placeholder="Buscar estratégias..."
-                  className="pl-9 w-64 bg-secondary/50 border-none focus-visible:ring-1"
+                  className="pl-9 w-64 bg-sidebar-accent/50 border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                <span className="absolute top-2 right-2.5 w-2 h-2 bg-destructive rounded-full border border-card" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative hover:bg-sidebar-accent transition-colors"
+              >
+                <Bell className="w-5 h-5 text-sidebar-foreground/70" />
+                <span className="absolute top-2 right-2.5 w-2 h-2 bg-accent rounded-full border border-sidebar" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="rounded-full bg-sidebar-accent text-sidebar-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                   >
                     <User className="w-5 h-5" />
                   </Button>
