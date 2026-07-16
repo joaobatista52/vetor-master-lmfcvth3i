@@ -3,6 +3,8 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth'
+import { ProtectedRoute } from '@/components/protected-route'
+import { AdminRoute } from '@/components/admin-route'
 import Layout from './components/Layout'
 import Index from './pages/Index'
 import Diagnosticos from './pages/Diagnosticos'
@@ -10,7 +12,12 @@ import PlanoDeAcao from './pages/PlanoDeAcao'
 import Modelos from './pages/Modelos'
 import Notas from './pages/Notas'
 import Resultados from './pages/Resultados'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminMetrics from './pages/AdminMetrics'
+import AdminLogsPage from './pages/AdminLogs'
+import AdminInvitesPage from './pages/AdminInvites'
 import NotFound from './pages/NotFound'
+import Login from './pages/Login'
 
 const App = () => (
   <BrowserRouter>
@@ -19,14 +26,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/diagnosticos" element={<Diagnosticos />} />
-            <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
-            <Route path="/modelos" element={<Modelos />} />
-            <Route path="/notas" element={<Notas />} />
-            <Route path="/resultados" element={<Resultados />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/diagnosticos" element={<Diagnosticos />} />
+              <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
+              <Route path="/modelos" element={<Modelos />} />
+              <Route path="/notas" element={<Notas />} />
+              <Route path="/resultados" element={<Resultados />} />
+            </Route>
           </Route>
+          <Route element={<AdminRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/dashboard" element={<AdminMetrics />} />
+              <Route path="/admin/logs" element={<AdminLogsPage />} />
+              <Route path="/admin/convites" element={<AdminInvitesPage />} />
+            </Route>
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

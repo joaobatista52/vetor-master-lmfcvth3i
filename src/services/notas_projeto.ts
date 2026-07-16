@@ -10,6 +10,8 @@ export interface NotaProjeto {
   tags: string[]
   created: string
   updated: string
+  userName?: string
+  userEmail?: string
 }
 
 export const getNotas = async (): Promise<NotaProjeto[]> => {
@@ -57,4 +59,24 @@ export const updateNota = async (
 
 export const deleteNota = async (id: string): Promise<void> => {
   await pb.collection('notas_projeto').delete(id)
+}
+
+export const getAllNotas = async (): Promise<NotaProjeto[]> => {
+  const records = await pb.collection('notas_projeto').getFullList({
+    sort: '-created',
+    expand: 'user',
+  })
+  return records.map((r: any) => ({
+    id: r.id,
+    title: r.title,
+    content: r.content,
+    user: r.user,
+    priority: r.priority || 'Média',
+    status: r.status || 'A Fazer',
+    tags: Array.isArray(r.tags) ? r.tags : [],
+    created: r.created,
+    updated: r.updated,
+    userName: r.expand?.user?.name || r.expand?.user?.email || 'Usuário',
+    userEmail: r.expand?.user?.email || '',
+  })) as NotaProjeto[]
 }

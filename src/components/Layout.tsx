@@ -1,6 +1,8 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Search, User } from 'lucide-react'
 import { AppSidebar } from './app-sidebar'
+import { Logo } from '@/components/Logo'
+import { useAuth } from '@/hooks/use-auth'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,10 +30,16 @@ const routeNames: Record<string, string> = {
   '/modelos': 'Modelos & Templates',
   '/notas': 'Notas do Projeto',
   '/resultados': 'Avaliação de Resultados',
+  '/admin': 'Painel Administrativo',
+  '/admin/dashboard': 'Dashboard de Métricas',
+  '/admin/logs': 'Logs de Auditoria',
+  '/admin/convites': 'Gestão de Convites',
 }
 
 export default function Layout() {
   const location = useLocation()
+  const { signOut } = useAuth()
+  const navigate = useNavigate()
   const currentPage = routeNames[location.pathname] || 'Página'
 
   return (
@@ -42,6 +50,7 @@ export default function Layout() {
           <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card z-10 sticky top-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+              <Logo className="w-7 h-7 shrink-0" />
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
                   <BreadcrumbItem>
@@ -86,7 +95,13 @@ export default function Layout() {
                   <DropdownMenuItem>Assinatura & Faturamento</DropdownMenuItem>
                   <DropdownMenuItem>Configurações da Empresa</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => {
+                      signOut()
+                      navigate('/login')
+                    }}
+                  >
                     Sair da Plataforma
                   </DropdownMenuItem>
                 </DropdownMenuContent>

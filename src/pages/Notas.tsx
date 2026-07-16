@@ -73,6 +73,7 @@ export default function Notas() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null)
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -107,6 +108,12 @@ export default function Notas() {
     loadNotas(true)
   })
 
+  const allTags = useMemo(() => {
+    const set = new Set<string>()
+    notas.forEach((n) => (n.tags || []).forEach((t) => set.add(t)))
+    return Array.from(set).sort()
+  }, [notas])
+
   const filteredNotas = useMemo(() => {
     const q = search.toLowerCase().trim()
     return notas.filter((n) => {
@@ -120,9 +127,10 @@ export default function Notas() {
       }
       if (statusFilter && (n.status || 'A Fazer') !== statusFilter) return false
       if (priorityFilter && (n.priority || 'Média') !== priorityFilter) return false
+      if (tagFilter && !(n.tags || []).includes(tagFilter)) return false
       return true
     })
-  }, [notas, search, statusFilter, priorityFilter])
+  }, [notas, search, statusFilter, priorityFilter, tagFilter])
 
   const openCreate = () => {
     setEditingId(null)
@@ -177,6 +185,16 @@ export default function Notas() {
       toast.error('Erro ao salvar nota.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      await updateNota(id, { status: newStatus })
+      toast.success('Status atualizado com sucesso!')
+      await loadNotas(true)
+    } catch {
+      toast.error('Erro ao atualizar status.')
     }
   }
 
@@ -333,7 +351,29 @@ export default function Notas() {
               </button>
             )
           })}
-          {(statusFilter || priorityFilter) && (
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 w-full">
+              <span className="text-xs font-medium text-muted-foreground mr-1">Tags:</span>
+              {allTags.map((t) => {
+                const active = tagFilter === t
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setTagFilter((prev) => (prev === t ? null : t))}
+                    className={cn(
+                      'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all',
+                      active
+                        ? 'bg-primary/10 text-primary border-primary/30'
+                        : 'bg-card text-muted-foreground border-border hover:bg-muted',
+                    )}
+                  >
+                    {t}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {(statusFilter || priorityFilter || tagFilter) && (
             <Button
               variant="ghost"
               size="sm"
@@ -341,6 +381,7 @@ export default function Notas() {
               onClick={() => {
                 setStatusFilter(null)
                 setPriorityFilter(null)
+                setTagFilter(null)
               }}
             >
               <X className="w-3 h-3" />
@@ -370,16 +411,16 @@ export default function Notas() {
               <StickyNote className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold mb-1">
-              {search || statusFilter || priorityFilter
+              {search || statusFilter || priorityFilter || tagFilter
                 ? 'Nenhuma nota encontrada'
                 : 'Nenhuma nota ainda'}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {search || statusFilter || priorityFilter
+              {search || statusFilter || priorityFilter || tagFilter
                 ? 'Tente outro termo de busca ou filtro.'
                 : 'Crie sua primeira nota para começar a registrar suas decisões.'}
             </p>
-            {!search && !statusFilter && !priorityFilter && (
+            {!search && !statusFilter && !priorityFilter && !tagFilter && (
               <Button onClick={openCreate} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Criar Primeira Nota
@@ -388,7 +429,12 @@ export default function Notas() {
           </CardContent>
         </Card>
       ) : viewMode === 'kanban' ? (
-        <KanbanBoard notas={filteredNotas} onEdit={openEdit} onDelete={(id) => setDeleteId(id)} />
+        <KanbanBoard
+          notas={filteredNotas}
+          onEdit={openEdit}
+          onDelete={(id) => setDeleteId(id)}
+          onStatusChange={handleStatusChange}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNotas.map((nota) => (
