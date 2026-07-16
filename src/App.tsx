@@ -18,6 +18,9 @@ import AdminLogsPage from './pages/AdminLogs'
 import AdminInvitesPage from './pages/AdminInvites'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
+import Landing from './pages/Landing'
+import Questionario from './pages/Questionario'
+import QuestionarioSucesso from './pages/QuestionarioSucesso'
 
 const App = () => (
   <BrowserRouter>
@@ -26,6 +29,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
+          <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
@@ -35,6 +39,8 @@ const App = () => (
               <Route path="/modelos" element={<Modelos />} />
               <Route path="/notas" element={<Notas />} />
               <Route path="/resultados" element={<Resultados />} />
+              <Route path="/questionario" element={<Questionario />} />
+              <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
             </Route>
           </Route>
           <Route element={<AdminRoute />}>
