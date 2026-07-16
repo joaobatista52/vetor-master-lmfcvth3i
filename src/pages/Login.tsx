@@ -87,7 +87,7 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <Logo className="h-16 shrink-0" showText />
+            <Logo className="h-24 shrink-0" variant="full" showText />
           </div>
           <div>
             <CardTitle className="text-2xl">Vetor Master</CardTitle>

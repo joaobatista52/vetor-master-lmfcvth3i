@@ -47,7 +47,8 @@ export function AppSidebar() {
       <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-border/50">
         <div className="flex items-center w-full overflow-hidden whitespace-nowrap">
           <Logo
-            className={cn('shrink-0', isCollapsed ? 'h-8 w-8' : 'h-8')}
+            className={cn('shrink-0', isCollapsed ? 'h-8 w-8' : 'h-10')}
+            variant={isCollapsed ? 'icon' : 'full'}
             showText={!isCollapsed}
           />
         </div>
