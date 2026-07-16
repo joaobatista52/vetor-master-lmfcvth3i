@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-16T20:38:31.158Z",
+  "generatedAt": "2026-07-16T21:15:08.378Z",
   "collections": [
     {
       "name": "users",
@@ -29,29 +29,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "role",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "admin",
-            "user"
-          ]
+          "selectValues": ["admin", "user"]
         }
       ],
       "indexes": [
@@ -94,30 +86,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "priority",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "Alta",
-            "Média",
-            "Baixa"
-          ]
+          "selectValues": ["Alta", "Média", "Baixa"]
         },
         {
           "name": "tags",
@@ -130,11 +113,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "A Fazer",
-            "Em Progresso",
-            "Concluído"
-          ]
+          "selectValues": ["A Fazer", "Em Progresso", "Concluído"]
         }
       ],
       "indexes": [
@@ -185,24 +164,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX `idx_logs_auditoria_user` ON `logs_auditoria` (user)"
-      ]
+      "indexes": ["CREATE INDEX `idx_logs_auditoria_user` ON `logs_auditoria` (user)"]
     },
     {
       "name": "convites",
@@ -226,44 +198,379 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "admin",
-            "user"
-          ]
+          "selectValues": ["admin", "user"]
         },
         {
           "name": "status",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "Pendente",
-            "Aceito"
-          ]
+          "selectValues": ["Pendente", "Aceito"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX `idx_convites_email` ON `convites` (email)"]
+    },
+    {
+      "name": "livros",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "autor",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "categoria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "resumo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "capa",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vector",
+          "type": "vector",
+          "required": false,
+          "system": false,
+          "vectorDimensions": 1536,
+          "vectorDistance": "cosine"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "frameworks",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "area_numero",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "conteudo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "regras_ouro",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vector",
+          "type": "vector",
+          "required": false,
+          "system": false,
+          "vectorDimensions": 1536,
+          "vectorDistance": "cosine"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_frameworks_area ON frameworks (area_numero)"]
+    },
+    {
+      "name": "mapeamento_dores",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "descricao_dor",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "framework",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "frameworks"
+        },
+        {
+          "name": "livros_referencia",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "livros"
+        },
+        {
+          "name": "vector",
+          "type": "vector",
+          "required": false,
+          "system": false,
+          "vectorDimensions": 1536,
+          "vectorDistance": "cosine"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "diagnosticos",
+      "type": "base",
+      "apiRules": {
+        "list": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "view": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "create": "@request.auth.id != '' && user = @request.auth.id",
+        "update": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "delete": "user = @request.auth.id || @request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "dados_entrada",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "relatorio_gerado",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vector",
+          "type": "vector",
+          "required": false,
+          "system": false,
+          "vectorDimensions": 1536,
+          "vectorDistance": "cosine"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_diagnosticos_user ON diagnosticos (user)"]
+    },
+    {
+      "name": "planos_acao",
+      "type": "base",
+      "apiRules": {
+        "list": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "view": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "create": "@request.auth.id != '' && user = @request.auth.id",
+        "update": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "delete": "user = @request.auth.id || @request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "diagnostico",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "diagnosticos"
+        },
+        {
+          "name": "tarefas_5w2h",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["A Fazer", "Em Progresso", "Concluído"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
-        "CREATE UNIQUE INDEX `idx_convites_email` ON `convites` (email)"
+        "CREATE INDEX idx_planos_acao_user ON planos_acao (user)",
+        "CREATE INDEX idx_planos_acao_status ON planos_acao (status)"
       ]
+    },
+    {
+      "name": "okrs",
+      "type": "base",
+      "apiRules": {
+        "list": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "view": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "create": "@request.auth.id != '' && user = @request.auth.id",
+        "update": "user = @request.auth.id || @request.auth.role = 'admin'",
+        "delete": "user = @request.auth.id || @request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "objetivo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resultados_chave",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "progresso",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_okrs_user ON okrs (user)"]
     }
   ]
 }
