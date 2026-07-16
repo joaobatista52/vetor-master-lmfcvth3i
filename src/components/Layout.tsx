@@ -50,7 +50,7 @@ export default function Layout() {
           <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-card z-10 sticky top-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-              <Logo className="w-7 h-7 shrink-0" />
+              <Logo className="h-7 shrink-0" showText={false} />
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
                   <BreadcrumbItem>

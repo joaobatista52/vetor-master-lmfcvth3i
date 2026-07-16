@@ -45,9 +45,8 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-border bg-sidebar">
       <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-border/50">
-        <div className="flex items-center gap-2 w-full font-bold text-xl text-primary overflow-hidden whitespace-nowrap">
-          <Logo className="w-8 h-8 shrink-0" />
-          {!isCollapsed && <span>Vetor Master</span>}
+        <div className="flex items-center w-full overflow-hidden whitespace-nowrap">
+          <Logo className="h-8 shrink-0" showText={!isCollapsed} />
         </div>
       </SidebarHeader>
 
