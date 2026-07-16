@@ -46,7 +46,10 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border bg-sidebar">
       <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-border/50">
         <div className="flex items-center w-full overflow-hidden whitespace-nowrap">
-          <Logo className="h-8 shrink-0" showText={!isCollapsed} />
+          <Logo
+            className={cn('shrink-0', isCollapsed ? 'h-8 w-8' : 'h-8')}
+            showText={!isCollapsed}
+          />
         </div>
       </SidebarHeader>
 
