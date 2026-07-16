@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-15T23:22:27.853Z",
+  "generatedAt": "2026-07-16T01:13:33.777Z",
   "collections": [
     {
       "name": "users",
@@ -100,12 +100,20 @@
           "type": "json",
           "required": false,
           "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["A Fazer", "Em Progresso", "Concluído"]
         }
       ],
       "indexes": [
         "CREATE INDEX idx_notas_projeto_user ON notas_projeto (user)",
         "CREATE INDEX `idx_notas_projeto_priority` ON `notas_projeto` (priority)",
-        "CREATE INDEX `idx_notas_projeto_tags` ON `notas_projeto` (tags)"
+        "CREATE INDEX `idx_notas_projeto_tags` ON `notas_projeto` (tags)",
+        "CREATE INDEX `idx_notas_projeto_status` ON `notas_projeto` (status)"
       ]
     }
   ]

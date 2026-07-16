@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PriorityBadge } from './priority-badge'
+import { StatusBadge } from './status-badge'
 import type { NotaProjeto } from '@/services/notas_projeto'
 
 interface NoteCardProps {
@@ -29,6 +30,7 @@ export function NoteCard({ nota, onEdit, onDelete }: NoteCardProps) {
           <CardTitle className="text-lg leading-tight truncate">{nota.title}</CardTitle>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <StatusBadge status={nota.status} />
           <PriorityBadge priority={nota.priority} />
           <Badge variant="outline" className="font-normal text-xs">
             {formatDate(nota.created)}

@@ -1,5 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, Search, StickyNote, Save, X } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  StickyNote,
+  Save,
+  X,
+  Download,
+  LayoutGrid,
+  Columns3,
+  FileText,
+  FileArchive,
+} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +41,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/use-auth'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -40,27 +57,37 @@ import {
   deleteNota,
   type NotaProjeto,
 } from '@/services/notas_projeto'
-import { PRIORITIES } from '@/lib/notes-constants'
+import { PRIORITIES, STATUSES, STATUS_CONFIG, PRIORITY_CONFIG } from '@/lib/notes-constants'
 import { NoteCard } from '@/components/notes/note-card'
+import { KanbanBoard } from '@/components/notes/kanban-board'
 import { TagsInput } from '@/components/notes/tags-input'
+import { exportAsText, exportAsPDF } from '@/lib/export-utils'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export default function Notas() {
   const { user } = useAuth()
   const [notas, setNotas] = useState<NotaProjeto[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [priorityFilter, setPriorityFilter] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [priority, setPriority] = useState('Média')
+  const [status, setStatus] = useState('A Fazer')
   const [tags, setTags] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const loadNotas = useCallback(async () => {
+  const loadNotas = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
+    else setRefreshing(true)
     try {
       const data = await getNotas()
       setNotas(data)
@@ -68,6 +95,7 @@ export default function Notas() {
       toast.error('Erro ao carregar notas.')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }, [])
 
@@ -76,25 +104,32 @@ export default function Notas() {
   }, [loadNotas])
 
   useRealtime('notas_projeto', () => {
-    loadNotas()
+    loadNotas(true)
   })
 
   const filteredNotas = useMemo(() => {
     const q = search.toLowerCase().trim()
-    if (!q) return notas
-    return notas.filter(
-      (n) =>
-        n.title.toLowerCase().includes(q) ||
-        n.content.toLowerCase().includes(q) ||
-        (n.tags || []).some((t) => t.toLowerCase().includes(q)),
-    )
-  }, [notas, search])
+    return notas.filter((n) => {
+      if (
+        q &&
+        !n.title.toLowerCase().includes(q) &&
+        !n.content.toLowerCase().includes(q) &&
+        !(n.tags || []).some((t) => t.toLowerCase().includes(q))
+      ) {
+        return false
+      }
+      if (statusFilter && (n.status || 'A Fazer') !== statusFilter) return false
+      if (priorityFilter && (n.priority || 'Média') !== priorityFilter) return false
+      return true
+    })
+  }, [notas, search, statusFilter, priorityFilter])
 
   const openCreate = () => {
     setEditingId(null)
     setTitle('')
     setContent('')
     setPriority('Média')
+    setStatus('A Fazer')
     setTags([])
     setDialogOpen(true)
   }
@@ -104,6 +139,7 @@ export default function Notas() {
     setTitle(nota.title)
     setContent(nota.content)
     setPriority(nota.priority || 'Média')
+    setStatus(nota.status || 'A Fazer')
     setTags(nota.tags || [])
     setDialogOpen(true)
   }
@@ -120,6 +156,7 @@ export default function Notas() {
           title: title.trim(),
           content: content.trim(),
           priority,
+          status,
           tags,
         })
         toast.success('Nota atualizada com sucesso!')
@@ -129,11 +166,13 @@ export default function Notas() {
           content: content.trim(),
           user: user.id,
           priority,
+          status,
           tags,
         })
         toast.success('Nota criada com sucesso!')
       }
       setDialogOpen(false)
+      await loadNotas(true)
     } catch {
       toast.error('Erro ao salvar nota.')
     } finally {
@@ -148,11 +187,38 @@ export default function Notas() {
       await deleteNota(deleteId)
       toast.success('Nota excluída com sucesso!')
       setDeleteId(null)
+      await loadNotas(true)
     } catch {
       toast.error('Erro ao excluir nota.')
     } finally {
       setDeleting(false)
     }
+  }
+
+  const handleExportText = () => {
+    if (filteredNotas.length === 0) {
+      toast.error('Nenhuma nota para exportar.')
+      return
+    }
+    exportAsText(filteredNotas)
+    toast.success('Arquivo TXT exportado!')
+  }
+
+  const handleExportPDF = () => {
+    if (filteredNotas.length === 0) {
+      toast.error('Nenhuma nota para exportar.')
+      return
+    }
+    exportAsPDF(filteredNotas)
+    toast.success('PDF gerado!')
+  }
+
+  const toggleStatusFilter = (s: string) => {
+    setStatusFilter((prev) => (prev === s ? null : s))
+  }
+
+  const togglePriorityFilter = (p: string) => {
+    setPriorityFilter((prev) => (prev === p ? null : p))
   }
 
   return (
@@ -164,21 +230,132 @@ export default function Notas() {
             Registre decisões importantes e mantenha o histórico do seu projeto.
           </p>
         </div>
-        <Button className="gap-2 shadow-sm" onClick={openCreate}>
-          <Plus className="w-4 h-4" />
-          Nova Nota
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 shadow-sm">
+                <Download className="w-4 h-4" />
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportText} className="gap-2 cursor-pointer">
+                <FileText className="w-4 h-4" />
+                Exportar como Texto
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                <FileArchive className="w-4 h-4" />
+                Exportar como PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button className="gap-2 shadow-sm" onClick={openCreate}>
+            <Plus className="w-4 h-4" />
+            Nova Nota
+          </Button>
+        </div>
       </div>
 
-      <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por título, conteúdo ou tags..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título, conteúdo ou tags..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-1 border rounded-lg p-1 bg-card">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              className="gap-1"
+              onClick={() => setViewMode('list')}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden sm:inline">Lista</span>
+            </Button>
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+              size="sm"
+              className="gap-1"
+              onClick={() => setViewMode('kanban')}
+            >
+              <Columns3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Kanban</span>
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground mr-1">Status:</span>
+          {STATUSES.map((s) => {
+            const config = STATUS_CONFIG[s]
+            const active = statusFilter === s
+            return (
+              <button
+                key={s}
+                onClick={() => toggleStatusFilter(s)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all',
+                  active
+                    ? config.badgeClass + ' ring-1 ring-offset-1 ring-offset-background'
+                    : 'bg-card text-muted-foreground border-border hover:bg-muted',
+                )}
+              >
+                <span className={cn('w-1.5 h-1.5 rounded-full', config.dotClass)} />
+                {config.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground mr-1">Prioridade:</span>
+          {PRIORITIES.map((p) => {
+            const config = PRIORITY_CONFIG[p]
+            const active = priorityFilter === p
+            return (
+              <button
+                key={p}
+                onClick={() => togglePriorityFilter(p)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all',
+                  active
+                    ? config.badgeClass + ' ring-1 ring-offset-1 ring-offset-background'
+                    : 'bg-card text-muted-foreground border-border hover:bg-muted',
+                )}
+              >
+                <span className={cn('w-1.5 h-1.5 rounded-full', config.dotClass)} />
+                {config.label}
+              </button>
+            )
+          })}
+          {(statusFilter || priorityFilter) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7 px-2"
+              onClick={() => {
+                setStatusFilter(null)
+                setPriorityFilter(null)
+              }}
+            >
+              <X className="w-3 h-3" />
+              Limpar filtros
+            </Button>
+          )}
+        </div>
       </div>
+
+      {refreshing && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          Atualizando...
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -193,14 +370,16 @@ export default function Notas() {
               <StickyNote className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold mb-1">
-              {search ? 'Nenhuma nota encontrada' : 'Nenhuma nota ainda'}
+              {search || statusFilter || priorityFilter
+                ? 'Nenhuma nota encontrada'
+                : 'Nenhuma nota ainda'}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {search
-                ? 'Tente outro termo de busca.'
+              {search || statusFilter || priorityFilter
+                ? 'Tente outro termo de busca ou filtro.'
                 : 'Crie sua primeira nota para começar a registrar suas decisões.'}
             </p>
-            {!search && (
+            {!search && !statusFilter && !priorityFilter && (
               <Button onClick={openCreate} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Criar Primeira Nota
@@ -208,6 +387,8 @@ export default function Notas() {
             )}
           </CardContent>
         </Card>
+      ) : viewMode === 'kanban' ? (
+        <KanbanBoard notas={filteredNotas} onEdit={openEdit} onDelete={(id) => setDeleteId(id)} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNotas.map((nota) => (
@@ -241,20 +422,37 @@ export default function Notas() {
                 maxLength={100}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Prioridade</Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Prioridade</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITIES.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Conteúdo</Label>

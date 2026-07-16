@@ -6,6 +6,7 @@ export interface NotaProjeto {
   content: string
   user: string
   priority: string
+  status: string
   tags: string[]
   created: string
   updated: string
@@ -21,6 +22,7 @@ export const getNotas = async (): Promise<NotaProjeto[]> => {
     content: r.content,
     user: r.user,
     priority: r.priority || 'Média',
+    status: r.status || 'A Fazer',
     tags: Array.isArray(r.tags) ? r.tags : [],
     created: r.created,
     updated: r.updated,
@@ -32,6 +34,7 @@ export const createNota = async (data: {
   content: string
   user: string
   priority: string
+  status: string
   tags: string[]
 }): Promise<NotaProjeto> => {
   const record = await pb.collection('notas_projeto').create(data)
@@ -44,6 +47,7 @@ export const updateNota = async (
     title: string
     content: string
     priority: string
+    status: string
     tags: string[]
   }>,
 ): Promise<NotaProjeto> => {
