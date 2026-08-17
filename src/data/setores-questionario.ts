@@ -296,7 +296,10 @@ export const setores: Setor[] = [
         pilar: 3,
         texto: 'Quantas decisões da última reunião comercial foram efetivamente implementadas?',
       },
-      { pilar: 3, texto: 'Existe um comitê de gestão periódico entre lojas, compras e financial?' },
+      {
+        pilar: 3,
+        texto: 'Existe um comitê de gestão periódico entre lojas, compras e financeiro?',
+      },
       { pilar: 3, texto: 'A equipe sabe o lucro líquido por cliente, canal e produto vendido?' },
     ],
   },
@@ -356,7 +359,7 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Quantas decisões do planejamento safra foram efetivamente executadas?' },
       {
         pilar: 3,
-        texto: 'Existe um comitê de gestão periódico entre produção, comercial e financial?',
+        texto: 'Existe um comitê de gestão periódico entre produção, comercial e financeiro?',
       },
       { pilar: 3, texto: 'A equipe comercial sabe o custo de produção e a margem por produto?' },
     ],
