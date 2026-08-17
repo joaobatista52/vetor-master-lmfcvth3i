@@ -473,7 +473,7 @@ export const setores: Setor[] = [
       },
       {
         pilar: 3,
-        texto: 'Quantas reuniões entre comercial, engenharia e financial ocorrem por mês?',
+        texto: 'Quantas reuniões entre comercial, engenharia e financeiro ocorrem por mês?',
       },
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'Sua equipe de planejamento sabe o custo real de cada etapa da obra?' },
@@ -571,7 +571,7 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'A equipe pedagógica sabe a meta de retenção por turma?' },
       {
         pilar: 3,
-        texto: 'Quantas reuniões entre pedagógico, comercial e financial ocorrem por mês?',
+        texto: 'Quantas reuniões entre pedagógico, comercial e financeiro ocorrem por mês?',
       },
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'O comercial sabe a margem de contribuição por curso, turno e unidade?' },
@@ -614,7 +614,7 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Os instrutores sabem a meta de retenção por turma?' },
       {
         pilar: 3,
-        texto: 'Quantas reuniões entre comercial, operação e financial ocorrem por mês?',
+        texto: 'Quantas reuniões entre comercial, operação e financeiro ocorrem por mês?',
       },
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'O comercial sabe a margem de contribuição por plano e unidade?' },
