@@ -49,7 +49,8 @@ const chartConfig = {
 export function HeatMapVisualization({ heatMap }: { heatMap: HeatMap }) {
   const radarData = heatMap.areas.map((area) => {
     const sa = strategicAreas.find((s) => s.numero === area.numero)
-    return { subject: sa?.titulo || area.titulo, score: area.score }
+    const shortLabel = sa?.titulo.split(' ')[0] || area.titulo
+    return { subject: shortLabel, score: area.score }
   })
 
   return (

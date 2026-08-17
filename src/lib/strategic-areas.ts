@@ -1,9 +1,11 @@
-import { Target, DollarSign, Settings, Users, TrendingUp, Cpu, Shield } from 'lucide-react'
+import { Target, DollarSign, Settings, Users, TrendingUp, Cpu, Shield, Eye } from 'lucide-react'
 
+// V6.5 — 8 Áreas Estratégicas (Master Framework Consolidado V2.0)
+// Área 8 (Foresight Estratégico) adicionada no upgrade V6.4 → V6.5.
 export const strategicAreas = [
   {
     numero: 1,
-    titulo: 'Estratégia & Visão',
+    titulo: 'Estratégia',
     icon: Target,
     dor: 'Sua estratégia sobrevive a 3 cenários adversos?',
     epifania: 'A maioria dos fundadores confunde otimismo com estratégia.',
@@ -12,16 +14,7 @@ export const strategicAreas = [
   },
   {
     numero: 2,
-    titulo: 'Finanças & Resultados',
-    icon: DollarSign,
-    dor: 'Sua empresa sobrevive 90 dias sem receita?',
-    epifania: 'Previsibilidade financeira é o que separa negócios de hobbies.',
-    cor: 'text-green-600',
-    bg: 'bg-green-50',
-  },
-  {
-    numero: 3,
-    titulo: 'Operações & Processos',
+    titulo: 'Execução e Qualidade',
     icon: Settings,
     dor: 'O que acontece com 20% mais demanda amanhã?',
     epifania: 'Processos não documentados são dependência disfarçada.',
@@ -29,8 +22,8 @@ export const strategicAreas = [
     bg: 'bg-orange-50',
   },
   {
-    numero: 4,
-    titulo: 'Pessoas & Liderança',
+    numero: 3,
+    titulo: 'Liderança e Governança',
     icon: Users,
     dor: 'E se 2 líderes-chave saírem amanhã?',
     epifania: 'Sua empresa não pode depender de pessoas insubstituíveis.',
@@ -38,8 +31,17 @@ export const strategicAreas = [
     bg: 'bg-purple-50',
   },
   {
+    numero: 4,
+    titulo: 'Inovação e Tecnologia',
+    icon: Cpu,
+    dor: 'Quanto você perde com 48h de indisponibilidade?',
+    epifania: 'Tecnologia é alavanca estratégica, não centro de custo.',
+    cor: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+  },
+  {
     numero: 5,
-    titulo: 'Vendas & Crescimento',
+    titulo: 'Marketing e Vendas',
     icon: TrendingUp,
     dor: 'Sua máquina de vendas é previsível e independente?',
     epifania: 'Crescimento sem previsibilidade é uma prisão dourada.',
@@ -48,21 +50,30 @@ export const strategicAreas = [
   },
   {
     numero: 6,
-    titulo: 'Tecnologia & Inovação',
-    icon: Cpu,
-    dor: 'Quanto você perde com 48h de indisponibilidade?',
-    epifania: 'Tecnologia é alavanca estratégica, não centro de custo.',
-    cor: 'text-indigo-600',
-    bg: 'bg-indigo-50',
+    titulo: 'Finanças e Economia',
+    icon: DollarSign,
+    dor: 'Sua empresa sobrevive 90 dias sem receita?',
+    epifania: 'Previsibilidade financeira é o que separa negócios de hobbies.',
+    cor: 'text-green-600',
+    bg: 'bg-green-50',
   },
   {
     numero: 7,
-    titulo: 'Governança & Compliance',
+    titulo: 'Gestão de Riscos e Compliance',
     icon: Shield,
     dor: 'Sua empresa sobreviveria a uma auditoria regulatória?',
     epifania: 'Governança protege o patrimônio que você construiu.',
     cor: 'text-red-600',
     bg: 'bg-red-50',
+  },
+  {
+    numero: 8,
+    titulo: 'Foresight Estratégico',
+    icon: Eye,
+    dor: 'Você sabe quais cenários podem desenhar o seu futuro?',
+    epifania: 'Antecipar futuros plausíveis é a única vantagem sustentável.',
+    cor: 'text-teal-600',
+    bg: 'bg-teal-50',
   },
 ]
 

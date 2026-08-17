@@ -9,13 +9,13 @@ import {
   Target,
   Send,
   Loader2,
+  Layers,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -25,18 +25,28 @@ import {
 } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { createDiagnostico } from '@/services/diagnosticos'
-import {
-  strategicAreas,
-  faturamentoOptions,
-  funcionariosOptions,
-  prazoOptions,
-} from '@/lib/strategic-areas'
+import { faturamentoOptions, funcionariosOptions, prazoOptions } from '@/lib/strategic-areas'
+import { setores, nomePilares, getPerguntasPorPilar } from '@/data/setores-questionario'
 
-const stepTitles = ['Sua Empresa', 'Dores Estratégicas', 'Objetivos', 'Revisão']
-const stepIcons = [Building2, AlertTriangle, Target, Check]
+// V6.5 — Questionário com Bloco Setorial Parametrizável (3 Pilares, ~18 perguntas por setor)
+// Fluxo: Sua Empresa → Setor → 3 Pilares → Objetivos → Revisão
+
+const stepTitles = [
+  'Sua Empresa',
+  'Setor de Atuação',
+  'Pilar 1 — Prisão do Fundador',
+  'Pilar 2 — Ineficiência Invisível',
+  'Pilar 3 — Abismo Estratégia vs. Execução',
+  'Objetivos',
+  'Revisão',
+]
+const stepIcons = [Building2, Layers, AlertTriangle, AlertTriangle, AlertTriangle, Target, Check]
+
+type Resposta = Record<string, string> // chave: indice da pergunta -> valor
 
 export default function Questionario() {
   const navigate = useNavigate()
@@ -44,46 +54,72 @@ export default function Questionario() {
   const { toast } = useToast()
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
-  const [data, setData] = useState({
+
+  const [empresa, setEmpresa] = useState({
     nome: '',
-    segmento: '',
     faturamento: '',
     funcionarios: '',
-    dores: [] as number[],
-    objetivos: '',
-    prazo: '',
   })
+  const [setorId, setSetorId] = useState<string>('')
+  const [segmento, setSegmento] = useState<string>('')
+  const [respostas, setRespostas] = useState<Resposta>({})
+  const [objetivos, setObjetivos] = useState({ descricao: '', prazo: '' })
 
-  const toggleDor = (num: number) => {
-    setData((p) => ({
-      ...p,
-      dores: p.dores.includes(num) ? p.dores.filter((d) => d !== num) : [...p.dores, num],
-    }))
-  }
+  const setorSelecionado = setores.find((s) => s.id === setorId) || null
+
+  const totalSteps = stepTitles.length
 
   const canProceed = () => {
-    if (step === 0) return data.nome.trim() !== '' && data.segmento.trim() !== ''
-    if (step === 1) return data.dores.length > 0
-    if (step === 2) return data.objetivos.trim().length > 0 && data.prazo !== ''
+    if (step === 0) return empresa.nome.trim() !== ''
+    if (step === 1) return setorId !== '' && segmento !== ''
+    if (step === 2 || step === 3 || step === 4) {
+      if (!setorSelecionado) return false
+      const pilar = step - 1 // step 2 -> pilar 1, step 3 -> pilar 2, step 4 -> pilar 3
+      const perguntas = getPerguntasPorPilar(setorSelecionado, pilar as 1 | 2 | 3)
+      return perguntas.every((_, idx) => !!respostas[`${pilar}-${idx}`])
+    }
+    if (step === 5) return objetivos.descricao.trim().length > 0 && objetivos.prazo !== ''
     return true
   }
 
+  const setResposta = (pilar: number, idx: number, valor: string) => {
+    setRespostas((p) => ({ ...p, [`${pilar}-${idx}`]: valor }))
+  }
+
+  const allPerguntasRespostas = () => {
+    if (!setorSelecionado) return []
+    return setorSelecionado.perguntas.map((p, idx) => {
+      // idx global na lista de perguntas do setor (0..17)
+      return {
+        pilar: p.pilar,
+        texto: p.texto,
+        resposta:
+          respostas[`${p.pilar}-${idxGlobalParaPilar(setorSelecionado, idx)}`] || 'Não respondida',
+      }
+    })
+  }
+
   const handleSubmit = async () => {
-    if (!user) return
+    if (!user || !setorSelecionado) return
     setSubmitting(true)
     try {
       await createDiagnostico({
         user: user.id,
+        setor: setorSelecionado.id,
         dados_entrada: {
           empresa: {
-            nome: data.nome,
-            segmento: data.segmento,
-            faturamento: data.faturamento,
-            funcionarios: data.funcionarios,
+            nome: empresa.nome,
+            segmento,
+            setor: setorSelecionado.nome,
+            faturamento: empresa.faturamento,
+            funcionarios: empresa.funcionarios,
           },
-          dores: data.dores,
-          objetivos: { descricao: data.objetivos, prazo: data.prazo },
-          questionario_version: '6.4',
+          setor_id: setorSelecionado.id,
+          setor_slug: setorSelecionado.slug,
+          micro_epifanias: setorSelecionado.microEpifanias,
+          respostas_3_pilares: allPerguntasRespostas(),
+          objetivos: { descricao: objetivos.descricao, prazo: objetivos.prazo },
+          questionario_version: '6.5',
           submetido_em: new Date().toISOString(),
         },
       })
@@ -101,15 +137,62 @@ export default function Questionario() {
 
   const StepIcon = stepIcons[step]
 
+  const renderPilarStep = (pilar: 1 | 2 | 3) => {
+    if (!setorSelecionado) return null
+    const perguntas = getPerguntasPorPilar(setorSelecionado, pilar)
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge variant="secondary">{nomePilares[pilar]}</Badge>
+          <span className="text-xs text-muted-foreground">
+            Setor: {setorSelecionado.nome} · {perguntas.length} perguntas
+          </span>
+        </div>
+        {perguntas.map((p, idx) => {
+          const chave = `${pilar}-${idx}`
+          return (
+            <div key={chave} className="border rounded-lg p-4 space-y-3">
+              <Label className="text-sm font-medium leading-relaxed block">
+                {idx + 1}. {p.texto}
+              </Label>
+              <RadioGroup
+                value={respostas[chave] || ''}
+                onValueChange={(v) => setResposta(pilar, idx, v)}
+                className="space-y-2"
+              >
+                {[
+                  'Sim, totalmente.',
+                  'Parcialmente, com ressalvas.',
+                  'Raramente / com dificuldade.',
+                  'Não / não sei informar.',
+                ].map((opt, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center space-x-3 rounded-md hover:bg-secondary/40 transition-colors p-2 cursor-pointer"
+                  >
+                    <RadioGroupItem value={opt} id={`${chave}-${i}`} />
+                    <Label htmlFor={`${chave}-${i}`} className="cursor-pointer font-normal text-sm">
+                      {opt}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Questionário Padrão</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Diagnóstico Estratégico Setorial</h1>
         <p className="text-muted-foreground mt-1">
-          JBP Gestão Master V 6.4 — Etapa {step + 1} de {stepTitles.length}
+          JBP Gestão Master V 6.5 — Etapa {step + 1} de {totalSteps}
         </p>
       </div>
-      <Progress value={((step + 1) / stepTitles.length) * 100} className="h-2 mb-6" />
+      <Progress value={((step + 1) / totalSteps) * 100} className="h-2 mb-6" />
 
       <Card>
         <CardHeader>
@@ -124,25 +207,16 @@ export default function Questionario() {
                 <Label htmlFor="nome">Nome da Empresa *</Label>
                 <Input
                   id="nome"
-                  value={data.nome}
-                  onChange={(e) => setData({ ...data, nome: e.target.value })}
+                  value={empresa.nome}
+                  onChange={(e) => setEmpresa({ ...empresa, nome: e.target.value })}
                   placeholder="Ex: Minha Empresa Ltda."
-                />
-              </div>
-              <div>
-                <Label htmlFor="segmento">Segmento / Indústria *</Label>
-                <Input
-                  id="segmento"
-                  value={data.segmento}
-                  onChange={(e) => setData({ ...data, segmento: e.target.value })}
-                  placeholder="Ex: Tecnologia, Varejo, Serviços..."
                 />
               </div>
               <div>
                 <Label>Faturamento Mensal</Label>
                 <Select
-                  value={data.faturamento}
-                  onValueChange={(v) => setData({ ...data, faturamento: v })}
+                  value={empresa.faturamento}
+                  onValueChange={(v) => setEmpresa({ ...empresa, faturamento: v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione..." />
@@ -159,8 +233,8 @@ export default function Questionario() {
               <div>
                 <Label>Número de Colaboradores</Label>
                 <Select
-                  value={data.funcionarios}
-                  onValueChange={(v) => setData({ ...data, funcionarios: v })}
+                  value={empresa.funcionarios}
+                  onValueChange={(v) => setEmpresa({ ...empresa, funcionarios: v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione..." />
@@ -176,49 +250,86 @@ export default function Questionario() {
               </div>
             </>
           )}
+
           {step === 1 && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-2">
-                Selecione as áreas onde você sente maior gargalo:
-              </p>
-              {strategicAreas.map((area) => (
-                <div
-                  key={area.numero}
-                  className="flex items-start gap-3 border rounded-lg p-3 hover:bg-secondary/40 transition-colors"
+            <div className="space-y-4">
+              <div>
+                <Label>Setor de Atuação *</Label>
+                <Select
+                  value={setorId}
+                  onValueChange={(v) => {
+                    setSetorId(v)
+                    setSegmento('')
+                  }}
                 >
-                  <Checkbox
-                    checked={data.dores.includes(area.numero)}
-                    onCheckedChange={() => toggleDor(area.numero)}
-                    id={`dor-${area.numero}`}
-                  />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={`dor-${area.numero}`}
-                      className="cursor-pointer font-medium text-sm flex items-center gap-2"
-                    >
-                      <area.icon className={`w-4 h-4 ${area.cor}`} /> {area.titulo}
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-1">{area.dor}</p>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione seu setor..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {setores.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {setorSelecionado && (
+                <>
+                  <div>
+                    <Label>Segmento *</Label>
+                    <Select value={segmento} onValueChange={setSegmento}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o segmento..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {setorSelecionado.segmentos.map((seg) => (
+                          <SelectItem key={seg} value={seg}>
+                            {seg}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-              ))}
+                  <div className="bg-secondary/40 rounded-lg p-4 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Micro-epifanias deste setor
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {setorSelecionado.microEpifanias.map((m) => (
+                        <Badge key={m} variant="outline" className="text-xs">
+                          {m}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
-          {step === 2 && (
+
+          {step === 2 && renderPilarStep(1)}
+          {step === 3 && renderPilarStep(2)}
+          {step === 4 && renderPilarStep(3)}
+
+          {step === 5 && (
             <>
               <div>
                 <Label htmlFor="objetivos">Seus Objetivos Estratégicos *</Label>
                 <Textarea
                   id="objetivos"
-                  value={data.objetivos}
-                  onChange={(e) => setData({ ...data, objetivos: e.target.value })}
+                  value={objetivos.descricao}
+                  onChange={(e) => setObjetivos({ ...objetivos, descricao: e.target.value })}
                   placeholder="Descreva onde você quer chegar nos próximos meses. Ex: Sair da operação, dobrar faturamento, delegar gestão..."
                   rows={5}
                 />
               </div>
               <div>
                 <Label>Horizonte de Tempo *</Label>
-                <Select value={data.prazo} onValueChange={(v) => setData({ ...data, prazo: v })}>
+                <Select
+                  value={objetivos.prazo}
+                  onValueChange={(v) => setObjetivos({ ...objetivos, prazo: v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
@@ -233,41 +344,43 @@ export default function Questionario() {
               </div>
             </>
           )}
-          {step === 3 && (
+
+          {step === 6 && (
             <div className="space-y-3 text-sm">
               <div>
-                <span className="text-muted-foreground">Empresa:</span> {data.nome} —{' '}
-                {data.segmento}
+                <span className="text-muted-foreground">Empresa:</span> {empresa.nome}
               </div>
-              {data.faturamento && (
+              {setorSelecionado && (
                 <div>
-                  <span className="text-muted-foreground">Faturamento:</span> {data.faturamento}
+                  <span className="text-muted-foreground">Setor / Segmento:</span>{' '}
+                  {setorSelecionado.nome} — {segmento}
                 </div>
               )}
-              {data.funcionarios && (
+              {empresa.faturamento && (
                 <div>
-                  <span className="text-muted-foreground">Colaboradores:</span> {data.funcionarios}
+                  <span className="text-muted-foreground">Faturamento:</span> {empresa.faturamento}
+                </div>
+              )}
+              {empresa.funcionarios && (
+                <div>
+                  <span className="text-muted-foreground">Colaboradores:</span>{' '}
+                  {empresa.funcionarios}
                 </div>
               )}
               <div>
-                <span className="text-muted-foreground">Dores selecionadas:</span>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {data.dores.map((n) => {
-                    const a = strategicAreas.find((s) => s.numero === n)
-                    return a ? (
-                      <Badge key={n} variant="secondary">
-                        {a.titulo}
-                      </Badge>
-                    ) : null
-                  })}
+                <span className="text-muted-foreground">Objetivos:</span> {objetivos.descricao}
+              </div>
+              <div>
+                <span className="text-muted-foreground">Prazo:</span> {objetivos.prazo}
+              </div>
+              {setorSelecionado && (
+                <div className="pt-2">
+                  <span className="text-muted-foreground">Respostas dos 3 Pilares:</span>{' '}
+                  <Badge variant="secondary">
+                    {setorSelecionado.perguntas.length} perguntas respondidas
+                  </Badge>
                 </div>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Objetivos:</span> {data.objetivos}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Prazo:</span> {data.prazo}
-              </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -282,7 +395,7 @@ export default function Questionario() {
         >
           <ChevronLeft className="w-4 h-4" /> Voltar
         </Button>
-        {step < stepTitles.length - 1 ? (
+        {step < totalSteps - 1 ? (
           <Button onClick={() => setStep((s) => s + 1)} disabled={!canProceed()} className="gap-2">
             Próximo <ChevronRight className="w-4 h-4" />
           </Button>
@@ -299,4 +412,12 @@ export default function Questionario() {
       </div>
     </div>
   )
+}
+
+// Helper: mapeia o índice global da pergunta (dentro da lista setor.perguntas)
+// para o índice local dentro do pilar correspondente.
+function idxGlobalParaPilar(setor: (typeof setores)[number], idxGlobal: number): number {
+  const p = setor.perguntas[idxGlobal]
+  if (!p) return idxGlobal
+  return setor.perguntas.filter((q) => q.pilar === p.pilar).indexOf(p)
 }

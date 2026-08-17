@@ -16,6 +16,8 @@ export interface Diagnostico {
   user: string
   dados_entrada: Record<string, any>
   relatorio_gerado: string
+  setor?: string
+  fase_atual?: number
   created: string
   updated: string
 }
@@ -27,6 +29,8 @@ export const getDiagnosticos = async (): Promise<Diagnostico[]> => {
     user: r.user,
     dados_entrada: r.dados_entrada || {},
     relatorio_gerado: r.relatorio_gerado || '',
+    setor: r.setor || '',
+    fase_atual: r.fase_atual,
     created: r.created,
     updated: r.updated,
   })) as Diagnostico[]
@@ -36,6 +40,8 @@ export const createDiagnostico = async (data: {
   user: string
   dados_entrada?: Record<string, any>
   relatorio_gerado?: string
+  setor?: string
+  fase_atual?: number
 }): Promise<Diagnostico> => {
   const r: any = await pb.collection('diagnosticos').create(data)
   return {
@@ -43,6 +49,8 @@ export const createDiagnostico = async (data: {
     user: r.user,
     dados_entrada: r.dados_entrada || {},
     relatorio_gerado: r.relatorio_gerado || '',
+    setor: r.setor || '',
+    fase_atual: r.fase_atual,
     created: r.created,
     updated: r.updated,
   } as Diagnostico
@@ -58,6 +66,8 @@ export const updateDiagnostico = async (
     user: r.user,
     dados_entrada: r.dados_entrada || {},
     relatorio_gerado: r.relatorio_gerado || '',
+    setor: r.setor || '',
+    fase_atual: r.fase_atual,
     created: r.created,
     updated: r.updated,
   } as Diagnostico
@@ -77,6 +87,8 @@ export const getLatestDiagnostico = async (): Promise<Diagnostico | null> => {
       user: r.user,
       dados_entrada: r.dados_entrada || {},
       relatorio_gerado: r.relatorio_gerado || '',
+      setor: r.setor || '',
+      fase_atual: r.fase_atual,
       created: r.created,
       updated: r.updated,
     }
@@ -92,6 +104,8 @@ export const getDiagnostico = async (id: string): Promise<Diagnostico> => {
     user: r.user,
     dados_entrada: r.dados_entrada || {},
     relatorio_gerado: r.relatorio_gerado || '',
+    setor: r.setor || '',
+    fase_atual: r.fase_atual,
     created: r.created,
     updated: r.updated,
   }
