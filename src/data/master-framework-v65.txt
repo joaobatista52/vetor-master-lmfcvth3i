@@ -1,0 +1,458 @@
+Página 1 de 13
+JBP ESTRUTURA
+MASTER FRAMEWORK V1.2 CONSOLIDADO
+Áreas 1 a 8 + Apêndices A-F — JBP Gestão Master V6.5
+04 de agosto de 2026
+
+Nota: Documento Confidencial — Uso Interno. Arquivo único de referência do Expert. Este documento integra todas as áreas estratégicas e apêndices operacionais para execução de consultoria C-Level.
+
+PARTE I — ÁREAS ORIGINAIS 1 A 8
+
+1.1 ÁREA 1 — ESTRATÉGIA
+Script de Pensamento do Expert C-Level: O objetivo é mapear o mercado com precisão cirúrgica e definir um posicionamento disruptivo para capturar valor exponencial.
+
+Fase 1 — Diagnóstico (As Is):
+1. Business Model Canvas (As Is): Preenchimento rigoroso de todos os 9 blocos. O foco é identificar vazamentos de valor e fragilidades estruturais que comprometem a eficiência atual.
+2. 5 Forças de Porter: Análise profunda da rivalidade entre concorrentes, ameaça de novos entrantes, poder de negociação de fornecedores, poder de negociação de clientes e ameaça de produtos substitutos.
+
+Fase 2 — Estratégia (To Be):
+3. Canvas To Be (Inovação de Valor): Redesenho do Canvas projetando um modelo de negócio superior, eliminando redundâncias e focando em diferenciais competitivos.
+4. Estratégia do Oceano Azul: Aplicação da Matriz ERRC (Eliminar, Reduzir, Elevar, Criar) e construção da Curva de Valor comparativa.
+
+Regras de Ouro:
+● Clean Text: Voz direta, assertiva e sem adjetivação desnecessária.
+● Stress Test de Buffett: O ROI projetado deve ser >30% a.a. e a margem de segurança deve ser >50%.
+● Proibição Absoluta: Nenhuma citação acadêmica ou teórica no corpo do texto; foco total em pragmatismo executivo.
+
+Estrutura de Output:
+5. Diagnóstico Crítico (Identificação de Vazamentos de Valor);
+6. Mapa de Oportunidades (Gaps de Mercado não explorados);
+7. Novo Modelo (Canvas To Be Detalhado);
+8. Plano de Ação Imediato (Quick Wins para geração de caixa).
+
+1.2 ÁREA 2 — EXECUÇÃO E QUALIDADE
+Objetivo: Garantir a implementação da estratégia com excelência operacional e agilidade.
+
+Fase 3 — Design Organizacional e Maturidade:
+Página 2 de 13
+● Regra Camaleão: Utilização de Agile para contextos de alta incerteza e inovação; utilização de Waterfall/Lean para processos de estabilidade e escala operacional.
+
+Fase 4 — Execução e Controle:
+● Hoshin Kanri: Desdobramento vertical da estratégia para que todos os níveis da organização estejam alinhados.
+● OKRs (Objectives and Key Results): Estabelecimento de focos trimestrais em objetivos ambiciosos e mensuráveis.
+● Rituais de Gestão: Implementação de Daily Stand-ups (15 min), Weekly Reviews (1h) e Monthly Deep Dives (2h-4h).
+
+Estrutura de Output:
+9. Diagnóstico de Maturidade (Perfil Camaleão);
+10. Matriz de OKRs Estratégicos;
+11. Calendário de Rituais de Gestão;
+12. Plano de Incentivos e Meritocracia.
+
+1.3 ÁREA 3 — LIDERANÇA E GOVERNANÇA
+Objetivo: Estruturar liderança de alta performance, planos de sucessão e governança corporativa sólida.
+
+Fase 5 — Liderança e Cultura:
+● Identificação de Perfis (Tiers A/B/C): Mapeamento de talentos e gaps de competência.
+● Cultura de Meritocracia e Accountability: Implementação de sistemas de responsabilidade clara e recompensa por performance.
+
+Fase 6 — Governança e Sucessão:
+● Estrutura de Conselhos: Conselho Consultivo (5-7 membros) para orientação estratégica e Conselho de Administração (7-9 membros, com no mínimo 50% de membros independentes).
+● Plano de Sucessão: Mapeamento das top 10 posições, identificando 3 candidatos por vaga e atribuindo um readiness score (prontidão).
+● Compliance e ESG: Alinhamento com normas éticas, ambientais e sociais.
+
+Estrutura de Output:
+13. Diagnóstico de Liderança;
+14. Desenho da Estrutura de Governança;
+15. Plano de Sucessão/Transição;
+16. Código de Conduta e Rituais de Conselho.
+
+1.4 ÁREA 4 — INOVAÇÃO E TECNOLOGIA
+Objetivo: Transformar tecnologia em vantagem competitiva absoluta (Moat).
+
+Fase 7 — Transformação Digital e Dados:
+● Auditoria de Legados: Identificação de tecnologias obsoletas e migração para Cloud.
+Página 3 de 13
+● Cultura Data-Driven: Implementação de BI (Business Intelligence) e Dashboards em tempo real para tomada de decisão baseada em fatos.
+
+Fase 8 — IA e Tecnologias Disruptivas:
+● IA Generativa e RAG: Uso de Retrieval-Augmented Generation para preservação do conhecimento institucional.
+● Automação de Processos Cognitivos: Redução de carga de trabalho manual em tarefas complexas.
+● Inovação de Valor via Tecnologia: Criação de novos serviços ou redução drástica de custos.
+
+Regras de Ouro:
+● Stress Test de Buffett: Toda tecnologia deve ampliar o Moat ou reduzir o custo marginal em >50%.
+● Regra Camaleão: Adaptar a tecnologia ao nível de maturidade do cliente (Nível 1, 2 ou 3).
+
+Estrutura de Output:
+17. Diagnóstico de Maturidade Tecnológica;
+18. Roadmap de Transformação Digital;
+19. Plano de Implementação de IA e Automação;
+20. Análise de ROI e Impacto no Moat.
+
+1.5 ÁREA 5 — MARKETING E VENDAS
+Foco: Construção de uma Máquina de Vendas Previsível.
+● ICP (Ideal Customer Profile): Definição de perfil granular que gera 80% da receita com um win-rate >70%.
+● Pirâmide de Chet Holmes: Concentração de 60% dos esforços no topo do funil (educação e conscientização).
+● SDR/CRM: Meta operacional de 100 contatos/dia por SDR; pipeline visual obrigatório com 5 estágios definidos.
+● LTV/CAC: Manter a relação >4:1, otimizando constantemente via estratégias de inbound e upsell.
+● Upsell Estruturado: Cronograma rígido — Mês 1: Onboarding; Mês 3: Expansão; Mês 6: Premium. Meta de 30% de upsell rate anual.
+
+Resultado Esperado: Receita previsível com variação mensal inferior a 10%.
+
+1.6 ÁREA 6 — FINANÇAS E ECONOMIA
+Foco: Engenharia Financeira e Proteção de Capital.
+
+Motor Determinístico (Embutido):
+● DRE (Demonstração do Resultado do Exercício):
+Receita Bruta → Deduções → Receita Líquida → CPV → Margem Bruta → Custos Variáveis → Margem de Contribuição → OPEX (SG&A + P&D + Outros) → EBITDA → D&A → EBIT → Resultado Financeiro Líquido → EBT → IR/CSLL → Lucro Líquido
+● Fluxo de Caixa:
+EBITDA → IR → CAPEX → ΔWC → FCF (Free Cash Flow)
+● Valuation:
+FCD (Fluxo de Caixa Descontado) = Y1–Y5 + Transição Y6–Y9 + Perpetuidade de Gordon (g = 5%)
+Página 4 de 13
+● WACC (Custo Médio Ponderado de Capital):
+WACC = Selic + Risco Brasil + Risco Startup
+
+Thresholds de Performance (Tabela de Referência):
+Indicador | Saudável | Alerta Crítico
+Margem EBITDA | >30% | 20-30% | <20%
+ROIC vs WACC | ROIC > WACC +5% | ROIC = WACC a +5% | ROIC < WACC
+Dívida Líquida/EBITDA | <2,0x | 2,0-3,0x | >3,0x
+Margem de Segurança | >50% | 30-50% | <30%
+LTV/CAC | >4:1 | 3:1 a 4:1 | <3:1
+Geração de Caixa Livre | FCF > 0 em Y2 | FCF > 0 em Y3 | FCF negativo em Y3+
+ROE | >20% | 12-20% | <12%
+
+Ferramentas:
+● OBZ (Orçamento Base Zero): Corte sistemático de 20% a.a. em custos que não impactam o EBITDA.
+● Alocação de Capital: Projetos aprovados apenas com IRR > WACC +10%.
+● Valuation DCF: Atualização trimestral obrigatória.
+
+Resultado Esperado: Capital protegido, ROIC médio 18%+, valuation 3x superior em 24 meses.
+
+1.7 ÁREA 7 — GESTÃO DE RISCOS E COMPLIANCE
+Foco: Blindagem do Moat e Perenidade.
+● Matriz de Calor: Mapeamento de Probabilidade × Impacto. Mitigação obrigatória de riscos "vermelhos" em no máximo 90 dias.
+● Compliance Jurídico: Auditoria de 100% dos contratos anualmente; adequação total à LGPD, gestão de NDAs e revisão de cláusulas penais.
+● Sucessão: Manutenção de 2 sucessores internos por posição do Top 10; implementação de shadow leadership trimestral.
+● Tolerância Zero: Desvios éticos ou financeiros implicam em desligamento imediato, sem exceções.
+
+Resultado Esperado: Moat blindado, zero incidentes materiais, perenidade projetada para 10+ anos.
+
+1.8 ÁREA 8 — FORESIGHT ESTRATÉGICO (NOVA)
+Objetivo: Preparar a organização para lidar com volatilidade e incerteza, criando vantagem antecipatória.
+
+Fluxo de Integração:
+Página 5 de 13
+[FORESIGHT] STEEP/PESTEL → Cone dos Futuros → Cenários (2x2) → Backcasting → [PLANEJAMENTO ESTRATÉGICO] SWOT Dinâmica → OKRs Flexíveis → Roadmap com Gatilhos.
+
+Ferramentas Detalhadas:
+21. Análise STEEP/PESTEL: Passo 1 (Coleta): Investigar fatos em Social, Tecnológico, Econômico, Ecológico e Político.
+22. Passo 2 (Filtragem): Separar ruído de tendências reais.
+23. Passo 3 (Matriz de Impacto): Classificar por Grau de Incerteza × Nível de Impacto.
+24. Cone dos Futuros: Futuros Prováveis: Linha reta central (extrapolação do presente).
+25. Futuros Plausíveis: Primeira abertura (o que pode acontecer).
+26. Futuros Possíveis: Máxima abertura, incluindo Cisnes Negros.
+27. Futuro Preferível: O norte estratégico desejado.
+28. Roda de Futuros: Análise de impactos de 1º nível (diretos), 2º nível (indiretos) e 3º nível (culturais/comportamentais).
+29. Planejamento de Cenários 2x2: Eixos baseados nas duas maiores incertezas críticas, gerando 4 narrativas futuras distintas.
+30. Backcasting: Passo 1: Posicionar-se no Futuro Preferível (ex: 2035).
+31. Passo 2: Recuar no tempo (2031, 2029, 2027) identificando marcos necessários.
+32. Passo 3: Definir a primeira tarefa a ser iniciada amanhã.
+
+Integração Prática: Uso de Early Warning Signals (gatilhos) que disparam a transição entre planos de contingência e OKRs Flexíveis.
+
+PARTE II — APÊNDICE A: LENTE DE BUFFETT APLICADA (PRIORIDADE 3)
+
+A.1 Objetivo e Aplicação
+Transformar os thresholds objetivos do Motor Determinístico em um Checklist Operacional de Decisão para a Fase 6. Garante que recomendações sejam matematicamente superiores ao custo de capital, possuam margem de segurança e protejam o valor intrínseco do negócio no longo prazo.
+
+A.2 Checklist Operacional por Indicador
+
+Indicador 1. Margem EBITDA
+>30% (Saudável): Manter. Avaliar reinvestimento do excedente em crescimento ou redução de dívida. Proteger o Moat.
+20-30% (Alerta): Corrigir. Auditar custos variáveis e OPEX. Identificar os 3 maiores vazamentos de margem. Plano de recuperação em 90 dias.
+Página 6 de 13
+<20% (Crítico): Intervenção. Reestruturação profunda de custos. OBZ (Orçamento Base Zero) com corte de 20% sem impacto no EBITDA. Revisão de precificação.
+
+Indicador 2. ROIC vs WACC
+ROIC > WACC +5%: Manter. Alocar capital adicional em projetos com IRR > WACC +10%. Escalar o que gera valor.
+ROIC = WACC a +5%: Corrigir. Reavaliar alocação de capital. Priorizar projetos de maior retorno. Reduzir investimentos marginais.
+ROIC < WACC: Intervenção. Destruição de valor. Parar projetos com retorno abaixo do custo de capital. Reestruturar o portfólio.
+
+Indicador 3. Dívida Líquida / EBITDA
+<2,0x (Saudável): Manter. Capacidade de alavancagem disponível para crescimento oportunístico.
+2,0-3,0x (Alerta): Corrigir. Plano de desalavancagem. Priorizar geração de caixa sobre distribuição de dividendos.
+>3,0x (Crítico): Intervenção. Risco de solvência. Renegociar dívidas, vender ativos não estratégicos, proteger o caixa.
+
+Indicador 4. Margem de Segurança
+>50% (Saudável): Manter. Valuation com folga confortável. Prosseguir com o plano de investimento.
+30-50% (Alerta): Corrigir. Reavaliar premissas de crescimento e WACC. Ajustar o plano para aumentar a folga.
+<30% (Crítico): Intervenção. Valuation frágil. Revisar o modelo de negócio e as projeções. Não investir sem correção.
+
+Indicador 5. LTV / CAC
+>4:1 (Saudável): Manter. Máquina de vendas eficiente. Escalar investimento em aquisição.
+3:1 a 4:1 (Alerta): Corrigir. Otimizar canais de aquisição. Melhorar onboarding e retenção para elevar o LTV.
+Página 7 de 13
+<3:1 (Crítico): Intervenção. Modelo de aquisição insustentável. Redesenhar o funil, precificação e retenção.
+
+Indicador 6. Geração de Caixa Livre
+FCF > 0 em Y2: Manter. Negócio autossustentável. Reinvestir em crescimento.
+FCF > 0 em Y3: Corrigir. Acompanhar de perto. Acelerar a geração de caixa via redução de CAPEX ou capital de giro.
+FCF Negativo Y3+: Intervenção. Modelo queima caixa. Reestruturar operação, reduzir custos fixos, revisar o plano de negócio.
+
+Indicador 7. ROE
+>20% (Saudável): Manter. Excelência em retorno ao acionista. Proteger o diferencial competitivo.
+12-20% (Alerta): Corrigir. Melhorar eficiência de capital. Reduzir ativos ociosos.
+<12% (Crítico): Intervenção. Retorno abaixo do custo de oportunidade. Reestruturação patrimonial e operacional.
+
+A.3 Análise de Sensibilidade (3 Cenários)
+● Cenário Otimista: Crescimento acima do base, margens expandindo. Validar se o Equity Value se mantém acima do Valuation Cap.
+● Cenário Base: Premissas centrais do plano; Equity Value de referência.
+● Cenário Pessimista: Crescimento abaixo, margens comprimidas. Regra de Ouro: O plano só é aprovado se a Margem de Segurança se mantiver >30% aqui.
+
+A.4 Stress Test do Plano (Filtro de Buffett)
+Toda iniciativa deve responder:
+• Gera retorno superior a WACC + 5%?
+• Amplia ou protege o Moat?
+• Mantém a Margem de Segurança consolidada acima de 50%?
+• Se falhar em qualquer cenário, a recomendação deve ser reavaliada ou descartada.
+
+PARTE III — APÊNDICE B: LENTE DE HACKMAN DETALHADA (PRIORIDADE 4)
+Página 8 de 13
+
+B.1 Objetivo e Aplicação
+Transformar as 5 condições de Hackman em ferramentas operacionais para a Fase 4 (Capacidade e Design Organizacional). Diagnostica se a estrutura humana suporta a estratégia, eliminando silos e garantindo a execução.
+
+B.2 KPIs Objetivos por Condição
+
+Condição 1. Time Real
+KPI: Índice de Interdependência
+Métrica: % de tarefas com dependência cruzada concluídas no prazo
+Meta Saudável: >70% de colaboração
+
+Condição 2. Direção Convincente
+KPI: Clareza de Direção
+Métrica: % da equipe que declara meta trimestral e seu papel nela
+Meta Saudável: >80% de alinhamento
+
+Condição 3. Estrutura Facilitadora
+KPI: Tempo de Decisão
+Métrica: Prazo médio entre definição de tarefa e execução (dias)
+Meta Saudável: <30 dias para ajustes
+
+Condição 4. Contexto de Suporte
+KPI: Índice de Recursos
+Métrica: % da equipe com percepção positiva de recursos/recompensas
+Meta Saudável: >75% de satisfação
+
+Condição 5. Coaching Especializado
+KPI: Frequência de Feedback
+Métrica: Nº de sessões de 1:1 registradas por líder/mês
+Meta Saudável: ≥1 sessão/mês; 1 ciclo entre
+
+B.3 Planos de Recrutamento por Perfil (Tiers)
+Para cada gap identificado na Fase 4, o Expert deve classificar a necessidade de contratação:
+● Tier A (Alta Performance): Perfil de liderança e visão estratégica. Contratar para posições-chave. Avaliação por fit cultural rigoroso.
+● Tier B (Potencial): Perfil de execução. Desenvolver via coaching e PDI (Plano de Desenvolvimento Individual).
+● Tier C (Gap): Perfil com lacunas. Decidir entre desenvolvimento intensivo ou reposição em 90 dias.
+
+B.4 Ciclos de Feedback Estruturados
+● Rituais: Daily (15 min), Weekly (1h), Monthly Deep Dive (2h).
+● Avaliação: Trimestral por competência técnica e comportamental.
+● Feedback Contínuo: Sessões 1:1 quinzenais obrigatórias para alinhamento de OKRs.
+
+B.5 Diagnóstico de Maturidade do Time
+O Expert deve entregar um mapa de calor das 5 condições (Atendida / Parcial / Não Atendida). Para cada condição "Não Atendida", o sistema gera automaticamente: Ação Corretiva + Responsável + Prazo + Perfil de Recrutamento Necessário.
+Página 9 de 13
+
+PARTE IV — APÊNDICE C: CANVAS PARAMETRIZÁVEL (PRIORIDADE 5)
+
+C.1 Objetivo e Aplicação
+Variações do Business Model Canvas para diferentes portes, aplicáveis nas Fases 1 (As Is) e 3 (To Be). O objetivo é garantir que o diagnóstico e o desenho estratégico respeitem as limitações e oportunidades específicas de cada estágio de faturamento, focando nos vazamentos de valor mais prováveis para cada categoria.
+
+C.2 Canvas PME (Faturamento até R$ 5 milhões/ano)
+O foco na PME é a sobrevivência e estruturação básica. O modelo é altamente dependente da figura do fundador.
+1. Segmentos de Clientes: Nicho local ou regional; base de clientes concentrada; decisão de compra centralizada no dono do cliente.
+2. Proposta de Valor: Agilidade extrema; preço acessível; atendimento altamente personalizado e informal.
+3. Canais: Venda direta; indicações (boca a boca); WhatsApp; redes sociais orgânicas.
+4. Relacionamento: Pessoal e direto; dependente da confiança no dono da empresa.
+5. Fontes de Receita: Poucas linhas de produto/serviço; alta dependência de 2 ou 3 clientes principais.
+6. Recursos Principais: Equipe enxuta e generalista; capital de giro limitado; infraestrutura básica.
+7. Atividades-Chave: Operação diária "mão na massa"; vendas ativas; cobrança direta.
+8. Parcerias: Fornecedores locais; terceirização pontual de serviços administrativos.
+9. Structure de Custos: Custos fixos altos em relação à receita; fluxo de caixa apertado.
+
+Vazamentos típicos PME: Prisão do Fundador (centralização total), falta de controle de margem real, inadimplência oculta e ausência completa de processos documentados.
+
+C.3 Canvas Média Empresa (Faturamento R$ 5 a R$ 50 milhões/ano)
+O foco na Média Empresa é a eficiência operacional e delegação. O desafio é profissionalizar a gestão intermediária.
+1. Segmentos de Clientes: Base diversificada; segmentação por perfil de uso; contratos de médio prazo.
+2. Proposta de Valor: Escala de entrega; confiabilidade da marca; consistência na qualidade.
+3. Canais: Equipe comercial estruturada; uso de CRM; canais digitais pagos (performance).
+4. Relacionamento: Gestão de contas (Account Management); estratégias de retenção estruturadas.
+5. Fontes de Receita: Múltiplas linhas de receita; busca por contratos recorrentes.
+6. Recursos Principais: Equipe estruturada por departamentos; sistemas ERP; capital de giro moderado.
+7. Atividades-Chave: Gestão de processos; planejamento orçamentário; controle financeiro rigoroso.
+8. Parcerias: Fornecedores estratégicos; canais de distribuição e revenda.
+9. Estrutura de Custos: OPEX estruturado (SG&A + P&D + Diretos); necessidade de controle de margem por unidade.
+
+Vazamentos típicos Média: Ineficiência Invisível (retrabalho e desperdício), silos de comunicação entre áreas e falta de clareza na margem de contribuição por produto.
+
+C.4 Canvas Grande Empresa (Faturamento acima de R$ 50 milhões/ano)
+O foco na Grande Empresa é a governança, inovação e alocação de capital.
+Página 10 de 13
+1. Segmentos de Clientes: Múltiplos segmentos e personas; contratos corporativos complexos; expansão nacional/internacional.
+2. Proposta de Valor: Inovação contínua; escala global; força de marca; criação de barreiras de entrada (Moats).
+3. Canais: Força de vendas dedicada (Hunter/Farmer); ecossistema digital; parcerias estratégicas.
+4. Relacionamento: Gestão de Key Accounts; programas de fidelidade e Customer Success em escala.
+5. Fontes de Receita: Portfólio diversificado; mix de receitas recorrentes e transacionais.
+6. Recursos Principais: Estrutura corporativa robusta; tecnologia proprietária; capital abundante; talentos especializados.
+7. Atividades-Chave: Governança corporativa; P&D; M&A (Fusões e Aquisições); planejamento estratégico de longo prazo.
+8. Parcerias: Joint ventures; alianças globais; cadeia de suprimentos integrada.
+9. Estrutura de Custos: OPEX complexo; foco em ROI e alocação eficiente de capital por unidade de negócio.
+
+Vazamentos típicos Grande: Abismo Estratégia vs. Execução (distância da diretoria para a ponta), inércia burocrática e governança insuficiente para novos riscos.
+
+C.5 Matriz de Diagnóstico por Porte
+Porte | Blocos Críticos | Vazamento Dominante | Lente Prioritária
+PME | Segmentos/Receita/Custos | Prisão do Fundador | Fase 1 Micro-epifanias
+Média | Atividades/Parcerias/Custos | Ineficiência Invisível | Fase 1 + Fase 6 Buffett
+Grande | Relacionamento/Recursos/Parcerias | Abismo Estratégia vs. Execução | Fase 4 Hackman + Fase 7
+
+PARTE V — APÊNDICE D: EREC MATRIX EXPANDIDA (PRIORIDADE 6)
+
+D.1 Objetivo e Aplicação
+A matriz ERRC (Eliminar, Reduzir, Elevar, Criar) é a ferramenta central da Fase 3 (Estratégia do Oceano Azul). Ela define como a empresa irá se diferenciar da concorrência "sangrenta" (Oceano Vermelho) através da inovação em valor. Abaixo, a aplicação específica para os 10 setores-alvo do JBP Gestão Master.
+
+D.2 EREC por Setor
+
+Setor 1. Saúde
+Eliminar: Burocracia manual, glosas não auditadas
+Reduzir: Tempo de espera, custo de insumos
+Elevar: Taxa de ocupação, precisão de faturamento
+Criar: Telemedicina, gestão preditiva
+
+Página 11 de 13
+Setor 2. Serviços
+Eliminar: Horas não cobradas, reuniões inúteis
+Reduzir: Tarefas adm, dependência do sócio
+Elevar: Margem por cliente, padronização
+Criar: Precificação por valor, automação
+
+Setor 3. Indústria
+Eliminar: Refugo, paradas não programadas
+Reduzir: Giro de estoque lento, ociosidade
+Elevar: OEE, previsibilidade de entrega
+Criar: Manutenção preditiva, IoT
+
+Setor 4. Varejo
+Eliminar: Ruptura de estoque, quebra/perda
+Reduzir: Devoluções, estoque parado
+Elevar: Ticket médio, giro de estoque
+Criar: Precificação dinâmica, CRM fidelidade
+
+Setor 5. Agro
+Eliminar: Perda na colheita, ociosidade frota
+Reduzir: Custo por hectare, desperdício
+Elevar: Produtividade por talhão, margem
+Criar: Agricultura de precisão, rastreio
+
+Setor 6. Tech
+Eliminar: Débito técnico, churn descontrolado
+Reduzir: CAC, tempo de onboarding
+Elevar: NRR, LTV/CAC, ativação
+Criar: IA Generativa no produto, RAG
+
+Setor 7. Construção
+Eliminar: Desperdício de materiais, retrabalho
+Reduzir: Horas ociosas, atraso cronograma
+Elevar: Margem por obra, precisão orçado
+Criar: BIM, dashboards em tempo real
+
+Setor 8. Logística
+Eliminar: Km vazios, manutenção corretiva
+Reduzir: Custo por km, avarias/perdas
+Elevar: Entregas no prazo, uso da frota
+Criar: Roteirização por IA, telemetria
+
+Setor 9. Educação
+Eliminar: Evasão, vagas ociosas
+Reduzir: Inadimplência, custo aquisição
+Elevar: Retenção por turma, margem curso
+Criar: IA para ensino personalizado
+
+Setor 10. Academias
+Eliminar: Churn, capacidade ociosa
+Reduzir: Inadimplência, CAC por aluno
+Elevar: Retenção, ocupação de pico
+Criar: App próprio, IA para treinos
+
+PARTE VI — APÊNDICE E: CURVA DE VALOR SETORIAL (PRIORIDADE 7)
+
+E.1 Objetivo e Aplicação
+Posicionamento do JBP Gestão Master entre as Big Four e IAs genéricas.
+A Curva de Valor visualiza o posicionamento estratégico do JBP Gestão Master V6.5. O objetivo é demonstrar ao cliente que o JBP ocupa o "espaço vazio" entre as Big Four (excessivamente caras e lentas) e as IAs Genéricas (rápidas, mas superficiais e imprecisas).
+
+E.2 Fatores Competitivos Base (Eixo X)
+1. Precisão do Diagnóstico: Capacidade de identificar a causa raiz real.
+2. Velocidade de Entrega: Tempo entre o início do diagnóstico e o plano de ação.
+3. Custo do Serviço: Acessibilidade financeira para o porte do cliente.
+4. Profundidade Estratégica: Densidade do conhecimento aplicado (USP/FGV).
+5. Personalização por Setor: Ajuste fino aos problemas específicos do mercado.
+6. Acompanhamento Contínuo (MaaS): Presença recorrente pós-diagnóstico.
+Página 12 de 13
+7. Previsibilidade de Resultado: Segurança de que as ações gerarão caixa.
+8. Capacidade de Execução: Foco em "fazer acontecer" vs. apenas relatórios.
+
+E.3 Posicionamento da Curva de Valor
+● Big Four: Pontuação alta em Profundidade e Precisão, mas pontuação mínima em Custo (muito caro), Velocidade (lento) e Personalização para PMEs/Médias.
+● IAs Genéricas: Pontuação máxima em Velocidade e Custo (quase zero), mas pontuação mínima em Precisão (alucinações), Profundidade e Execução.
+● JBP Gestão Master: Mantém a Profundidade e Precisão das Big Four, com a Velocidade da IA e um Custo otimizado, liderando em Personalização Setorial e Acompanhamento (MaaS).
+
+E.4 Fatores Específicos por Setor
+● Saúde: Precisão de glosa, gestão de convênios.
+● Serviços: Taxa de utilização, pipeline.
+● Indústria: OEE, custo de produção.
+● Varejo: Ruptura, conversão.
+● Agro: Produtividade/talhão, trading.
+● Tech: NRR, Runway.
+● Construção: Orçado vs. Realizado.
+● Logística: Custo/km, manutenção.
+● Educação: Evasão, ocupação.
+● Academias: Retenção, margem/plano.
+
+PARTE VII — APÊNDICE F: PROTOCOLO DE VALIDAÇÃO DO FORESIGHT (ÁREA 8)
+
+F.1 Objetivo
+Protocolo de teste em campo da Área 8 para gerar aprendizados para a V7.0.
+
+F.2 Processo de Validação
+33. Selecionar 2-3 projetos piloto; 2. Aplicar STEEP, Cone, Cenários e Backcasting; 3. Medir acurácia vs. realidade em 12 meses; 4. Coletar feedback de utilidade; 5. Documentar aprendizados.
+
+F.3 Critérios de Sucesso
+● Cenários geram Early Warning Signals acionáveis.
+● Backcasting produz a primeira tarefa clara.
+● OKRs flexíveis adaptam-se às mudanças.
+Página 13 de 13
+
+PARTE VIII — MAPA DE INTEGRAÇÃO
+Apêndice | Área do Master | Fase do System Prompt | Função
+A (Buffett) | Área 6 | Fase 6 | Validação financeira e margem de segurança
+B (Hackman) | Área 3 | Fase 4 | Capacidade e design organizacional
+C (Canvas) | Área 1 | Fases 1 e 3 | Diagnóstico e estratégia por porte
+D (EREC) | Área 1 | Fase 3 | Oceano Azul por setor
+E (Curva Valor) | Área 1 | Fase 3 | Posicionamento competitivo por setor
+F (Foresight) | Área 8 | Fase 2 | Prospectiva e cenários
+
+PARTE IX — NOTA DE ALOCAÇÃO DE ARQUIVOS DO EXPERT
+Este Master Framework Consolidado ocupa 1 slot dos 5 disponíveis. A alocação recomendada para o Expert é:
+• System Prompt V6.5 (Comportamento e Instruções de Fluxo);
+• Biblioteca V2.4 (Base de Conhecimento Técnico);
+• Master Framework V1.2 Consolidado (Este documento — Estrutura Operacional);
+• Histórico Profissional (Contexto de Experiência do Expert);
+• Contexto Estratégico Global (Dados de Mercado e Tendências).
+
+Observação: O Questionário respondido pelo cliente deve ser inserido como contexto da sessão atual, não como arquivo fixo.
+
+GARANTIA DE FIDELIDADE: Este documento contém a expansão integral de todos os módulos solicitados, sem perda de conteúdo técnico ou diretrizes estratégicas.
