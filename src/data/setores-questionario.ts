@@ -2,16 +2,18 @@
 // Fonte: "Questionários_Consolidados_10_Setores_V6.5_04ago26"
 //
 // Estrutura completa do questionário, na ordem de exibição:
-//   Seção 1 — Perfil da Empresa e Contexto
+//   Seção 1 — Perfil da Empresa e Contexto (setorial: específica para Saúde,
+//             Tecnologia/Startups, Educação e Academias; genérica para os
+//             demais 6 setores)
 //   Pilar 1 — Prisão do Fundador
 //   Pilar 2 — Ineficiência Invisível
 //   Pilar 3 — Abismo Estratégia vs. Execução
 //   Seção 5 — Hackman (6 perguntas, iguais para todos os setores)
 //   Seção 6 — Buffett (6 perguntas, iguais para todos os setores)
-//   Seção 6.6 — Runway 12 meses (somente Tecnologia/Startups)
+//   Seção 6.6 — Runway 12 meses (somente Tecnologia/Startups, 1 pergunta)
 //   Seção 7 — Expectativas e Ambição (5 perguntas, iguais para todos)
 //   Seção 8 — Inovação e Tecnologia (7 perguntas, versão setorial fiel)
-//   Seção 9 — Próximos Passos (MaaS/Híbrido/CaaS)
+//   Seção 9 — Próximos Passos (4 campos: 1 display + 3 inputs)
 //
 // Os 3 Pilares são extraídos fielmente do PDF "Contexto Estratégico Global
 // 10 Setores V6.5" (04ago26). As Seções 1, 5, 6, 6.6, 7, 8 e 9 são extraídas
@@ -22,7 +24,7 @@ export interface PerguntaSetor {
   texto: string
 }
 
-export type TipoInput = 'escala' | 'texto' | 'numero' | 'textarea' | 'select'
+export type TipoInput = 'escala' | 'texto' | 'numero' | 'textarea' | 'select' | 'display'
 
 export interface PerguntaSecao {
   texto: string
@@ -45,7 +47,7 @@ export interface Setor {
   segmentos: string[]
   microEpifanias: string[]
   perguntas: PerguntaSetor[] // 3 Pilares (Seções P1/P2/P3)
-  secaoPerfil: PerguntaSecao[] // Seção 1
+  secaoPerfil: PerguntaSecao[] // Seção 1 (setorial)
   secaoInovacao: PerguntaSecao[] // Seção 8 (setorial)
   secaoRunway?: PerguntaSecao[] // Seção 6.6 (somente Tecnologia)
 }
@@ -65,6 +67,16 @@ export const escalaOpcoes = [
   'Não / não sei informar.',
 ] as const
 
+// Opções fiéis ao PDF V6.5 (Questionários Consolidados)
+export const simNaoParcialmenteOpcoes = ['Sim', 'Não', 'Parcialmente']
+export const simNaoOpcoes = ['Sim', 'Não']
+export const disposicaoOpcoes = ['Alto', 'Médio', 'Baixo']
+export const formatoInteresseOpcoes = ['MaaS', 'Híbrido', 'CaaS', 'Ainda não sei']
+export const maturidadeDigitalOpcoesSaude = ['1 — Básico', '2 — Intermediário', '3 — Avançado']
+export const maturidadeDigitalOpcoes = ['1', '2', '3']
+
+// Seção 1 — opções dos setores com perfil específico
+export const porteOptions = ['MEI', 'ME', 'EPP', 'Média', 'Grande']
 export const faturamentoAnualOptions = [
   'Até R$ 600 mil/ano',
   'R$ 600 mil - R$ 2,4 mi/ano',
@@ -72,7 +84,6 @@ export const faturamentoAnualOptions = [
   'R$ 6 mi - R$ 12 mi/ano',
   'Acima de R$ 12 mi/ano',
 ]
-
 export const funcionariosOptions = [
   '1 a 5 colaboradores',
   '6 a 20 colaboradores',
@@ -80,34 +91,85 @@ export const funcionariosOptions = [
   '51 a 100 colaboradores',
   'Acima de 100 colaboradores',
 ]
-
-export const porteOptions = ['MEI', 'ME', 'EPP', 'Média', 'Grande']
-
 export const regimeTributarioOptions = ['Simples Nacional', 'Lucro Presumido', 'Lucro Real']
-
 export const tempoMercadoOptions = [
   'Menos de 2 anos',
   '2 a 5 anos',
   '5 a 10 anos',
   'Mais de 10 anos',
 ]
-
 export const formaJuridicaOptions = ['MEI', 'Empresário Individual', 'LTDA', 'S.A.']
 
-export const prazoOptions = ['3 meses', '6 meses', '12 meses', '24 meses']
+// Variantes de regime tributário usadas no PDF por setor
+const regimeTributarioSimplesOptions = ['Simples', 'Lucro Presumido', 'Lucro Real']
+const propriedadeSaudeOpcoes = ['Familiar', 'Sócios', 'Investidores', 'Outro']
+const propriedadeTecOpcoes = ['Founder-led', 'Cofundadores', 'Investidores', 'Grupo']
+const estagioTecOpcoes = ['Pré-seed', 'Seed', 'Série A', 'Série B+', 'Scale-up']
 
-export const escadaValorOptions = [
-  'MaaS (Management as a Service) — assinatura mensal',
-  'Híbrido — consultoria pontual + licenciamento da plataforma',
-  'CaaS (Consulting as a Service) — projeto complexo com Success Fee',
+// ============================================================
+// Seção 1 — Perfil da Empresa e Contexto (setorial)
+// ============================================================
+
+// Perfil específico — Saúde (8 campos)
+const secaoPerfilSaude: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas unidades/sedes a empresa possui?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadeSaudeOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  { texto: 'Principais fontes de receita (Convênios, Particular, SUS, etc)?', tipo: 'texto' },
+  { texto: 'Possui certificações (ONA, ISO, etc)?', tipo: 'texto' },
 ]
 
-// ============================================================
-// Seções compartilhadas (idênticas para todos os 10 setores)
-// ============================================================
+// Perfil específico — Tecnologia/Startups (8 campos)
+const secaoPerfilTecnologia: PerguntaSecao[] = [
+  { texto: 'Qual a receita anual recorrente (ARR/MRR) aproximada?', tipo: 'texto' },
+  { texto: 'Estágio:', tipo: 'select', opcoes: estagioTecOpcoes },
+  { texto: 'Colaboradores por área (Engenharia, Comercial, Ops)?', tipo: 'texto' },
+  { texto: 'Crescimento de receita nos últimos 3 anos?', tipo: 'texto' },
+  { texto: 'Propriedade:', tipo: 'select', opcoes: propriedadeTecOpcoes },
+  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioOptions },
+  { texto: 'Fontes de receita (MRR, Contratos, Marketplace, Serviços)?', tipo: 'texto' },
+  {
+    texto: 'Possui métricas definidas (CAC, LTV, Churn, Payback)?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+]
 
-// Seção 1 — Perfil da Empresa e Contexto
-export const secaoPerfil: PerguntaSecao[] = [
+// Perfil específico — Educação (9 campos)
+const secaoPerfilEducacao: PerguntaSecao[] = [
+  { texto: 'Faturamento anual aproximado?', tipo: 'texto' },
+  { texto: 'Unidades (campi, filiais, polos EAD)?', tipo: 'numero' },
+  { texto: 'Colaboradores (Docentes vs. Adm/Pedagógico)?', tipo: 'texto' },
+  { texto: 'Alunos matriculados e capacidade instalada?', tipo: 'texto' },
+  { texto: 'Tempo de operação e crescimento nos últimos 3 anos?', tipo: 'texto' },
+  { texto: 'Estrutura de propriedade?', tipo: 'select', opcoes: propriedadeSaudeOpcoes },
+  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioOptions },
+  { texto: 'Fontes de receita (Mensalidades, Matrículas, Convênios)?', tipo: 'texto' },
+  { texto: 'Certificações (MEC, ISO, Internacionais)?', tipo: 'texto' },
+]
+
+// Perfil específico — Academias de Ginástica (9 campos)
+const secaoPerfilAcademias: PerguntaSecao[] = [
+  { texto: 'Faturamento anual aproximado?', tipo: 'texto' },
+  { texto: 'Unidades (academias/estúdios)?', tipo: 'numero' },
+  { texto: 'Colaboradores (Instrutores vs. Adm/Atendimento)?', tipo: 'texto' },
+  { texto: 'Alunos ativos e capacidade instalada?', tipo: 'texto' },
+  { texto: 'Tempo de operação e crescimento nos últimos 3 anos?', tipo: 'texto' },
+  { texto: 'Estrutura de propriedade?', tipo: 'select', opcoes: propriedadeSaudeOpcoes },
+  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioOptions },
+  { texto: 'Fontes de receita (Mensalidades, Planos, Personal, Loja)?', tipo: 'texto' },
+  { texto: 'Certificações ou premiações setoriais?', tipo: 'texto' },
+]
+
+// Perfil genérico — demais 6 setores (Serviços, Indústria, Varejo, Agronegócio,
+// Construção, Transporte). O PDF não traz Seção 1 para estes setores.
+export const secaoPerfilGenerico: PerguntaSecao[] = [
   { texto: 'Qual o porte da empresa?', tipo: 'select', opcoes: porteOptions },
   { texto: 'Qual o faturamento bruto anual?', tipo: 'select', opcoes: faturamentoAnualOptions },
   { texto: 'Quantos colaboradores a empresa possui?', tipo: 'select', opcoes: funcionariosOptions },
@@ -121,145 +183,273 @@ export const secaoPerfil: PerguntaSecao[] = [
   { texto: 'Quantos sócios a empresa possui?', tipo: 'numero', placeholder: 'Ex: 2' },
 ]
 
-// Seção 5 — Hackman (6 perguntas)
-// Temas: time real, direção convincente, estrutura habilitadora, contexto de
-// apoio, coaching especializado (5 condições de Hackman) + competências.
+// ============================================================
+// Seções compartilhadas (idênticas para todos os 10 setores)
+// ============================================================
+
+// Seção 5 — Hackman (6 perguntas) — fiel ao PDF V6.5
 export const secaoHackman: PerguntaSecao[] = [
   {
-    texto:
-      'A sua equipe é um "time real", com fronteiras claras e membros que se conhecem e dependem uns dos outros para entregar resultados?',
+    texto: 'Existe um time real, com limites claros e interdependência definida?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
   {
-    texto:
-      'A equipe tem uma direção convincente — uma meta desafiadora e clara que mobiliza todos na mesma direção?',
+    texto: 'A direção da empresa está clara e convincente para todos?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
   {
-    texto:
-      'A estrutura da equipe é habilitadora — o design de tarefas permite autonomia e impacto mensurável no resultado?',
+    texto: 'As tarefas e normas facilitam a execução do trabalho?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
   {
-    texto:
-      'O contexto organizacional oferece apoio — sistemas de recompensa, recursos e reconhecimento adequados ao desempenho?',
+    texto: 'A equipe dispõe de recursos e recompensas adequados?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
   {
-    texto:
-      'Há coaching especializado disponível — mentoria técnica e feedback contínuo acessíveis à equipe?',
+    texto: 'Existe coaching ou feedback contínuo para as lideranças?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
   {
-    texto:
-      'Os membros da equipe possuem as competências técnicas e interpessoais necessárias para entregar os resultados esperados?',
+    texto: 'Quantos dos seus líderes são considerados de alta performance?',
+    tipo: 'texto',
   },
 ]
 
-// Seção 6 — Buffett (6 perguntas)
-// Temas: EBITDA, endividamento, DRE, margem de segurança, ROIC vs WACC, FCF.
+// Seção 6 — Buffett (6 perguntas) — fiel ao PDF V6.5
 export const secaoBuffett: PerguntaSecao[] = [
+  { texto: 'Qual a margem EBITDA atual aproximada?', tipo: 'texto' },
+  { texto: 'Qual o nível de endividamento atual (Dívida Líquida / EBITDA)?', tipo: 'texto' },
+  { texto: 'Qual o prazo médio de recebimento da carteira?', tipo: 'texto' },
+  { texto: 'Qual o índice de inadimplência da carteira de clientes?', tipo: 'texto' },
   {
-    texto: 'Qual a margem EBITDA atual da empresa e como ela se compara aos últimos 3 anos?',
-    tipo: 'texto',
-    placeholder: 'Ex: 18%, em queda vs. 24% há 3 anos',
+    texto: 'A empresa fecha DRE gerencial mensal até o 10º dia útil?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
   {
-    texto: 'Qual o nível de endividamento (Dívida Líquida / EBITDA) da empresa?',
-    tipo: 'texto',
-    placeholder: 'Ex: 2,5x',
-  },
-  {
-    texto:
-      'A empresa possui DRE (Demonstração do Resultado do Exercício) projetada e atualizada mensalmente?',
-    tipo: 'texto',
-    placeholder: 'Ex: Sim, mensal / Não, apenas no contador',
-  },
-  {
-    texto: 'Qual a margem de segurança atual dos seus principais produtos ou serviços?',
-    tipo: 'texto',
-    placeholder: 'Ex: 35%',
-  },
-  {
-    texto: 'O ROIC (Retorno sobre o Capital Investido) da empresa supera o WACC?',
-    tipo: 'texto',
-    placeholder: 'Ex: ROIC 16% vs WACC 13,75%',
-  },
-  {
-    texto: 'A empresa gera fluxo de caixa livre (FCF) positivo de forma recorrente?',
-    tipo: 'texto',
-    placeholder: 'Ex: Sim, desde 2023',
+    texto: 'Possui reserva de capital de giro para 3 meses de operação?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
   },
 ]
 
-// Seção 6.6 — Runway 12 meses (somente Tecnologia/Startups)
+// Seção 6.6 — Runway 12 meses (somente Tecnologia/Startups, 1 pergunta)
+// Fiel ao PDF V6.5: "A empresa possui reserva de capital (runway) para 12
+// meses de operação?" — única pergunta da Seção 6.6 no PDF.
 export const secaoRunway: PerguntaSecao[] = [
   {
-    texto: 'Qual o runway atual (caixa disponível / burn rate mensal) em meses?',
-    tipo: 'numero',
-    placeholder: 'Ex: 14',
-  },
-  {
-    texto: 'Qual o burn rate mensal e quanto dele é composto por custos fixos?',
-    tipo: 'texto',
-    placeholder: 'Ex: R$ 120 mil/mês, 70% fixos',
-  },
-  {
-    texto: 'Há rodada de captação prevista nos próximos 12 meses? Qual o tamanho estimado?',
-    tipo: 'texto',
-    placeholder: 'Ex: Seed R$ 3 mi em 6 meses',
-  },
-  {
-    texto: 'Qual a meta de receita recorrente (ARR/MRR) para os próximos 12 meses?',
-    tipo: 'texto',
-    placeholder: 'Ex: MRR R$ 250 mil',
-  },
-]
-
-// Seção 7 — Expectativas e Ambição (5 perguntas)
-export const secaoExpectativas: PerguntaSecao[] = [
-  {
-    texto: 'Qual a sua principal meta de crescimento para os próximos 12 meses?',
-    tipo: 'textarea',
-    placeholder: 'Ex: Dobrar o faturamento e abrir 2 novas unidades',
-  },
-  {
-    texto: 'Em qual horizonte de tempo você espera sair da prisão do fundador?',
+    texto: 'A empresa possui reserva de capital (runway) para 12 meses de operação?',
     tipo: 'select',
-    opcoes: prazoOptions,
-  },
-  {
-    texto: 'Qual o resultado financeiro que você considera sucesso ao final do processo?',
-    tipo: 'textarea',
-    placeholder: 'Ex: EBITDA de 25% e captação de R$ 5 mi',
-  },
-  {
-    texto: 'O que acontece com a empresa se nada mudar nos próximos 12 meses?',
-    tipo: 'textarea',
-    placeholder: 'Ex: Perda de competitividade e risco de caixa',
-  },
-  {
-    texto: 'Qual o nível de comprometimento da sua equipe com essa transformação?',
-    tipo: 'escala',
+    opcoes: simNaoParcialmenteOpcoes,
   },
 ]
 
-// Seção 9 — Próximos Passos (MaaS/Híbrido/CaaS)
+// Seção 7 — Expectativas e Ambição (5 perguntas) — fiel ao PDF V6.5
+export const secaoExpectativas: PerguntaSecao[] = [
+  { texto: 'O que o levou a buscar este diagnóstico?', tipo: 'textarea' },
+  { texto: 'Qual o principal problema a resolver nos próximos 12 meses?', tipo: 'textarea' },
+  { texto: 'Qual o horizonte de transformação desejado para a empresa?', tipo: 'textarea' },
+  { texto: 'Nível de disposição para mudanças:', tipo: 'select', opcoes: disposicaoOpcoes },
+  {
+    texto: 'Já contratou consultoria ou mentoria anteriormente? Qual o resultado?',
+    tipo: 'textarea',
+  },
+]
+
+// Seção 9 — Próximos Passos (4 campos) — fiel ao PDF V6.5
+// 9.1 é puramente informativo (tipo display), não exige resposta.
 export const secaoProximosPassos: PerguntaSecao[] = [
   {
-    texto: 'Qual modalidade de engajamento faz mais sentido para o seu momento atual?',
+    texto: 'Você receberá um Diagnóstico Executivo com recomendações prioritárias.',
+    tipo: 'display',
+  },
+  { texto: 'Autoriza sessão de devolutiva de 45 min?', tipo: 'select', opcoes: simNaoOpcoes },
+  { texto: 'Formato de interesse:', tipo: 'select', opcoes: formatoInteresseOpcoes },
+  { texto: 'Responsável pelos documentos:', tipo: 'texto' },
+]
+
+// ============================================================
+// Seção 8 — Inovação e Tecnologia (setorial, 7 perguntas cada)
+// Extraída fielmente do PDF V6.5 para cada um dos 10 setores.
+// ============================================================
+
+const secaoInovacaoSaude: PerguntaSecao[] = [
+  { texto: 'Utiliza sistema de gestão de saúde/ERP integrado? Qual?', tipo: 'texto' },
+  { texto: 'Seus sistemas operam em nuvem ou servidor local?', tipo: 'texto' },
+  {
+    texto: 'Acompanha dashboards de ocupação, glosa e faturamento em tempo real?',
     tipo: 'select',
-    opcoes: escadaValorOptions,
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza prontuário eletrônico, IA ou telemedicina na operação?', tipo: 'texto' },
+  { texto: 'Quais processos são automatizados (faturamento, guias, cobrança)?', tipo: 'textarea' },
+  {
+    texto: 'Nível de maturidade digital:',
+    tipo: 'select',
+    opcoes: maturidadeDigitalOpcoesSaude,
   },
   {
-    texto: 'Qual o budget mensal disponível para a transformação?',
+    texto: 'Quais as maiores barreiras para inovar (Custo, Equipe, Integração)?',
+    tipo: 'textarea',
+  },
+]
+
+const secaoInovacaoServicos: PerguntaSecao[] = [
+  { texto: 'Utiliza ERP/CRM integrado (propostas, contratos, financeiro)? Qual?', tipo: 'texto' },
+  { texto: 'Seus sistemas operam em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Acompanha dashboards de utilização, receita e pipeline em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza IA para apoio a propostas, contratos ou pesquisa?', tipo: 'texto' },
+  { texto: 'Quais processos administrativos já são automatizados?', tipo: 'textarea' },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para digitalizar a operação?', tipo: 'textarea' },
+]
+
+const secaoInovacaoIndustria: PerguntaSecao[] = [
+  { texto: 'Utiliza ERP integrado (produção, estoque, financeiro, fiscal)? Qual?', tipo: 'texto' },
+  { texto: 'Seus sistemas operam em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Acompanha dashboards de OEE, refugo e margem em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza automação, IoT, robótica ou IA na linha de produção?', tipo: 'texto' },
+  { texto: 'Quais processos já são automatizados (PCP, faturamento, NF-e)?', tipo: 'textarea' },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para inovar na indústria?', tipo: 'textarea' },
+]
+
+const secaoInovacaoVarejo: PerguntaSecao[] = [
+  { texto: 'Utiliza ERP/PDV integrado (estoque, vendas, financeiro)? Qual?', tipo: 'texto' },
+  { texto: 'Seus sistemas operam em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Acompanha dashboards de vendas, ruptura e ticket médio em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza e-commerce, marketplaces ou IA para precificação dinâmica?', tipo: 'texto' },
+  {
+    texto: 'Quais processos são automatizados (reposição, faturamento, logística)?',
+    tipo: 'textarea',
+  },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para inovar no varejo?', tipo: 'textarea' },
+]
+
+const secaoInovacaoAgronegocio: PerguntaSecao[] = [
+  { texto: 'Utiliza sistema de gestão agrícola/ERP integrado? Qual?', tipo: 'texto' },
+  { texto: 'Seus sistemas operam em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Acompanha dashboards de produtividade, custo/ha e clima em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza agricultura de precisão, IoT, drones ou satélite?', tipo: 'texto' },
+  {
+    texto: 'Quais processos são automatizados (insumos, rastreabilidade, trading)?',
+    tipo: 'textarea',
+  },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as barreiras (incluindo conectividade no campo)?', tipo: 'textarea' },
+]
+
+const secaoInovacaoTecnologia: PerguntaSecao[] = [
+  { texto: 'Utiliza ERP/CRM integrado (vendas, financeiro, suporte)? Qual?', tipo: 'texto' },
+  { texto: 'Sistemas em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Dashboards de MRR, Churn, CAC e NPS em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: 'Utiliza IA generativa, automação ou dados para produto e comercial?',
     tipo: 'texto',
-    placeholder: 'Ex: R$ 15 mil/mês',
   },
   {
-    texto: 'Quem serão os responsáveis internos por executar o plano de ação?',
+    texto: 'Quais processos são automatizados (onboarding, cobrança, suporte)?',
+    tipo: 'textarea',
+  },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para escalar (incluindo capital)?', tipo: 'textarea' },
+]
+
+const secaoInovacaoConstrucao: PerguntaSecao[] = [
+  { texto: 'Utiliza ERP ou software de gestão de obras? Qual?', tipo: 'texto' },
+  { texto: 'Sistemas em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Dashboards de custo orçado vs. realizado e curva S em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza BIM, drones, IoT ou IA para planejamento e canteiro?', tipo: 'texto' },
+  {
+    texto: 'Quais processos são automatizados (medições, materiais, faturamento)?',
+    tipo: 'textarea',
+  },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para inovar na construção?', tipo: 'textarea' },
+]
+
+const secaoInovacaoTransporte: PerguntaSecao[] = [
+  { texto: 'Utiliza TMS ou ERP integrado (frota, rotas, financeiro)? Qual?', tipo: 'texto' },
+  { texto: 'Sistemas em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Dashboards de ociosidade, km vazios e entregas no prazo em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza telemetria, rastreamento ou IA para roteirização?', tipo: 'texto' },
+  {
+    texto: 'Quais processos são automatizados (CT-e, agendamento, monitoramento)?',
+    tipo: 'textarea',
+  },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para inovar na logística?', tipo: 'textarea' },
+]
+
+const secaoInovacaoEducacao: PerguntaSecao[] = [
+  { texto: 'Utiliza ERP ou software de gestão escolar integrado? Qual?', tipo: 'texto' },
+  { texto: 'Sistemas em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Dashboards de evasão, inadimplência e captação em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: 'Utiliza EAD, plataformas digitais ou IA para ensino e comunicação?',
     tipo: 'texto',
-    placeholder: 'Ex: COO + Diretor Financeiro',
   },
   {
-    texto: 'Há disposição para implementar mudanças estruturais nos próximos 90 dias?',
-    tipo: 'escala',
+    texto: 'Quais processos são automatizados (matrícula, cobrança, comunicação)?',
+    tipo: 'textarea',
   },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as barreiras (incluindo resistência do corpo docente)?', tipo: 'textarea' },
+]
+
+const secaoInovacaoAcademias: PerguntaSecao[] = [
+  { texto: 'Utiliza sistema de gestão de academia ou ERP integrado? Qual?', tipo: 'texto' },
+  { texto: 'Sistemas em nuvem?', tipo: 'select', opcoes: simNaoParcialmenteOpcoes },
+  {
+    texto: 'Dashboards de evasão, inadimplência e vendas em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  { texto: 'Utiliza app próprio, IA ou automação para retenção e treinos?', tipo: 'texto' },
+  {
+    texto: 'Quais processos são automatizados (matrícula online, acesso, cobrança)?',
+    tipo: 'textarea',
+  },
+  { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
+  { texto: 'Quais as maiores barreiras para inovar na academia?', tipo: 'textarea' },
 ]
 
 export const setores: Setor[] = [
@@ -342,22 +532,8 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'A equipe sabe exatamente o custo real de cada procedimento realizado?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      { texto: 'O prontuário eletrônico e o sistema de faturamento estão integrados?' },
-      { texto: 'A empresa utiliza BI/dashboards em tempo real para ocupação de leitos e glosas?' },
-      { texto: 'Há iniciativas de telemedicina ou atendimento digital implementadas?' },
-      {
-        texto:
-          'Qual o nível de automação dos processos administrativos (agendamento, faturamento, auditoria de glosas)?',
-      },
-      {
-        texto:
-          'A empresa utiliza IA para análise preditiva de ocupação ou gestão de riscos clínicos?',
-      },
-      { texto: 'Os sistemas críticos estão em nuvem (Cloud) ou on-premise?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilSaude,
+    secaoInovacao: secaoInovacaoSaude,
   },
   {
     id: 'servicos',
@@ -426,25 +602,8 @@ export const setores: Setor[] = [
       },
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      { texto: 'A empresa utiliza CRM para gestão de clientes, propostas e contratos?' },
-      {
-        texto: 'Há controle automatizado de horas faturáveis e taxa de utilização por consultor?',
-      },
-      {
-        texto:
-          'Qual o nível de automação de tarefas administrativas (cobrança, relatórios, onboarding)?',
-      },
-      {
-        texto: 'A empresa utiliza BI para acompanhar margem por cliente, projeto e consultor?',
-      },
-      {
-        texto: 'Há iniciativas de produto digital (produtos escaláveis além de horas consultivas)?',
-      },
-      { texto: 'Os sistemas estão em nuvem (Cloud) e integrados entre si?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilGenerico,
+    secaoInovacao: secaoInovacaoServicos,
   },
   {
     id: 'industria',
@@ -516,28 +675,8 @@ export const setores: Setor[] = [
         texto: 'Sua equipe de PCP sabe exatamente o custo real de cada ordem de produção?',
       },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      {
-        texto: 'Há sistema de gestão integrado (ERP) conectando produção, compras e financeiro?',
-      },
-      {
-        texto: 'A empresa utiliza BI/dashboards em tempo real para OEE, refugo e paradas?',
-      },
-      {
-        texto: 'Há automação industrial (IoT, sensores, manutenção preditiva) implementada?',
-      },
-      {
-        texto: 'Qual o nível de rastreabilidade de lotes, ordens de produção e matéria-prima?',
-      },
-      {
-        texto: 'A empresa utiliza IA para previsão de demanda ou otimização de mix de produção?',
-      },
-      {
-        texto: 'Os sistemas industriais e administrativos estão integrados e em nuvem?',
-      },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilGenerico,
+    secaoInovacao: secaoInovacaoIndustria,
   },
   {
     id: 'varejo',
@@ -599,24 +738,8 @@ export const setores: Setor[] = [
       },
       { pilar: 3, texto: 'A equipe sabe o lucro líquido por cliente, canal e produto vendido?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      {
-        texto: 'Há ERP/PDV integrado com e-commerce e gestão de estoque em tempo real?',
-      },
-      {
-        texto: 'A empresa utiliza BI para ticket médio, margem por categoria e curva ABC?',
-      },
-      { texto: 'Há automação de reposição de estoque e precificação dinâmica?' },
-      { texto: 'A empresa utiliza CRM/fidelidade para retenção e upsell?' },
-      {
-        texto: 'Há iniciativas de IA para recomendação de produtos ou previsão de demanda?',
-      },
-      {
-        texto: 'Os canais (loja, e-commerce, marketplace) estão integrados em omnichannel?',
-      },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilGenerico,
+    secaoInovacao: secaoInovacaoVarejo,
   },
   {
     id: 'agronegocio',
@@ -678,24 +801,8 @@ export const setores: Setor[] = [
       },
       { pilar: 3, texto: 'A equipe comercial sabe o custo de produção e a margem por produto?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      {
-        texto: 'Há sistema de gestão integrando fazenda, insumos, financeiro e comercial?',
-      },
-      {
-        texto: 'A empresa utiliza agricultura de precisão (taxa variável, mapas de produtividade)?',
-      },
-      { texto: 'Há telemetria e IoT na frota e equipamentos (tratores, colheitadeiras)?' },
-      {
-        texto: 'A empresa utiliza BI para custo por hectare, margem por talhão e produtividade?',
-      },
-      { texto: 'Há automação no controle de pragas, irrigação ou manejo?' },
-      {
-        texto: 'A empresa utiliza IA/satélite para previsão de safra e gestão de risco climático?',
-      },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilGenerico,
+    secaoInovacao: secaoInovacaoAgronegocio,
   },
   {
     id: 'tecnologia',
@@ -748,21 +855,9 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'A equipe de CS sabe o NRR e a meta de expansão por cliente?' },
     ],
-    secaoPerfil,
+    secaoPerfil: secaoPerfilTecnologia,
     secaoRunway,
-    secaoInovacao: [
-      {
-        texto: 'A arquitetura de produto é escalável e o débito técnico está sob controle?',
-      },
-      { texto: 'Há observabilidade (logs, métricas, tracing) e CI/CD automatizado?' },
-      {
-        texto: 'A empresa utiliza BI/dashboards para MRR, churn, CAC/LTV e ativação em tempo real?',
-      },
-      { texto: 'Há IA Generativa/RAG incorporada ao produto ou à operação?' },
-      { texto: 'A infraestrutura está em Cloud nativa com custo otimizado (FinOps)?' },
-      { texto: 'Há automação de onboarding, suporte e retenção (CS)?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoInovacao: secaoInovacaoTecnologia,
   },
   {
     id: 'construcao',
@@ -826,22 +921,8 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'Sua equipe de planejamento sabe o custo real de cada etapa da obra?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      { texto: 'A empresa utiliza BIM (Building Information Modeling) nos projetos?' },
-      { texto: 'Há ERP integrando orçamento, compras, cronograma e obra?' },
-      {
-        texto: 'A empresa utiliza BI para orçado vs. realizado, aditivos e margem por obra?',
-      },
-      {
-        texto: 'Há automação de medição, liberação de pagamentos e controle de suprimentos?',
-      },
-      {
-        texto: 'A empresa utiliza IoT/sensores em canteiro (segurança, equipamentos, qualidade)?',
-      },
-      { texto: 'Há IA para previsão de prazo, custo e gestão de risco de obra?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilGenerico,
+    secaoInovacao: secaoInovacaoConstrucao,
   },
   {
     id: 'transporte',
@@ -894,25 +975,8 @@ export const setores: Setor[] = [
         texto: 'O comercial sabe o custo real de cada rota antes de precificar o frete?',
       },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      {
-        texto: 'Há TMS (Transport Management System) integrado a roteirização e telemetria?',
-      },
-      {
-        texto: 'A empresa utiliza BI para custo por km, ociosidade da frota e margem por rota?',
-      },
-      { texto: 'Há automação de roteirização, rastreamento e gestão de avarias?' },
-      {
-        texto:
-          'A empresa utiliza IoT/telemetria na frota (combustível, manutenção, comportamento)?',
-      },
-      {
-        texto: 'Há IA para previsão de demanda, otimização de frota e precificação de frete?',
-      },
-      { texto: 'Os sistemas (TMS, WMS, ERP) estão integrados e em nuvem?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilGenerico,
+    secaoInovacao: secaoInovacaoTransporte,
   },
   {
     id: 'educacao',
@@ -959,25 +1023,8 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'O comercial sabe a margem de contribuição por curso, turno e unidade?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      {
-        texto:
-          'Há sistema integrado (ERP acadêmico) conectando matrícula, pedagógico e financeiro?',
-      },
-      {
-        texto: 'A empresa utiliza BI para evasão, inadimplência, ocupação e margem por curso?',
-      },
-      {
-        texto: 'Há automação de matrícula, cobrança e comunicação com alunos/pais?',
-      },
-      {
-        texto: 'A empresa utiliza IA para ensino personalizado e previsão de evasão?',
-      },
-      { texto: 'Há plataformas de EAD/Edtech integradas ao modelo pedagógico?' },
-      { texto: 'Os sistemas estão em nuvem e integrados entre unidades?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilEducacao,
+    secaoInovacao: secaoInovacaoEducacao,
   },
   {
     id: 'academias',
@@ -1021,24 +1068,8 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'O comercial sabe a margem de contribuição por plano e unidade?' },
     ],
-    secaoPerfil,
-    secaoInovacao: [
-      {
-        texto: 'Há sistema de gestão integrando matrícula, cobrança, acesso e retenção?',
-      },
-      {
-        texto: 'A empresa utiliza BI para churn, ocupação por horário, CAC e margem por plano?',
-      },
-      {
-        texto: 'Há automação de cobrança recorrente, lembretes e reativação de alunos?',
-      },
-      { texto: 'A empresa utiliza app próprio para treinos, agendamento e engajamento?' },
-      {
-        texto: 'Há IA para prescrição de treinos personalizados e previsão de evasão?',
-      },
-      { texto: 'Os sistemas (acesso, billing, CRM) estão integrados e em nuvem?' },
-      { texto: 'Qual o impacto da tecnologia atual no seu fosso competitivo (Moat)?' },
-    ],
+    secaoPerfil: secaoPerfilAcademias,
+    secaoInovacao: secaoInovacaoAcademias,
   },
 ]
 

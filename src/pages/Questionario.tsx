@@ -16,6 +16,7 @@ import {
   Eye,
   Cpu,
   Compass,
+  Info,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -93,7 +94,9 @@ export default function Questionario() {
     if (isSetorStep) return setorId !== '' && segmento !== ''
     if (isReviewStep) return true
     if (!currentStep) return false
-    return currentStep.perguntas.every((_, idx) => {
+    return currentStep.perguntas.every((p, idx) => {
+      // Campos puramente informativos (tipo "display") não exigem resposta.
+      if ((p.tipo || 'escala') === 'display') return true
       const v = respostas[`${currentStep.key}-${idx}`]
       return v !== undefined && v.trim() !== ''
     })
@@ -107,10 +110,15 @@ export default function Questionario() {
   const back = () => setStepIdx((s) => Math.max(s - 1, 0))
 
   const coletarRespostasStep = (step: StepDescriptor) =>
-    step.perguntas.map((p, idx) => ({
-      texto: p.texto,
-      resposta: respostas[`${step.key}-${idx}`] || 'Não respondida',
-    }))
+    step.perguntas.map((p, idx) => {
+      if ((p.tipo || 'escala') === 'display') {
+        return { texto: p.texto, resposta: 'Informativo (sem resposta)' }
+      }
+      return {
+        texto: p.texto,
+        resposta: respostas[`${step.key}-${idx}`] || 'Não respondida',
+      }
+    })
 
   const handleSubmit = async () => {
     if (!user || !setorSelecionado) return
@@ -280,16 +288,19 @@ export default function Questionario() {
                 {setorSelecionado.nome} — {segmento}
               </div>
               {steps.map((step) => {
-                const respondidas = step.perguntas.filter(
-                  (_, idx) => !!respostas[`${step.key}-${idx}`],
+                const perguntasInput = step.perguntas
+                  .map((p, idx) => ({ p, idx }))
+                  .filter(({ p }) => (p.tipo || 'escala') !== 'display')
+                const respondidas = perguntasInput.filter(
+                  ({ idx }) => !!respostas[`${step.key}-${idx}`],
                 ).length
                 return (
                   <div key={step.key} className="flex items-center justify-between border-b pb-2">
                     <span>{step.titulo}</span>
                     <Badge
-                      variant={respondidas === step.perguntas.length ? 'default' : 'secondary'}
+                      variant={respondidas === perguntasInput.length ? 'default' : 'secondary'}
                     >
-                      {respondidas}/{step.perguntas.length}
+                      {respondidas}/{perguntasInput.length}
                     </Badge>
                   </div>
                 )
@@ -399,6 +410,13 @@ function PerguntaField({
           placeholder={pergunta.placeholder || 'Sua resposta...'}
           rows={4}
         />
+      )}
+
+      {tipo === 'display' && (
+        <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-sm text-muted-foreground flex items-start gap-2">
+          <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+          <span>{pergunta.texto}</span>
+        </div>
       )}
     </div>
   )
