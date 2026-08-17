@@ -20,4 +20,4 @@ export const updateConvite = (
   data: Partial<Pick<Convite, 'role' | 'status'>>,
 ): Promise<Convite> => pb.collection('convites').update(id, data)
 
-export const deleteConvite = (id: string): Promise<void> => pb.collection('convites').delete(id)
+export const deleteConvite = (id: string): Promise<boolean> => pb.collection('convites').delete(id)

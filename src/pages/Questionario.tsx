@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronLeft,
@@ -10,6 +10,12 @@ import {
   Send,
   Loader2,
   Layers,
+  Users,
+  DollarSign,
+  Rocket,
+  Eye,
+  Cpu,
+  Compass,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,97 +35,116 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { createDiagnostico } from '@/services/diagnosticos'
-import { faturamentoOptions, funcionariosOptions, prazoOptions } from '@/lib/strategic-areas'
-import { setores, nomePilares, getPerguntasPorPilar } from '@/data/setores-questionario'
+import {
+  setores,
+  nomePilares,
+  getStepsDoSetor,
+  escalaOpcoes,
+  type PerguntaSecao,
+  type StepDescriptor,
+} from '@/data/setores-questionario'
 
-// V6.5 — Questionário com Bloco Setorial Parametrizável (3 Pilares, ~18 perguntas por setor)
-// Fluxo: Sua Empresa → Setor → 3 Pilares → Objetivos → Revisão
+// V6.5 — Questionário Consolidado completo (10 setores).
+// Fluxo: Setor → Seção 1 (Perfil) → Pilar 1 → Pilar 2 → Pilar 3 → Seção 5
+//   (Hackman) → Seção 6 (Buffett) → Seção 6.6 (Runway, só Tecnologia) →
+//   Seção 7 (Expectativas) → Seção 8 (Inovação) → Seção 9 (Próximos Passos) → Revisão.
 
-const stepTitles = [
-  'Sua Empresa',
-  'Setor de Atuação',
-  'Pilar 1 — Prisão do Fundador',
-  'Pilar 2 — Ineficiência Invisível',
-  'Pilar 3 — Abismo Estratégia vs. Execução',
-  'Objetivos',
-  'Revisão',
-]
-const stepIcons = [Building2, Layers, AlertTriangle, AlertTriangle, AlertTriangle, Target, Check]
+type Resposta = Record<string, string>
 
-type Resposta = Record<string, string> // chave: indice da pergunta -> valor
+const stepIconByTipo: Record<string, any> = {
+  perfil: Building2,
+  pilar: AlertTriangle,
+  hackman: Users,
+  buffett: DollarSign,
+  runway: Rocket,
+  expectativas: Target,
+  inovacao: Cpu,
+  'proximos-passos': Compass,
+}
 
 export default function Questionario() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { toast } = useToast()
-  const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
 
-  const [empresa, setEmpresa] = useState({
-    nome: '',
-    faturamento: '',
-    funcionarios: '',
-  })
+  // 0 = seleção de setor; depois steps dinâmicos; último = revisão.
   const [setorId, setSetorId] = useState<string>('')
   const [segmento, setSegmento] = useState<string>('')
   const [respostas, setRespostas] = useState<Resposta>({})
-  const [objetivos, setObjetivos] = useState({ descricao: '', prazo: '' })
+  const [stepIdx, setStepIdx] = useState(0)
 
   const setorSelecionado = setores.find((s) => s.id === setorId) || null
 
-  const totalSteps = stepTitles.length
+  const steps = useMemo<StepDescriptor[]>(
+    () => (setorSelecionado ? getStepsDoSetor(setorSelecionado) : []),
+    [setorSelecionado],
+  )
+
+  // stepIdx === 0 : seleção de setor
+  // 1..steps.length : steps dinâmicos
+  // steps.length + 1 : revisão
+  const totalSteps = steps.length + 2
+  const isSetorStep = stepIdx === 0
+  const isReviewStep = stepIdx === steps.length + 1
+  const currentStep = !isSetorStep && !isReviewStep ? steps[stepIdx - 1] : null
 
   const canProceed = () => {
-    if (step === 0) return empresa.nome.trim() !== ''
-    if (step === 1) return setorId !== '' && segmento !== ''
-    if (step === 2 || step === 3 || step === 4) {
-      if (!setorSelecionado) return false
-      const pilar = step - 1 // step 2 -> pilar 1, step 3 -> pilar 2, step 4 -> pilar 3
-      const perguntas = getPerguntasPorPilar(setorSelecionado, pilar as 1 | 2 | 3)
-      return perguntas.every((_, idx) => !!respostas[`${pilar}-${idx}`])
-    }
-    if (step === 5) return objetivos.descricao.trim().length > 0 && objetivos.prazo !== ''
-    return true
-  }
-
-  const setResposta = (pilar: number, idx: number, valor: string) => {
-    setRespostas((p) => ({ ...p, [`${pilar}-${idx}`]: valor }))
-  }
-
-  const allPerguntasRespostas = () => {
-    if (!setorSelecionado) return []
-    return setorSelecionado.perguntas.map((p, idx) => {
-      // idx global na lista de perguntas do setor (0..17)
-      return {
-        pilar: p.pilar,
-        texto: p.texto,
-        resposta:
-          respostas[`${p.pilar}-${idxGlobalParaPilar(setorSelecionado, idx)}`] || 'Não respondida',
-      }
+    if (isSetorStep) return setorId !== '' && segmento !== ''
+    if (isReviewStep) return true
+    if (!currentStep) return false
+    return currentStep.perguntas.every((_, idx) => {
+      const v = respostas[`${currentStep.key}-${idx}`]
+      return v !== undefined && v.trim() !== ''
     })
   }
+
+  const setResposta = (key: string, idx: number, valor: string) => {
+    setRespostas((p) => ({ ...p, [`${key}-${idx}`]: valor }))
+  }
+
+  const next = () => setStepIdx((s) => Math.min(s + 1, totalSteps - 1))
+  const back = () => setStepIdx((s) => Math.max(s - 1, 0))
+
+  const coletarRespostasStep = (step: StepDescriptor) =>
+    step.perguntas.map((p, idx) => ({
+      texto: p.texto,
+      resposta: respostas[`${step.key}-${idx}`] || 'Não respondida',
+    }))
 
   const handleSubmit = async () => {
     if (!user || !setorSelecionado) return
     setSubmitting(true)
     try {
+      const respostasPorSecao: Record<string, any> = {}
+      steps.forEach((step) => {
+        respostasPorSecao[step.key] = coletarRespostasStep(step)
+      })
+
       await createDiagnostico({
         user: user.id,
         setor: setorSelecionado.id,
         dados_entrada: {
           empresa: {
-            nome: empresa.nome,
             segmento,
             setor: setorSelecionado.nome,
-            faturamento: empresa.faturamento,
-            funcionarios: empresa.funcionarios,
           },
           setor_id: setorSelecionado.id,
           setor_slug: setorSelecionado.slug,
           micro_epifanias: setorSelecionado.microEpifanias,
-          respostas_3_pilares: allPerguntasRespostas(),
-          objetivos: { descricao: objetivos.descricao, prazo: objetivos.prazo },
-          questionario_version: '6.5',
+          respostas_3_pilares: [
+            ...respostasPorSecao['pilar-1'],
+            ...respostasPorSecao['pilar-2'],
+            ...respostasPorSecao['pilar-3'],
+          ],
+          secao_1_perfil: respostasPorSecao['perfil'],
+          secao_5_hackman: respostasPorSecao['hackman'],
+          secao_6_buffett: respostasPorSecao['buffett'],
+          secao_66_runway: respostasPorSecao['runway'] || null,
+          secao_7_expectativas: respostasPorSecao['expectativas'],
+          secao_8_inovacao: respostasPorSecao['inovacao'],
+          secao_9_proximos_passos: respostasPorSecao['proximos-passos'],
+          questionario_version: '6.5-consolidado',
           submetido_em: new Date().toISOString(),
         },
       })
@@ -135,123 +160,39 @@ export default function Questionario() {
     }
   }
 
-  const StepIcon = stepIcons[step]
+  const StepIcon = isSetorStep
+    ? Layers
+    : isReviewStep
+      ? Check
+      : stepIconByTipo[currentStep!.tipo] || AlertTriangle
 
-  const renderPilarStep = (pilar: 1 | 2 | 3) => {
-    if (!setorSelecionado) return null
-    const perguntas = getPerguntasPorPilar(setorSelecionado, pilar)
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Badge variant="secondary">{nomePilares[pilar]}</Badge>
-          <span className="text-xs text-muted-foreground">
-            Setor: {setorSelecionado.nome} · {perguntas.length} perguntas
-          </span>
-        </div>
-        {perguntas.map((p, idx) => {
-          const chave = `${pilar}-${idx}`
-          return (
-            <div key={chave} className="border rounded-lg p-4 space-y-3">
-              <Label className="text-sm font-medium leading-relaxed block">
-                {idx + 1}. {p.texto}
-              </Label>
-              <RadioGroup
-                value={respostas[chave] || ''}
-                onValueChange={(v) => setResposta(pilar, idx, v)}
-                className="space-y-2"
-              >
-                {[
-                  'Sim, totalmente.',
-                  'Parcialmente, com ressalvas.',
-                  'Raramente / com dificuldade.',
-                  'Não / não sei informar.',
-                ].map((opt, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center space-x-3 rounded-md hover:bg-secondary/40 transition-colors p-2 cursor-pointer"
-                  >
-                    <RadioGroupItem value={opt} id={`${chave}-${i}`} />
-                    <Label htmlFor={`${chave}-${i}`} className="cursor-pointer font-normal text-sm">
-                      {opt}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
+  const stepTitle = isSetorStep
+    ? 'Setor de Atuação'
+    : isReviewStep
+      ? 'Revisão'
+      : currentStep!.titulo
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Diagnóstico Estratégico Setorial</h1>
         <p className="text-muted-foreground mt-1">
-          JBP Gestão Master V 6.5 — Etapa {step + 1} de {totalSteps}
+          JBP Gestão Master V 6.5 — Etapa {stepIdx + 1} de {totalSteps}
         </p>
       </div>
-      <Progress value={((step + 1) / totalSteps) * 100} className="h-2 mb-6" />
+      <Progress value={((stepIdx + 1) / totalSteps) * 100} className="h-2 mb-6" />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <StepIcon className="w-5 h-5 text-primary" /> {stepTitles[step]}
+            <StepIcon className="w-5 h-5 text-primary" /> {stepTitle}
           </CardTitle>
+          {currentStep?.descricao && (
+            <p className="text-sm text-muted-foreground">{currentStep.descricao}</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {step === 0 && (
-            <>
-              <div>
-                <Label htmlFor="nome">Nome da Empresa *</Label>
-                <Input
-                  id="nome"
-                  value={empresa.nome}
-                  onChange={(e) => setEmpresa({ ...empresa, nome: e.target.value })}
-                  placeholder="Ex: Minha Empresa Ltda."
-                />
-              </div>
-              <div>
-                <Label>Faturamento Mensal</Label>
-                <Select
-                  value={empresa.faturamento}
-                  onValueChange={(v) => setEmpresa({ ...empresa, faturamento: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {faturamentoOptions.map((o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Número de Colaboradores</Label>
-                <Select
-                  value={empresa.funcionarios}
-                  onValueChange={(v) => setEmpresa({ ...empresa, funcionarios: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {funcionariosOptions.map((o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-
-          {step === 1 && (
+          {isSetorStep && (
             <div className="space-y-4">
               <div>
                 <Label>Setor de Atuação *</Label>
@@ -260,6 +201,7 @@ export default function Questionario() {
                   onValueChange={(v) => {
                     setSetorId(v)
                     setSegmento('')
+                    setStepIdx(0)
                   }}
                 >
                   <SelectTrigger>
@@ -308,98 +250,60 @@ export default function Questionario() {
             </div>
           )}
 
-          {step === 2 && renderPilarStep(1)}
-          {step === 3 && renderPilarStep(2)}
-          {step === 4 && renderPilarStep(3)}
-
-          {step === 5 && (
-            <>
-              <div>
-                <Label htmlFor="objetivos">Seus Objetivos Estratégicos *</Label>
-                <Textarea
-                  id="objetivos"
-                  value={objetivos.descricao}
-                  onChange={(e) => setObjetivos({ ...objetivos, descricao: e.target.value })}
-                  placeholder="Descreva onde você quer chegar nos próximos meses. Ex: Sair da operação, dobrar faturamento, delegar gestão..."
-                  rows={5}
+          {currentStep && (
+            <div className="space-y-4">
+              {currentStep.tipo === 'pilar' && (
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="secondary">{nomePilares[currentStep.pilar!]}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    Setor: {setorSelecionado?.nome} · {currentStep.perguntas.length} perguntas
+                  </span>
+                </div>
+              )}
+              {currentStep.perguntas.map((p, idx) => (
+                <PerguntaField
+                  key={`${currentStep.key}-${idx}`}
+                  pergunta={p}
+                  index={idx}
+                  stepKey={currentStep.key}
+                  value={respostas[`${currentStep.key}-${idx}`] || ''}
+                  onChange={(v) => setResposta(currentStep.key, idx, v)}
                 />
-              </div>
-              <div>
-                <Label>Horizonte de Tempo *</Label>
-                <Select
-                  value={objetivos.prazo}
-                  onValueChange={(v) => setObjetivos({ ...objetivos, prazo: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {prazoOptions.map((o) => (
-                      <SelectItem key={o} value={o}>
-                        {o}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
+              ))}
+            </div>
           )}
 
-          {step === 6 && (
+          {isReviewStep && setorSelecionado && (
             <div className="space-y-3 text-sm">
               <div>
-                <span className="text-muted-foreground">Empresa:</span> {empresa.nome}
+                <span className="text-muted-foreground">Setor / Segmento:</span>{' '}
+                {setorSelecionado.nome} — {segmento}
               </div>
-              {setorSelecionado && (
-                <div>
-                  <span className="text-muted-foreground">Setor / Segmento:</span>{' '}
-                  {setorSelecionado.nome} — {segmento}
-                </div>
-              )}
-              {empresa.faturamento && (
-                <div>
-                  <span className="text-muted-foreground">Faturamento:</span> {empresa.faturamento}
-                </div>
-              )}
-              {empresa.funcionarios && (
-                <div>
-                  <span className="text-muted-foreground">Colaboradores:</span>{' '}
-                  {empresa.funcionarios}
-                </div>
-              )}
-              <div>
-                <span className="text-muted-foreground">Objetivos:</span> {objetivos.descricao}
-              </div>
-              <div>
-                <span className="text-muted-foreground">Prazo:</span> {objetivos.prazo}
-              </div>
-              {setorSelecionado && (
-                <div className="pt-2">
-                  <span className="text-muted-foreground">Respostas dos 3 Pilares:</span>{' '}
-                  <Badge variant="secondary">
-                    {setorSelecionado.perguntas.length} perguntas respondidas
-                  </Badge>
-                </div>
-              )}
+              {steps.map((step) => {
+                const respondidas = step.perguntas.filter(
+                  (_, idx) => !!respostas[`${step.key}-${idx}`],
+                ).length
+                return (
+                  <div key={step.key} className="flex items-center justify-between border-b pb-2">
+                    <span>{step.titulo}</span>
+                    <Badge
+                      variant={respondidas === step.perguntas.length ? 'default' : 'secondary'}
+                    >
+                      {respondidas}/{step.perguntas.length}
+                    </Badge>
+                  </div>
+                )
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
       <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={() => setStep((s) => s - 1)}
-          disabled={step === 0}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={back} disabled={stepIdx === 0} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Voltar
         </Button>
-        {step < totalSteps - 1 ? (
-          <Button onClick={() => setStep((s) => s + 1)} disabled={!canProceed()} className="gap-2">
-            Próximo <ChevronRight className="w-4 h-4" />
-          </Button>
-        ) : (
+        {isReviewStep ? (
           <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -408,16 +312,94 @@ export default function Questionario() {
             )}
             {submitting ? 'Enviando...' : 'Enviar Diagnóstico'}
           </Button>
+        ) : (
+          <Button onClick={next} disabled={!canProceed()} className="gap-2">
+            Próximo <ChevronRight className="w-4 h-4" />
+          </Button>
         )}
       </div>
     </div>
   )
 }
 
-// Helper: mapeia o índice global da pergunta (dentro da lista setor.perguntas)
-// para o índice local dentro do pilar correspondente.
-function idxGlobalParaPilar(setor: (typeof setores)[number], idxGlobal: number): number {
-  const p = setor.perguntas[idxGlobal]
-  if (!p) return idxGlobal
-  return setor.perguntas.filter((q) => q.pilar === p.pilar).indexOf(p)
+function PerguntaField({
+  pergunta,
+  index,
+  stepKey,
+  value,
+  onChange,
+}: {
+  pergunta: PerguntaSecao
+  index: number
+  stepKey: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  const tipo = pergunta.tipo || 'escala'
+  const chave = `${stepKey}-${index}`
+
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <Label className="text-sm font-medium leading-relaxed block">
+        {index + 1}. {pergunta.texto}
+      </Label>
+
+      {tipo === 'escala' && (
+        <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
+          {escalaOpcoes.map((opt, i) => (
+            <div
+              key={i}
+              className="flex items-center space-x-3 rounded-md hover:bg-secondary/40 transition-colors p-2 cursor-pointer"
+            >
+              <RadioGroupItem value={opt} id={`${chave}-${i}`} />
+              <Label htmlFor={`${chave}-${i}`} className="cursor-pointer font-normal text-sm">
+                {opt}
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      )}
+
+      {tipo === 'select' && pergunta.opcoes && (
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger>
+            <SelectValue placeholder={pergunta.placeholder || 'Selecione...'} />
+          </SelectTrigger>
+          <SelectContent>
+            {pergunta.opcoes.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {tipo === 'texto' && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={pergunta.placeholder || 'Sua resposta...'}
+        />
+      )}
+
+      {tipo === 'numero' && (
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={pergunta.placeholder || 'Sua resposta...'}
+        />
+      )}
+
+      {tipo === 'textarea' && (
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={pergunta.placeholder || 'Sua resposta...'}
+          rows={4}
+        />
+      )}
+    </div>
+  )
 }

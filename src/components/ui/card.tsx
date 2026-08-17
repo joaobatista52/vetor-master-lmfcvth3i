@@ -3,15 +3,32 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { asChild?: boolean }
+>(({ className, asChild, children, ...props }, ref) => {
+  if (asChild && React.isValidElement(children)) {
+    const child = children as React.ReactElement<any>
+    return React.cloneElement(child, {
+      ...props,
+      className: cn(
+        'rounded-lg border bg-card text-card-foreground shadow-sm',
+        className,
+        child.props.className,
+      ),
+      ref,
+    })
+  }
+  return (
     <div
       ref={ref}
       className={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)}
       {...props}
-    />
-  ),
-)
+    >
+      {children}
+    </div>
+  )
+})
 Card.displayName = 'Card'
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

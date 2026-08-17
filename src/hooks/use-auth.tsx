@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
-      setUser(pb.authStore.isValid ? record : null)
+      setUser(pb.authStore.isValid ? (record as unknown as AuthUser) : null)
       setIsAuthenticated(pb.authStore.isValid)
     })
     if (pb.authStore.isValid) {

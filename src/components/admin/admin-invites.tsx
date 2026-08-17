@@ -44,7 +44,7 @@ export function AdminInvites() {
   const [convites, setConvites] = useState<Convite[]>([])
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState('user')
+  const [role, setRole] = useState<'admin' | 'user'>('user')
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -117,7 +117,7 @@ export function AdminInvites() {
           </div>
           <div className="w-full sm:w-40 space-y-2">
             <Label>Função</Label>
-            <Select value={role} onValueChange={setRole}>
+            <Select value={role} onValueChange={(v) => setRole(v as 'admin' | 'user')}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

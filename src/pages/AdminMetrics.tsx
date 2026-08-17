@@ -133,7 +133,7 @@ export default function AdminMetrics() {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label={(entry) => `${entry.name}: ${entry.count}`}
+                    label={(entry: any) => `${entry.name}: ${entry.count}`}
                   >
                     {statusData.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T16:32:35.748Z",
+  "generatedAt": "2026-08-17T17:14:32.529Z",
   "collections": [
     {
       "name": "users",
@@ -644,6 +644,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "questionario",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_setores_slug ON setores (slug)"]
