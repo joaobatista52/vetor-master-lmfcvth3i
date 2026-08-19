@@ -12,17 +12,17 @@ import {
   Layers,
   Users,
   DollarSign,
-  Rocket,
-  Eye,
   Cpu,
   Compass,
   Info,
+  ClipboardList,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -46,18 +46,18 @@ import {
 } from '@/data/setores-questionario'
 
 // V6.5 — Questionário Consolidado completo (10 setores).
-// Fluxo: Setor → Seção 1 (Perfil) → Pilar 1 → Pilar 2 → Pilar 3 → Seção 5
-//   (Hackman) → Seção 6 (Buffett) → Seção 6.6 (Runway, só Tecnologia) →
-//   Seção 7 (Expectativas) → Seção 8 (Inovação) → Seção 9 (Próximos Passos) → Revisão.
+// Fluxo: Setor → Identificação da Empresa → Seção 1 (Perfil) → Pilar 1 →
+//   Pilar 2 → Pilar 3 → Seção 5 (Hackman) → Seção 6 (Buffett) → Seção 7
+//   (Expectativas) → Seção 8 (Inovação) → Seção 9 (Próximos Passos) → Revisão.
 
 type Resposta = Record<string, string>
 
 const stepIconByTipo: Record<string, any> = {
+  identificacao: ClipboardList,
   perfil: Building2,
   pilar: AlertTriangle,
   hackman: Users,
   buffett: DollarSign,
-  runway: Rocket,
   expectativas: Target,
   inovacao: Cpu,
   'proximos-passos': Compass,
@@ -95,8 +95,11 @@ export default function Questionario() {
     if (isReviewStep) return true
     if (!currentStep) return false
     return currentStep.perguntas.every((p, idx) => {
-      // Campos puramente informativos (tipo "display") não exigem resposta.
-      if ((p.tipo || 'escala') === 'display') return true
+      const tipo = p.tipo || 'escala'
+      // Campos puramente informativos (display) não exigem resposta.
+      if (tipo === 'display') return true
+      // Campos opcionais (checkbox — Documentação Adicional) podem ficar vazios.
+      if (tipo === 'checkbox') return true
       const v = respostas[`${currentStep.key}-${idx}`]
       return v !== undefined && v.trim() !== ''
     })
@@ -111,12 +114,21 @@ export default function Questionario() {
 
   const coletarRespostasStep = (step: StepDescriptor) =>
     step.perguntas.map((p, idx) => {
-      if ((p.tipo || 'escala') === 'display') {
+      const tipo = p.tipo || 'escala'
+      if (tipo === 'display') {
         return { texto: p.texto, resposta: 'Informativo (sem resposta)' }
+      }
+      const v = respostas[`${step.key}-${idx}`] || ''
+      if (tipo === 'checkbox') {
+        const selecionados = v.split('|').filter(Boolean).join(', ')
+        return {
+          texto: p.texto,
+          resposta: selecionados || 'Nenhum documento selecionado',
+        }
       }
       return {
         texto: p.texto,
-        resposta: respostas[`${step.key}-${idx}`] || 'Não respondida',
+        resposta: v || 'Não respondida',
       }
     })
 
@@ -129,6 +141,13 @@ export default function Questionario() {
         respostasPorSecao[step.key] = coletarRespostasStep(step)
       })
 
+      const identificacao = respostasPorSecao['identificacao'] || []
+      const identificacaoObj: Record<string, string> = {}
+      identificacao.forEach((item: any) => {
+        const label = item.texto.replace(/:$/, '').trim()
+        identificacaoObj[label] = item.resposta
+      })
+
       await createDiagnostico({
         user: user.id,
         setor: setorSelecionado.id,
@@ -136,7 +155,9 @@ export default function Questionario() {
           empresa: {
             segmento,
             setor: setorSelecionado.nome,
+            ...identificacaoObj,
           },
+          identificacao,
           setor_id: setorSelecionado.id,
           setor_slug: setorSelecionado.slug,
           micro_epifanias: setorSelecionado.microEpifanias,
@@ -148,11 +169,10 @@ export default function Questionario() {
           secao_1_perfil: respostasPorSecao['perfil'],
           secao_5_hackman: respostasPorSecao['hackman'],
           secao_6_buffett: respostasPorSecao['buffett'],
-          secao_66_runway: respostasPorSecao['runway'] || null,
           secao_7_expectativas: respostasPorSecao['expectativas'],
           secao_8_inovacao: respostasPorSecao['inovacao'],
           secao_9_proximos_passos: respostasPorSecao['proximos-passos'],
-          questionario_version: '6.5-consolidado',
+          questionario_version: '6.5-consolidado-pdf-19ago26',
           submetido_em: new Date().toISOString(),
         },
       })
@@ -260,6 +280,14 @@ export default function Questionario() {
 
           {currentStep && (
             <div className="space-y-4">
+              {currentStep.tipo === 'identificacao' && (
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="secondary">Identificação</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    Setor: {setorSelecionado?.nome}
+                  </span>
+                </div>
+              )}
               {currentStep.tipo === 'pilar' && (
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="secondary">{nomePilares[currentStep.pilar!]}</Badge>
@@ -416,6 +444,31 @@ function PerguntaField({
         <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-sm text-muted-foreground flex items-start gap-2">
           <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
           <span>{pergunta.texto}</span>
+        </div>
+      )}
+
+      {tipo === 'checkbox' && (
+        <div className="space-y-2">
+          {pergunta.opcoes?.map((opt, i) => {
+            const checked = value.split('|').filter(Boolean).includes(opt)
+            return (
+              <div
+                key={i}
+                className="flex items-center space-x-3 rounded-md hover:bg-secondary/40 transition-colors p-2 cursor-pointer"
+                onClick={() => {
+                  const current = value.split('|').filter(Boolean)
+                  const next = checked ? current.filter((o) => o !== opt) : [...current, opt]
+                  onChange(next.join('|'))
+                }}
+              >
+                <Checkbox checked={checked} />
+                <Label className="cursor-pointer font-normal text-sm">{opt}</Label>
+              </div>
+            )
+          })}
+          {value === '' && (
+            <p className="text-xs text-muted-foreground">Campo opcional — pode deixar em branco.</p>
+          )}
         </div>
       )}
     </div>

@@ -1,30 +1,37 @@
 // Base de Conhecimento V6.5 — Questionários Consolidados (10 setores)
-// Fonte: "Questionários_Consolidados_10_Setores_V6.5_04ago26"
+// Fonte: "Questionários_Consolidados_10_Setores_V6.5_19ago26"
 //
 // Estrutura completa do questionário, na ordem de exibição:
-//   Seção 1 — Perfil da Empresa e Contexto (setorial: específica para Saúde,
-//             Tecnologia/Startups, Educação e Academias; genérica para os
-//             demais 6 setores)
+//   Identificação da Empresa (6 campos, setorial apenas no Segmento)
+//   Seção 1 — Perfil da Empresa e Contexto (setorial: específica para os
+//             10 setores, extraída palavra por palavra do PDF)
 //   Pilar 1 — Prisão do Fundador
 //   Pilar 2 — Ineficiência Invisível
 //   Pilar 3 — Abismo Estratégia vs. Execução
 //   Seção 5 — Hackman (6 perguntas, iguais para todos os setores)
-//   Seção 6 — Buffett (6 perguntas, iguais para todos os setores)
-//   Seção 6.6 — Runway 12 meses (somente Tecnologia/Startups, 1 pergunta)
+//   Seção 6 — Buffett (6 perguntas; versão específica para Tecnologia/Startups,
+//             onde 6.6 = "reserva de capital (runway) para 12 meses")
 //   Seção 7 — Expectativas e Ambição (5 perguntas, iguais para todos)
 //   Seção 8 — Inovação e Tecnologia (7 perguntas, versão setorial fiel)
-//   Seção 9 — Próximos Passos (4 campos: 1 display + 3 inputs)
+//   Seção 9 — Próximos Passos (4 campos + Documentação Adicional opcional)
 //
 // Os 3 Pilares são extraídos fielmente do PDF "Contexto Estratégico Global
-// 10 Setores V6.5" (04ago26). As Seções 1, 5, 6, 6.6, 7, 8 e 9 são extraídas
-// do PDF "Questionários Consolidados 10 Setores V6.5" (04ago26).
+// 10 Setores V6.5". As Seções 1, 5, 6, 7, 8 e 9 e a Identificação da Empresa
+// são extraídas do PDF "Questionários Consolidados 10 Setores V6.5" (19ago26).
 
 export interface PerguntaSetor {
   pilar: 1 | 2 | 3
   texto: string
 }
 
-export type TipoInput = 'escala' | 'texto' | 'numero' | 'textarea' | 'select' | 'display'
+export type TipoInput =
+  | 'escala'
+  | 'texto'
+  | 'numero'
+  | 'textarea'
+  | 'select'
+  | 'display'
+  | 'checkbox'
 
 export interface PerguntaSecao {
   texto: string
@@ -47,9 +54,10 @@ export interface Setor {
   segmentos: string[]
   microEpifanias: string[]
   perguntas: PerguntaSetor[] // 3 Pilares (Seções P1/P2/P3)
+  secaoIdentificacao: PerguntaSecao[] // Identificação da Empresa (início)
   secaoPerfil: PerguntaSecao[] // Seção 1 (setorial)
+  secaoBuffett?: PerguntaSecao[] // Seção 6 (override; default = secaoBuffett)
   secaoInovacao: PerguntaSecao[] // Seção 8 (setorial)
-  secaoRunway?: PerguntaSecao[] // Seção 6.6 (somente Tecnologia)
 }
 
 export const nomePilares = {
@@ -75,39 +83,38 @@ export const formatoInteresseOpcoes = ['MaaS', 'Híbrido', 'CaaS', 'Ainda não s
 export const maturidadeDigitalOpcoesSaude = ['1 — Básico', '2 — Intermediário', '3 — Avançado']
 export const maturidadeDigitalOpcoes = ['1', '2', '3']
 
-// Seção 1 — opções dos setores com perfil específico
-export const porteOptions = ['MEI', 'ME', 'EPP', 'Média', 'Grande']
-export const faturamentoAnualOptions = [
-  'Até R$ 600 mil/ano',
-  'R$ 600 mil - R$ 2,4 mi/ano',
-  'R$ 2,4 mi - R$ 6 mi/ano',
-  'R$ 6 mi - R$ 12 mi/ano',
-  'Acima de R$ 12 mi/ano',
-]
-export const funcionariosOptions = [
-  '1 a 5 colaboradores',
-  '6 a 20 colaboradores',
-  '21 a 50 colaboradores',
-  '51 a 100 colaboradores',
-  'Acima de 100 colaboradores',
-]
-export const regimeTributarioOptions = ['Simples Nacional', 'Lucro Presumido', 'Lucro Real']
-export const tempoMercadoOptions = [
-  'Menos de 2 anos',
-  '2 a 5 anos',
-  '5 a 10 anos',
-  'Mais de 10 anos',
-]
-export const formaJuridicaOptions = ['MEI', 'Empresário Individual', 'LTDA', 'S.A.']
-
 // Variantes de regime tributário usadas no PDF por setor
 const regimeTributarioSimplesOptions = ['Simples', 'Lucro Presumido', 'Lucro Real']
-const propriedadeSaudeOpcoes = ['Familiar', 'Sócios', 'Investidores', 'Outro']
+const regimeTributarioNacionalOptions = ['Simples Nacional', 'Lucro Presumido', 'Lucro Real']
+const propriedadePadraoOpcoes = ['Familiar', 'Sócios', 'Investidores', 'Outro']
 const propriedadeTecOpcoes = ['Founder-led', 'Cofundadores', 'Investidores', 'Grupo']
 const estagioTecOpcoes = ['Pré-seed', 'Seed', 'Série A', 'Série B+', 'Scale-up']
+const documentacaoAdicionalOpcoes = [
+  'Balanço Patrimonial',
+  'DRE',
+  'Organograma',
+  'Relatórios de Vendas',
+]
 
 // ============================================================
-// Seção 1 — Perfil da Empresa e Contexto (setorial)
+// Identificação da Empresa (comum a todos os 10 setores; só o
+// Segmento varia conforme o setor)
+// ============================================================
+
+export function buildSecaoIdentificacao(segmentos: string[]): PerguntaSecao[] {
+  return [
+    { texto: 'Razão Social:', tipo: 'texto' },
+    { texto: 'CNPJ:', tipo: 'texto' },
+    { texto: 'Data:', tipo: 'texto', placeholder: '//______' },
+    { texto: 'Segmento:', tipo: 'select', opcoes: [...segmentos, 'Outro'] },
+    { texto: 'Respondente:', tipo: 'texto' },
+    { texto: 'Cargo:', tipo: 'texto' },
+  ]
+}
+
+// ============================================================
+// Seção 1 — Perfil da Empresa e Contexto (setorial, 10 versões)
+// Extraída palavra por palavra do PDF V6.5 (19ago26).
 // ============================================================
 
 // Perfil específico — Saúde (8 campos)
@@ -119,10 +126,82 @@ const secaoPerfilSaude: PerguntaSecao[] = [
     texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
     tipo: 'texto',
   },
-  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadeSaudeOpcoes },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
   { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
-  { texto: 'Principais fontes de receita (Convênios, Particular, SUS, etc)?', tipo: 'texto' },
-  { texto: 'Possui certificações (ONA, ISO, etc)?', tipo: 'texto' },
+  { texto: 'Principais fontes de receita (Convênios, Particular, SUS, etc.)?', tipo: 'texto' },
+  { texto: 'Possui certificações (ONA, ISO, etc.)?', tipo: 'texto' },
+]
+
+// Perfil específico — Serviços Profissionais (8 campos)
+const secaoPerfilServicos: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas unidades/sedes a empresa possui?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  {
+    texto: 'Principais fontes de receita (projetos, contratos recorrentes, honorários, etc.)?',
+    tipo: 'texto',
+  },
+  { texto: 'Possui certificações ou reconhecimentos de mercado?', tipo: 'texto' },
+]
+
+// Perfil específico — Indústria (8 campos)
+const secaoPerfilIndustria: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas unidades/sedes (plantas) a empresa possui?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  {
+    texto: 'Principais fontes de receita (B2B, B2C, distribuição, exportação, etc.)?',
+    tipo: 'texto',
+  },
+  { texto: 'Possui certificações (ISO, etc.)?', tipo: 'texto' },
+]
+
+// Perfil específico — Varejo (8 campos)
+const secaoPerfilVarejo: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas unidades/lojas a empresa possui?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  {
+    texto: 'Principais fontes de receita (loja física, e-commerce, marketplaces, etc.)?',
+    tipo: 'texto',
+  },
+  { texto: 'Possui certificações ou reconhecimentos de mercado?', tipo: 'texto' },
+]
+
+// Perfil específico — Agronegócio (8 campos)
+const secaoPerfilAgronegocio: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas unidades/fazendas a empresa possui?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  {
+    texto: 'Principais fontes de receita (commodities, pecuária, trading, etc.)?',
+    tipo: 'texto',
+  },
+  { texto: 'Possui certificações (sustentabilidade, orgânico, etc.)?', tipo: 'texto' },
 ]
 
 // Perfil específico — Tecnologia/Startups (8 campos)
@@ -132,13 +211,49 @@ const secaoPerfilTecnologia: PerguntaSecao[] = [
   { texto: 'Colaboradores por área (Engenharia, Comercial, Ops)?', tipo: 'texto' },
   { texto: 'Crescimento de receita nos últimos 3 anos?', tipo: 'texto' },
   { texto: 'Propriedade:', tipo: 'select', opcoes: propriedadeTecOpcoes },
-  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioOptions },
+  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioNacionalOptions },
   { texto: 'Fontes de receita (MRR, Contratos, Marketplace, Serviços)?', tipo: 'texto' },
   {
     texto: 'Possui métricas definidas (CAC, LTV, Churn, Payback)?',
     tipo: 'select',
     opcoes: simNaoParcialmenteOpcoes,
   },
+]
+
+// Perfil específico — Construção Civil (8 campos)
+const secaoPerfilConstrucao: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas obras/unidades a empresa possui em andamento?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  {
+    texto: 'Principais fontes de receita (obras privadas, públicas, incorporação, etc.)?',
+    tipo: 'texto',
+  },
+  { texto: 'Possui certificações (ISO, PBQP-H, etc.)?', tipo: 'texto' },
+]
+
+// Perfil específico — Transporte/Logística (8 campos)
+const secaoPerfilTransporte: PerguntaSecao[] = [
+  { texto: 'Qual o faturamento anual aproximado da empresa?', tipo: 'texto' },
+  { texto: 'Quantas unidades/bases a empresa possui?', tipo: 'numero' },
+  { texto: 'Quantos colaboradores ao todo?', tipo: 'numero' },
+  {
+    texto: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: 'Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário:', tipo: 'select', opcoes: regimeTributarioSimplesOptions },
+  {
+    texto: 'Principais fontes de receita (fretes, contratos, distribuição, etc.)?',
+    tipo: 'texto',
+  },
+  { texto: 'Possui certificações (ISO, ANTT, etc.)?', tipo: 'texto' },
 ]
 
 // Perfil específico — Educação (9 campos)
@@ -148,8 +263,8 @@ const secaoPerfilEducacao: PerguntaSecao[] = [
   { texto: 'Colaboradores (Docentes vs. Adm/Pedagógico)?', tipo: 'texto' },
   { texto: 'Alunos matriculados e capacidade instalada?', tipo: 'texto' },
   { texto: 'Tempo de operação e crescimento nos últimos 3 anos?', tipo: 'texto' },
-  { texto: 'Estrutura de propriedade?', tipo: 'select', opcoes: propriedadeSaudeOpcoes },
-  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioOptions },
+  { texto: 'Estrutura de propriedade?', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioNacionalOptions },
   { texto: 'Fontes de receita (Mensalidades, Matrículas, Convênios)?', tipo: 'texto' },
   { texto: 'Certificações (MEC, ISO, Internacionais)?', tipo: 'texto' },
 ]
@@ -161,26 +276,10 @@ const secaoPerfilAcademias: PerguntaSecao[] = [
   { texto: 'Colaboradores (Instrutores vs. Adm/Atendimento)?', tipo: 'texto' },
   { texto: 'Alunos ativos e capacidade instalada?', tipo: 'texto' },
   { texto: 'Tempo de operação e crescimento nos últimos 3 anos?', tipo: 'texto' },
-  { texto: 'Estrutura de propriedade?', tipo: 'select', opcoes: propriedadeSaudeOpcoes },
-  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioOptions },
+  { texto: 'Estrutura de propriedade?', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  { texto: 'Regime tributário atual?', tipo: 'select', opcoes: regimeTributarioNacionalOptions },
   { texto: 'Fontes de receita (Mensalidades, Planos, Personal, Loja)?', tipo: 'texto' },
   { texto: 'Certificações ou premiações setoriais?', tipo: 'texto' },
-]
-
-// Perfil genérico — demais 6 setores (Serviços, Indústria, Varejo, Agronegócio,
-// Construção, Transporte). O PDF não traz Seção 1 para estes setores.
-export const secaoPerfilGenerico: PerguntaSecao[] = [
-  { texto: 'Qual o porte da empresa?', tipo: 'select', opcoes: porteOptions },
-  { texto: 'Qual o faturamento bruto anual?', tipo: 'select', opcoes: faturamentoAnualOptions },
-  { texto: 'Quantos colaboradores a empresa possui?', tipo: 'select', opcoes: funcionariosOptions },
-  { texto: 'Qual o regime tributário?', tipo: 'select', opcoes: regimeTributarioOptions },
-  {
-    texto: 'Há quanto tempo a empresa está no mercado?',
-    tipo: 'select',
-    opcoes: tempoMercadoOptions,
-  },
-  { texto: 'Qual a forma jurídica da empresa?', tipo: 'select', opcoes: formaJuridicaOptions },
-  { texto: 'Quantos sócios a empresa possui?', tipo: 'numero', placeholder: 'Ex: 2' },
 ]
 
 // ============================================================
@@ -221,6 +320,7 @@ export const secaoHackman: PerguntaSecao[] = [
 ]
 
 // Seção 6 — Buffett (6 perguntas) — fiel ao PDF V6.5
+// Versão padrão (9 setores): 6.6 = "reserva de capital de giro para 3 meses"
 export const secaoBuffett: PerguntaSecao[] = [
   { texto: 'Qual a margem EBITDA atual aproximada?', tipo: 'texto' },
   { texto: 'Qual o nível de endividamento atual (Dívida Líquida / EBITDA)?', tipo: 'texto' },
@@ -238,10 +338,20 @@ export const secaoBuffett: PerguntaSecao[] = [
   },
 ]
 
-// Seção 6.6 — Runway 12 meses (somente Tecnologia/Startups, 1 pergunta)
-// Fiel ao PDF V6.5: "A empresa possui reserva de capital (runway) para 12
-// meses de operação?" — única pergunta da Seção 6.6 no PDF.
-export const secaoRunway: PerguntaSecao[] = [
+// Seção 6 — Buffett — versão Tecnologia/Startups (6 perguntas).
+// Fiel ao PDF V6.5: 6.6 = "A empresa possui reserva de capital (runway) para
+// 12 meses de operação?" — não há Seção 6.6 separada; a pergunta de runway
+// é a 6.6 da própria Seção 6 de Tecnologia.
+export const secaoBuffettTecnologia: PerguntaSecao[] = [
+  { texto: 'Qual a margem EBITDA atual aproximada?', tipo: 'texto' },
+  { texto: 'Qual o nível de endividamento atual (Dívida Líquida / EBITDA)?', tipo: 'texto' },
+  { texto: 'Qual o prazo médio de recebimento da carteira?', tipo: 'texto' },
+  { texto: 'Qual o índice de inadimplência da carteira de clientes?', tipo: 'texto' },
+  {
+    texto: 'A empresa fecha DRE gerencial mensal até o 10º dia útil?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
   {
     texto: 'A empresa possui reserva de capital (runway) para 12 meses de operação?',
     tipo: 'select',
@@ -261,8 +371,9 @@ export const secaoExpectativas: PerguntaSecao[] = [
   },
 ]
 
-// Seção 9 — Próximos Passos (4 campos) — fiel ao PDF V6.5
+// Seção 9 — Próximos Passos (4 campos + Documentação Adicional) — fiel ao PDF V6.5
 // 9.1 é puramente informativo (tipo display), não exige resposta.
+// Ao final, "Documentação Adicional (Opcional)" como checkboxes (multi-seleção).
 export const secaoProximosPassos: PerguntaSecao[] = [
   {
     texto: 'Você receberá um Diagnóstico Executivo com recomendações prioritárias.',
@@ -271,6 +382,11 @@ export const secaoProximosPassos: PerguntaSecao[] = [
   { texto: 'Autoriza sessão de devolutiva de 45 min?', tipo: 'select', opcoes: simNaoOpcoes },
   { texto: 'Formato de interesse:', tipo: 'select', opcoes: formatoInteresseOpcoes },
   { texto: 'Responsável pelos documentos:', tipo: 'texto' },
+  {
+    texto: 'Documentação Adicional (Opcional):',
+    tipo: 'checkbox',
+    opcoes: documentacaoAdicionalOpcoes,
+  },
 ]
 
 // ============================================================
@@ -532,6 +648,13 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'A equipe sabe exatamente o custo real de cada procedimento realizado?' },
     ],
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Hospitalar',
+      'Clínica',
+      'Odontológica',
+      'Laboratório',
+      'Home Care',
+    ]),
     secaoPerfil: secaoPerfilSaude,
     secaoInovacao: secaoInovacaoSaude,
   },
@@ -602,7 +725,15 @@ export const setores: Setor[] = [
       },
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
     ],
-    secaoPerfil: secaoPerfilGenerico,
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Consultoria',
+      'Advocacia',
+      'Contabilidade',
+      'Arquitetura',
+      'Agência',
+      'TI',
+    ]),
+    secaoPerfil: secaoPerfilServicos,
     secaoInovacao: secaoInovacaoServicos,
   },
   {
@@ -675,7 +806,15 @@ export const setores: Setor[] = [
         texto: 'Sua equipe de PCP sabe exatamente o custo real de cada ordem de produção?',
       },
     ],
-    secaoPerfil: secaoPerfilGenerico,
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Manufatura',
+      'Metalurgia',
+      'Alimentos',
+      'Químico',
+      'Têxtil',
+      'Plástico',
+    ]),
+    secaoPerfil: secaoPerfilIndustria,
     secaoInovacao: secaoInovacaoIndustria,
   },
   {
@@ -738,7 +877,14 @@ export const setores: Setor[] = [
       },
       { pilar: 3, texto: 'A equipe sabe o lucro líquido por cliente, canal e produto vendido?' },
     ],
-    secaoPerfil: secaoPerfilGenerico,
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Lojas Físicas',
+      'E-commerce',
+      'Distribuição',
+      'Alimentação',
+      'Moda',
+    ]),
+    secaoPerfil: secaoPerfilVarejo,
     secaoInovacao: secaoInovacaoVarejo,
   },
   {
@@ -801,7 +947,14 @@ export const setores: Setor[] = [
       },
       { pilar: 3, texto: 'A equipe comercial sabe o custo de produção e a margem por produto?' },
     ],
-    secaoPerfil: secaoPerfilGenerico,
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Grãos',
+      'Pecuária',
+      'Cana',
+      'Café',
+      'Fruticultura',
+    ]),
+    secaoPerfil: secaoPerfilAgronegocio,
     secaoInovacao: secaoInovacaoAgronegocio,
   },
   {
@@ -855,8 +1008,15 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'A equipe de CS sabe o NRR e a meta de expansão por cliente?' },
     ],
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'SaaS',
+      'Fintech',
+      'Healthtech',
+      'Edtech',
+      'Marketplace',
+    ]),
     secaoPerfil: secaoPerfilTecnologia,
-    secaoRunway,
+    secaoBuffett: secaoBuffettTecnologia,
     secaoInovacao: secaoInovacaoTecnologia,
   },
   {
@@ -921,7 +1081,13 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'Sua equipe de planejamento sabe o custo real de cada etapa da obra?' },
     ],
-    secaoPerfil: secaoPerfilGenerico,
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Edificações',
+      'Incorporação',
+      'Infraestrutura',
+      'Reformas',
+    ]),
+    secaoPerfil: secaoPerfilConstrucao,
     secaoInovacao: secaoInovacaoConstrucao,
   },
   {
@@ -975,7 +1141,13 @@ export const setores: Setor[] = [
         texto: 'O comercial sabe o custo real de cada rota antes de precificar o frete?',
       },
     ],
-    secaoPerfil: secaoPerfilGenerico,
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Cargas',
+      'Passageiros',
+      'Distribuição',
+      'Armazenagem',
+    ]),
+    secaoPerfil: secaoPerfilTransporte,
     secaoInovacao: secaoInovacaoTransporte,
   },
   {
@@ -1023,6 +1195,13 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'O comercial sabe a margem de contribuição por curso, turno e unidade?' },
     ],
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Básica',
+      'Superior',
+      'Técnico',
+      'Idiomas',
+      'Edtech',
+    ]),
     secaoPerfil: secaoPerfilEducacao,
     secaoInovacao: secaoInovacaoEducacao,
   },
@@ -1068,6 +1247,13 @@ export const setores: Setor[] = [
       { pilar: 3, texto: 'Existe um comitê de gestão periódico com indicadores padronizados?' },
       { pilar: 3, texto: 'O comercial sabe a margem de contribuição por plano e unidade?' },
     ],
+    secaoIdentificacao: buildSecaoIdentificacao([
+      'Musculação',
+      'Estúdio',
+      'CrossFit',
+      'Pilates',
+      'Natação',
+    ]),
     secaoPerfil: secaoPerfilAcademias,
     secaoInovacao: secaoInovacaoAcademias,
   },
@@ -1083,14 +1269,16 @@ export function getPerguntasPorPilar(setor: Setor, pilar: 1 | 2 | 3): PerguntaSe
 
 // ============================================================
 // Steps dinâmicos do questionário (ordem de exibição)
+// Identificação → Perfil → P1 → P2 → P3 → Hackman → Buffett →
+//   Expectativas → Inovação → Próximos Passos
 // ============================================================
 
 export type TipoStep =
+  | 'identificacao'
   | 'perfil'
   | 'pilar'
   | 'hackman'
   | 'buffett'
-  | 'runway'
   | 'expectativas'
   | 'inovacao'
   | 'proximos-passos'
@@ -1105,11 +1293,11 @@ export interface StepDescriptor {
 }
 
 export const tituloSecao: Record<TipoStep, string> = {
+  identificacao: 'Identificação da Empresa',
   perfil: 'Seção 1 — Perfil da Empresa e Contexto',
   pilar: '', // preenchido dinamicamente
   hackman: 'Seção 5 — Hackman',
   buffett: 'Seção 6 — Buffett',
-  runway: 'Seção 6.6 — Runway 12 meses',
   expectativas: 'Seção 7 — Expectativas e Ambição',
   inovacao: 'Seção 8 — Inovação e Tecnologia',
   'proximos-passos': 'Seção 9 — Próximos Passos',
@@ -1117,6 +1305,13 @@ export const tituloSecao: Record<TipoStep, string> = {
 
 export function getStepsDoSetor(setor: Setor): StepDescriptor[] {
   const steps: StepDescriptor[] = [
+    {
+      key: 'identificacao',
+      titulo: tituloSecao.identificacao,
+      descricao: 'Dados cadastrais da empresa para o diagnóstico.',
+      tipo: 'identificacao',
+      perguntas: setor.secaoIdentificacao,
+    },
     {
       key: 'perfil',
       titulo: tituloSecao.perfil,
@@ -1148,18 +1343,8 @@ export function getStepsDoSetor(setor: Setor): StepDescriptor[] {
     titulo: tituloSecao.buffett,
     descricao: 'Lente de Buffett — saúde financeira e Moat.',
     tipo: 'buffett',
-    perguntas: secaoBuffett,
+    perguntas: setor.secaoBuffett ?? secaoBuffett,
   })
-
-  if (setor.secaoRunway) {
-    steps.push({
-      key: 'runway',
-      titulo: tituloSecao.runway,
-      descricao: 'Exclusivo para Tecnologia/Startups.',
-      tipo: 'runway',
-      perguntas: setor.secaoRunway,
-    })
-  }
 
   steps.push({
     key: 'expectativas',
