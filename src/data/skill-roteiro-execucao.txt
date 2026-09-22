@@ -1,0 +1,75 @@
+JBP GESTÃO MASTER V7.2
+SKILL: ROTEIRO DE EXECUÇÃO (13 PROMPTS FIXOS E AUTOMAÇÃO)
+21 de setembro de 2026
+DOCUMENTO OPERACIONAL EXCLUSIVO — SKILL SEPARADA DO SYSTEM PROMPT
+
+1. VISÃO GERAL E DIRETRIZES DA SKILL
+Esta Skill contém a automação operacional completa e os 13 Prompts Fixos sequenciais para condução do processo consultivo C-Level no JBP Gestão Master V7.2. Ela é uma entidade própria, separada do System Prompt, assegurando que o agente siga rigorosamente o fluxo de fases sem atropelos.
+
+REGRAS DE OURO DA AUTOMAÇÃO:
+1. Avanço Estritamente Controlado: Nenhuma fase inicia sem o comando explícito de avanço emitido pelo usuário/consultor.
+2. Frase de Fechamento Obrigatória: Todas as respostas intermediárias devem ser concluídas rigorosamente com: "Aguardo seu comando."
+3. Documentos Internos Obrigatórios: As análises e entregáveis devem ser gerados em formato de "Documento Interno", contendo cabeçalho executivo, escopo, premissas, metodologia e anexos tabulares.
+4. Anexos Tabulares Obrigatórios (A a G):
+   ● Anexo A: Mapa Estratégico e Balanced Scorecard (BSC)
+   ● Anexo B: Matriz EREC / ERRC Setorial
+   ● Anexo C: Curva de Valor Comparativa
+   ● Anexo D: Business Model Canvas (As Is e To Be)
+   ● Anexo E: Matriz de OKRs Estratégicos e Táticos
+   ● Anexo F: Roadmap Faseado de Implementação (Curto, Médio e Longo Prazo)
+   ● Anexo G: Calendário de Rituais de Gestão e Governança
+5. Auditoria de Qualidade e Conformidade: Margem de tolerância a discrepâncias analíticas (SLA) ≤ 2%, com zero inferência setorial não validada por dados fornecidos.
+
+2. OS 13 PROMPTS FIXOS SEQUENCIAIS
+
+PROMPT 1 (P1) — Carga do Dossiê JSON e Reconhecimento
+Comando: "Carregar dados de entrada do cliente a partir do Dossiê JSON estruturado."
+Ação do Expert: Fazer a leitura dos dados cadastrais, respostas dos 3 Pilares e seções complementares do questionário setorial. Confirmar o setor econômico do cliente dentre os 12 disponíveis, listar as principais dores declaradas e sintetizar o contexto inicial. Concluir com: "Aguardo seu comando."
+
+PROMPT 2 (P2) — Fase 1: Diagnóstico Profundo
+Comando: "Executar Fase 1: Diagnóstico Profundo."
+Ação do Expert: Aplicar as lentes de Micro-epifanias, 5 Forças de Porter e Canvas As Is. Quantificar vazamentos operacionais e financeiros. Apresentar o Diagnóstico Crítico preliminar. Concluir com: "Aguardo seu comando."
+
+PROMPT 3 (P3) — Bloco CTA Isca e Devolutiva Executiva (45 minutos)
+Comando: "Gerar Bloco CTA e estrutura da Devolutiva Executiva de 45 minutos."
+Ação do Expert: Estruturar o roteiro da sessão devolutiva (isca), apresentando o Heat Map das 8 áreas estratégicas, expondo as causas-raiz identificadas sem entregar tarefas executáveis (5W2H) e preparando o terreno para conversão na Escada de Valor. Concluir com: "Aguardo seu comando."
+
+PROMPT 4 (P4) — Portão de Conversão (Gatekeeper)
+Comando: "O cliente assinou [MODALIDADE]." (Onde [MODALIDADE] = MaaS, Híbrido ou CaaS).
+Ação do Expert: Registrar a formalização do contrato na modalidade indicada. Ajustar a profundidade da entrega conforme o nível contratado e liberar a continuidade das fases profundas da consultoria (Fases 2 a 8). Concluir com: "Aguardo seu comando."
+
+PROMPT 5 (P5) — Fase 2: Foresight Estratégico
+Comando: "Executar Fase 2: Foresight Estratégico."
+Ação do Expert: Aplicar STEEP/PESTEL, Cone dos Futuros, Cenários 2x2 e Backcasting a partir do futuro preferível. Identificar early warning signals e desenhar a SWOT dinâmica. Concluir com: "Aguardo seu comando."
+
+PROMPT 6 (P6) — Fase 3: Estratégia e Diferenciação
+Comando: "Executar Fase 3: Estratégia e Diferenciação."
+Ação do Expert: Desenhar o Canvas To Be (Inovação de Valor), aplicar a Matriz EREC para o setor específico e construir a Curva de Valor comparativa contra concorrentes diretos e substitutos. Concluir com: "Aguardo seu comando."
+
+PROMPT 7 (P7) — Fase 4: Capacidade e Design Organizacional
+Comando: "Executar Fase 4: Capacidade e Design Organizacional."
+Ação do Expert: Avaliar o time sob a Lente de Hackman (5 condições). Classificar líderes em Tiers A/B/C. Mapear gaps críticos e estruturar plano de recrutamento ou realocação. Concluir com: "Aguardo seu comando."
+
+PROMPT 8 (P8) — Fase 5: Execução e Roadmap
+Comando: "Executar Fase 5: Execução e Roadmap."
+Ação do Expert: Aplicar a Regra Camaleão (Agile vs. Waterfall). Desdobrar a estratégia em Hoshin Kanri e OKRs trimestrais. Estabelecer o calendário de rituais (Daily, Weekly, Monthly). Concluir com: "Aguardo seu comando."
+
+PROMPT 9 (P9) — Fase 6: Validação Financeira e Alocação
+Comando: "Executar Fase 6: Validação Financeira e Alocação."
+Ação do Expert: Rodar o Motor Determinístico (DRE projetada, Fluxo de Caixa Livre e Valuation FCD + Gordon com desaceleração linear). Aplicar o WACC por estágio (Pré-Seed 4,5% / Seed 3,5% / Série A 2,5% + Selic 13,75% + Risco Brasil 4,50%). Rodar a Lente de Buffett e análise de sensibilidade. Em caso de Trading, aplicar a DRE de 15 linhas e avaliar risco CBS/IBS sem incentivos estaduais. Concluir com: "Aguardo seu comando."
+
+PROMPT 10 (P10) — Fase 7: Governança e Liderança
+Comando: "Executar Fase 7: Governança e Liderança."
+Ação do Expert: Desenhar a arquitetura de governança PME em 2 etapas (Conselho Consultivo até 5 membros → Conselho de Administração 7 membros com ≥50% independentes). Estruturar plano de sucessão top 10 com readiness score e código de conduta. Concluir com: "Aguardo seu comando."
+
+PROMPT 11 (P11) — Fase 8: Inovação e Tecnologia
+Comando: "Executar Fase 8: Inovação e Tecnologia."
+Ação do Expert: Elaborar o roadmap de modernização tecnológica, avaliar uso de IA Generativa/RAG, automação de processos e mensurar o impacto no Moat competitivo. Concluir com: "Aguardo seu comando."
+
+PROMPT 12 (P12) — Bloco Solução Completo como Documento Interno
+Comando: "Consolidar o Bloco Solução Completo no formato de Documento Interno Oficial."
+Ação do Expert: Consolidar todas as 8 fases em um único Documento Executivo Formal, incluindo sumário executivo C-Level, tese de transformação, validações financeira e humana, e anexando integralmente os Anexos A a G em formato tabular. Concluir com: "Aguardo seu comando."
+
+PROMPT 13 (P13) — Auditoria de Conformidade e Encerramento
+Comando: "Executar Auditoria de Conformidade e Encerramento do Projeto."
+Ação do Expert: Auditar todas as tabelas e números com SLA de consistência ≤ 2%. Validar conformidade de Clean Text (zero citações acadêmicas). Confirmar que não houve inferência setorial externa aos 12 setores e ao dossiê. Emitir parecer de auditoria e termo de encerramento da intervenção estratégica. Concluir com: "Aguardo seu comando."

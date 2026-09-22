@@ -72,7 +72,7 @@ export default function Resultados() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Avaliação de Resultados</h1>
           <p className="text-muted-foreground mt-1">
-            V6.5 — Acompanhe sua jornada rumo a uma empresa autogerenciável.
+            V7.2 — Acompanhe sua jornada rumo a uma empresa autogerenciável.
           </p>
         </div>
 
@@ -106,7 +106,7 @@ export default function Resultados() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-primary" />
-              As 8 Fases da Metodologia V6.5
+              As 8 Fases da Metodologia V7.2
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -135,7 +135,7 @@ export default function Resultados() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Avaliação de Resultados</h1>
         <p className="text-muted-foreground mt-1">
-          JBP Gestão Master V 6.5 — Diagnóstico Executivo Estratégico
+          JBP Gestão Master V 7.2 — Diagnóstico Executivo Estratégico
         </p>
       </div>
 
@@ -180,7 +180,7 @@ export default function Resultados() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-primary" />
-              Solução Completa V6.5
+              Solução Completa V7.2
             </CardTitle>
             <CardDescription>Conteúdo premium desbloqueado para assinantes.</CardDescription>
           </CardHeader>

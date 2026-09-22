@@ -1,23 +1,21 @@
-// Base de Conhecimento V6.5 — Questionários Consolidados (10 setores)
-// Fonte: "Questionários_Consolidados_10_Setores_V6.5_19ago26"
+// Base de Conhecimento V7.2 — Questionários Consolidados (12 setores)
+// Fonte: "Questionários Consolidados 12 Setores V7.2 (18set26)"
 //
 // Estrutura completa do questionário, na ordem de exibição:
-//   Identificação da Empresa (6 campos, setorial apenas no Segmento)
+//   Identificação da Empresa (6-7 campos, setorial no Segmento e Modalidade)
 //   Seção 1 — Perfil da Empresa e Contexto (setorial: específica para os
-//             10 setores, extraída palavra por palavra do PDF)
+//             12 setores, extraída fielmente do V7.2)
 //   Pilar 1 — Prisão do Fundador
 //   Pilar 2 — Ineficiência Invisível
 //   Pilar 3 — Abismo Estratégia vs. Execução
 //   Seção 5 — Hackman (6 perguntas, iguais para todos os setores)
-//   Seção 6 — Buffett (6 perguntas; versão específica para Tecnologia/Startups,
-//             onde 6.6 = "reserva de capital (runway) para 12 meses")
+//   Seção 6 — Buffett (6 a 10 perguntas; Trading com 6.1 a 6.10;
+//             Tecnologia onde 6.6 = "reserva de capital (runway) para 12 meses")
 //   Seção 7 — Expectativas e Ambição (5 perguntas, iguais para todos)
-//   Seção 8 — Inovação e Tecnologia (7 perguntas, versão setorial fiel)
+//   Seção 8 — Inovação e Tecnologia (setorial, 7 a 9 perguntas)
 //   Seção 9 — Próximos Passos (4 campos + Documentação Adicional opcional)
 //
-// Os 3 Pilares são extraídos fielmente do PDF "Contexto Estratégico Global
-// 10 Setores V6.5". As Seções 1, 5, 6, 7, 8 e 9 e a Identificação da Empresa
-// são extraídas do PDF "Questionários Consolidados 10 Setores V6.5" (19ago26).
+// Os 3 Pilares cobrem os 12 setores do Contexto Estratégico Global V7.2.
 
 export interface PerguntaSetor {
   pilar: 1 | 2 | 3
@@ -58,6 +56,7 @@ export interface Setor {
   secaoPerfil: PerguntaSecao[] // Seção 1 (setorial)
   secaoBuffett?: PerguntaSecao[] // Seção 6 (override; default = secaoBuffett)
   secaoInovacao: PerguntaSecao[] // Seção 8 (setorial)
+  secaoProximosPassos?: PerguntaSecao[] // Seção 9 (override; default = secaoProximosPassos)
 }
 
 export const nomePilares = {
@@ -389,6 +388,29 @@ export const secaoProximosPassos: PerguntaSecao[] = [
   },
 ]
 
+// Documentação adicional específica para Trading
+export const secaoProximosPassosTrading: PerguntaSecao[] = [
+  {
+    texto: 'Você receberá um Diagnóstico Executivo com recomendações prioritárias para Trading.',
+    tipo: 'display',
+  },
+  { texto: 'Autoriza sessão de devolutiva de 45 min?', tipo: 'select', opcoes: simNaoOpcoes },
+  { texto: 'Formato de interesse:', tipo: 'select', opcoes: formatoInteresseOpcoes },
+  { texto: 'Responsável pelos documentos:', tipo: 'texto' },
+  {
+    texto: 'Documentação Adicional (Opcional):',
+    tipo: 'checkbox',
+    opcoes: [
+      'Balanço Patrimonial',
+      'DRE',
+      'Organograma',
+      'Relatórios de Vendas',
+      'Contratos de Câmbio',
+      'Planilha de Landed Cost',
+    ],
+  },
+]
+
 // ============================================================
 // Seção 8 — Inovação e Tecnologia (setorial, 7 perguntas cada)
 // Extraída fielmente do PDF V6.5 para cada um dos 10 setores.
@@ -566,6 +588,282 @@ const secaoInovacaoAcademias: PerguntaSecao[] = [
   },
   { texto: 'Nível de maturidade digital:', tipo: 'select', opcoes: maturidadeDigitalOpcoes },
   { texto: 'Quais as maiores barreiras para inovar na academia?', tipo: 'textarea' },
+]
+
+// --- SETOR 11: Comércio Internacional / Trading Company ---
+const secaoIdentificacaoTrading: PerguntaSecao[] = [
+  { texto: 'Razão Social:', tipo: 'texto' },
+  { texto: 'CNPJ:', tipo: 'texto' },
+  { texto: 'Data:', tipo: 'texto', placeholder: '//______' },
+  {
+    texto: 'Segmento:',
+    tipo: 'select',
+    opcoes: [
+      'Importação por Conta e Ordem',
+      'Importação por Encomenda',
+      'Trading Própria',
+      'Exportação de Commodities',
+      'Distribuição de Importados',
+      'Outro',
+    ],
+  },
+  {
+    texto: 'Modalidade de atuação principal:',
+    tipo: 'select',
+    opcoes: [
+      'Importação por Conta e Ordem',
+      'Importação por Encomenda',
+      'Trading Própria',
+      'Exportação de Commodities',
+      'Distribuição de Importados',
+    ],
+  },
+  { texto: 'Respondente:', tipo: 'texto' },
+  { texto: 'Cargo:', tipo: 'texto' },
+]
+
+const secaoPerfilTrading: PerguntaSecao[] = [
+  {
+    texto: '1.1 Qual o faturamento bruto anual aproximado (ou volume FOB/CIF movimentado)?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '1.2 Quantas unidades ou filiais a empresa possui (incluindo filiais em estados com incentivo fiscal)?',
+    tipo: 'numero',
+  },
+  {
+    texto: '1.3 Quantos colaboradores atuam na operação de Comex e administrativo?',
+    tipo: 'numero',
+  },
+  {
+    texto: '1.4 Há quantos anos a empresa opera e qual o crescimento de volume nos últimos 3 anos?',
+    tipo: 'texto',
+  },
+  { texto: '1.5 Estrutura de propriedade:', tipo: 'select', opcoes: propriedadePadraoOpcoes },
+  {
+    texto: '1.6 Regime tributário:',
+    tipo: 'select',
+    opcoes: ['Lucro Real', 'Lucro Presumido', 'Simples Nacional'],
+  },
+  {
+    texto: '1.7 Principais origens de importação e destinos de exportação (países/rotas)?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '1.8 Possui habilitação Radar/Siscomex em qual modalidade (Expressa, Limitada, Ilimitada) e certificação OEA?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '1.9 Qual o percentual de repasse dos incentivos fiscais estaduais para os clientes na precificação final?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '1.10 Qual a proporção da receita bruta advinda de importação por Encomenda vs. Conta e Ordem?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '1.11 A empresa mantém matriz ou filial no estado concessor do benefício com substância econômica real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto:
+      '1.12 Possui política formal de hedge cambial para travar variação de moeda e frete internacional?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto:
+      '1.13 Qual o índice de parametrização em Canal Verde no desembaraço aduaneiro nos últimos 12 meses?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '1.14 Como a empresa está se preparando para a transição da Reforma Tributária (CBS/IBS 2027-2033)?',
+    tipo: 'textarea',
+  },
+]
+
+const secaoBuffettTrading: PerguntaSecao[] = [
+  {
+    texto: '6.1 Qual a margem EBITDA atual aproximada (desconsiderando incentivos fiscais)?',
+    tipo: 'texto',
+  },
+  { texto: '6.2 Qual o nível de endividamento atual (Dívida Líquida / EBITDA)?', tipo: 'texto' },
+  {
+    texto: '6.3 Qual o prazo médio de recebimento da carteira de importadores/clientes?',
+    tipo: 'texto',
+  },
+  { texto: '6.4 Qual o índice de inadimplência da carteira de clientes?', tipo: 'texto' },
+  {
+    texto: '6.5 A empresa fecha DRE gerencial mensal até o 10º dia útil segregando operações?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '6.6 Possui reserva de capital de giro livre para 3 meses de operação?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '6.7 Qual o limite total de linhas de crédito bancário de câmbio (ACC/ACE) ativas?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '6.8 Qual o volume financeiro médio exposto a oscilação cambial sem proteção de derivativos (hedge)?',
+    tipo: 'texto',
+  },
+  {
+    texto:
+      '6.9 Qual a margem líquida da trading caso os benefícios de ICMS sejam reduzidos em 50%?',
+    tipo: 'texto',
+  },
+  {
+    texto: '6.10 Possui provisão financeira para riscos de demurrage e contingências aduaneiras?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+]
+
+const secaoInovacaoTrading: PerguntaSecao[] = [
+  {
+    texto: '8.1 Utiliza ERP especialista em Comex integrado ao Siscomex e financeiro? Qual?',
+    tipo: 'texto',
+  },
+  {
+    texto: '8.2 Seus sistemas operam em nuvem com alta disponibilidade?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '8.3 Acompanha dashboards de Landed Cost, demurrage e câmbio em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '8.4 Utiliza automação para consulta de status de DI/DU-E e rastreio de cargas?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '8.5 Utiliza IA para conferência documental (BL, Commercial Invoice, Packing List)?',
+    tipo: 'texto',
+  },
+  { texto: '8.6 Quais processos aduaneiros e cambiais já são automatizados?', tipo: 'textarea' },
+  {
+    texto: '8.7 Nível de maturidade digital da trading:',
+    tipo: 'select',
+    opcoes: maturidadeDigitalOpcoes,
+  },
+  {
+    texto: '8.8 Possui portal do cliente para acompanhamento do desembaraço em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '8.9 Quais as maiores barreiras tecnológicas para integração da cadeia de suprimentos?',
+    tipo: 'textarea',
+  },
+]
+
+// --- SETOR 12: Facilities e Serviços Terceirizados ---
+const secaoIdentificacaoFacilities: PerguntaSecao[] = buildSecaoIdentificacao([
+  'Limpeza e Conservação',
+  'Segurança Patrimonial',
+  'Manutenção Predial e Industrial',
+  'Portaria e Recepção',
+  'Gestão Integrada de Facilities (IFM)',
+])
+
+const secaoPerfilFacilities: PerguntaSecao[] = [
+  { texto: '1.1 Qual o faturamento anual bruto aproximado da empresa?', tipo: 'texto' },
+  { texto: '1.2 Quantos postos de trabalho / contratos ativos a empresa mantém?', tipo: 'numero' },
+  { texto: '1.3 Quantos colaboradores terceirizados estão alocados em campo?', tipo: 'numero' },
+  {
+    texto:
+      '1.4 Qual a margem de lucro operacional média por contrato e o percentual de contratos deficitários?',
+    tipo: 'texto',
+  },
+  {
+    texto: '1.5 Qual o índice médio mensal de turnover e de absenteísmo (faltas/atestados)?',
+    tipo: 'texto',
+  },
+  {
+    texto: '1.6 Qual o SLA médio acordado para substituição de faltas em postos críticos?',
+    tipo: 'texto',
+  },
+  {
+    texto: '1.7 Estrutura de propriedade da empresa:',
+    tipo: 'select',
+    opcoes: propriedadePadraoOpcoes,
+  },
+  {
+    texto: '1.8 Regime tributário e histórico de contingências trabalhistas nos últimos 3 anos:',
+    tipo: 'select',
+    opcoes: regimeTributarioSimplesOptions,
+  },
+]
+
+const secaoBuffettFacilities: PerguntaSecao[] = [
+  { texto: '6.1 Qual a margem EBITDA atual aproximada?', tipo: 'texto' },
+  { texto: '6.2 Qual o nível de endividamento atual (Dívida Líquida / EBITDA)?', tipo: 'texto' },
+  {
+    texto: '6.3 Qual o prazo médio de recebimento das faturas de clientes contratantes?',
+    tipo: 'texto',
+  },
+  {
+    texto: '6.4 Qual o índice de inadimplência e glosas de faturamento na carteira?',
+    tipo: 'texto',
+  },
+  {
+    texto: '6.5 A empresa fecha DRE gerencial mensal por contrato até o 10º dia útil?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '6.6 Possui reserva de capital de giro para honrar 2 a 3 folhas salariais completas?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+]
+
+const secaoInovacaoFacilities: PerguntaSecao[] = [
+  { texto: '8.1 Utiliza ERP especialista em facilities/escala de plantão? Qual?', tipo: 'texto' },
+  {
+    texto: '8.2 Utiliza sistema de ponto digital mobile ou biometria facial com geolocalização?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto:
+      '8.3 Acompanha dashboards de absenteísmo, horas extras e margem por contrato em tempo real?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '8.4 Utiliza aplicativo de supervisão e auditoria de postos com checklist digital?',
+    tipo: 'select',
+    opcoes: simNaoParcialmenteOpcoes,
+  },
+  {
+    texto: '8.5 Utiliza automação ou IA para redimensionamento de escalas e substituição rápida?',
+    tipo: 'texto',
+  },
+  {
+    texto: '8.6 Nível de maturidade digital da operação de facilities:',
+    tipo: 'select',
+    opcoes: maturidadeDigitalOpcoes,
+  },
+  {
+    texto: '8.7 Quais as maiores barreiras tecnológicas para digitalizar os postos de trabalho?',
+    tipo: 'textarea',
+  },
 ]
 
 export const setores: Setor[] = [
@@ -1257,6 +1555,167 @@ export const setores: Setor[] = [
     secaoPerfil: secaoPerfilAcademias,
     secaoInovacao: secaoInovacaoAcademias,
   },
+  {
+    id: 'trading',
+    nome: 'Comércio Internacional / Trading Company',
+    slug: 'comercio-internacional-trading',
+    segmentos: [
+      'Importação por Conta e Ordem',
+      'Importação por Encomenda',
+      'Trading Própria',
+      'Exportação de Commodities',
+      'Distribuição de Importados',
+    ],
+    microEpifanias: [
+      'Descasamento de hedge cambial',
+      'Custos ocultos de landed cost',
+      'Sobrestadia de contêineres (demurrage)',
+      'Exposição ao fim de incentivos estaduais (Reforma Tributária 2027-2033)',
+      'Glosa e parametrização aduaneira no Siscomex',
+    ],
+    perguntas: [
+      {
+        pilar: 1,
+        texto:
+          'Qual o volume de operações de câmbio e fechamentos cambiais que dependem da sua aprovação direta no dia a dia?',
+      },
+      {
+        pilar: 1,
+        texto:
+          'Quantas negociações com fornecedores internacionais ou tradings globais passam exclusivamente por você?',
+      },
+      {
+        pilar: 1,
+        texto:
+          'Se você se ausentar por 30 dias em oscilação cambial abrupta, sua equipe tem alçada para travar hedge e margem?',
+      },
+      {
+        pilar: 1,
+        texto:
+          'O relacionamento bancário e os limites de crédito para adiantamento de câmbio (ACC/ACE) dependem do seu aval?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Qual o custo anual incorrido com demurrage (sobrestadia de contêineres) e armazenagem extraordinária?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'A empresa possui controle milimétrico do Landed Cost efetivo por SKU/contêiner ou trabalha com estimativas médias?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Qual o impacto no caixa do descasamento temporal entre nacionalização e recebimento das duplicatas?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Quanto da margem provém de incentivos fiscais estaduais transitórios que serão extintos na Reforma Tributária?',
+      },
+      {
+        pilar: 3,
+        texto:
+          'A equipe comercial calcula rentabilidade segregando Encomenda vs. Conta e Ordem antes de emitir propostas?',
+      },
+      {
+        pilar: 3,
+        texto:
+          'Qual a velocidade de resposta entre cotação de frete internacional e fechamento de contrato com cliente?',
+      },
+      {
+        pilar: 3,
+        texto:
+          'Existe auditoria permanente de compliance aduaneiro e parametrização fiscal (canal verde/vermelho Siscomex)?',
+      },
+    ],
+    secaoIdentificacao: secaoIdentificacaoTrading,
+    secaoPerfil: secaoPerfilTrading,
+    secaoBuffett: secaoBuffettTrading,
+    secaoInovacao: secaoInovacaoTrading,
+    secaoProximosPassos: secaoProximosPassosTrading,
+  },
+  {
+    id: 'facilities',
+    nome: 'Facilities e Serviços Terceirizados',
+    slug: 'facilities-servicos-terceirizados',
+    segmentos: [
+      'Limpeza e Conservação',
+      'Segurança Patrimonial',
+      'Manutenção Predial e Industrial',
+      'Portaria e Recepção',
+      'Gestão Integrada de Facilities (IFM)',
+    ],
+    microEpifanias: [
+      'Margem negativa oculta por contrato por horas extras e absenteísmo',
+      'Passivo trabalhista invisível de escalas e intervalos',
+      'Multas e glosas por quebra de SLA contratual',
+      'Custo oculto do turnover na base operacional',
+      'Desperdício de insumos e equipamentos nos postos de clientes',
+    ],
+    perguntas: [
+      {
+        pilar: 1,
+        texto:
+          'Quantas vezes por semana você precisa intervir pessoalmente em clientes por falha na cobertura de postos?',
+      },
+      {
+        pilar: 1,
+        texto:
+          'A alocação e reposição de profissionais em postos depende da sua aprovação ou intervenção direta?',
+      },
+      {
+        pilar: 1,
+        texto:
+          'Se você tirar 30 dias de férias, a empresa tem autonomia para precificar e participar de grandes concorrências?',
+      },
+      {
+        pilar: 1,
+        texto:
+          'As negociações de reajuste anual e repasse de dissídio dependem do seu relacionamento pessoal com clientes?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Você conhece a margem de contribuição líquida exata de cada contrato ativo após horas extras e absenteísmo?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Quanto a empresa gasta mensalmente com horas extras causadas exclusivamente por faltas e atrasos?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Qual a provisão financeira real para contingências trabalhistas decorrentes de escalas e intervalos?',
+      },
+      {
+        pilar: 2,
+        texto:
+          'Qual o custo mensal invisível com turnover, exames admissionais/demissionais, treinamentos e uniformes?',
+      },
+      {
+        pilar: 3,
+        texto:
+          'Qual o índice de cumprimento de SLA com os clientes e qual o volume de glosas contratuais no último ano?',
+      },
+      {
+        pilar: 3,
+        texto:
+          'Os supervisores e encarregados operacionais têm metas claras de margem e controle de consumo de insumos?',
+      },
+      {
+        pilar: 3,
+        texto:
+          'Existe acompanhamento digital de ponto eletrônico geolocalizado em tempo real integrado ao faturamento?',
+      },
+    ],
+    secaoIdentificacao: secaoIdentificacaoFacilities,
+    secaoPerfil: secaoPerfilFacilities,
+    secaoBuffett: secaoBuffettFacilities,
+    secaoInovacao: secaoInovacaoFacilities,
+  },
 ]
 
 export function getSetorById(id: string): Setor | undefined {
@@ -1366,7 +1825,7 @@ export function getStepsDoSetor(setor: Setor): StepDescriptor[] {
     titulo: tituloSecao['proximos-passos'],
     descricao: 'Escada de Valor — MaaS / Híbrido / CaaS.',
     tipo: 'proximos-passos',
-    perguntas: secaoProximosPassos,
+    perguntas: setor.secaoProximosPassos ?? secaoProximosPassos,
   })
 
   return steps

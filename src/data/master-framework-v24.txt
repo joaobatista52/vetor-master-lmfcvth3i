@@ -1,0 +1,140 @@
+JBP ESTRUTURA
+MASTER FRAMEWORK CONSOLIDADO V2.4
+Áreas 1 a 8 + Apêndices A-F — JBP Gestão Master V7.2
+18 de setembro de 2026
+DOCUMENTO CONFIDENCIAL — USO INTERNO
+
+PARTE I — ÁREAS ESTRATÉGICAS 1 A 8
+
+1.1 ÁREA 1 — ESTRATÉGIA
+Script de Pensamento do Expert C-Level: O objetivo é mapear o mercado com precisão cirúrgica e definir um posicionamento disruptivo para capturar valor exponencial.
+Fase 1 — Diagnóstico (As Is):
+1. Business Model Canvas (As Is): Preenchimento de todos os 9 blocos para identificar vazamentos de valor e ineficiências estruturais.
+2. 5 Forças de Porter: Análise da rivalidade, novos entrantes, poder de fornecedores e clientes, e produtos substitutos.
+Fase 2 — Estratégia (To Be):
+3. Canvas To Be (Inovação de Valor): Redesenho projetando modelo de negócio superior.
+4. Estratégia do Oceano Azul: Matriz EREC/ERRC e Curva de Valor comparativa com foco nos 12 setores.
+Regras de Ouro: Clean Text (sem citações acadêmicas), ROI projetado > 30% a.a., Margem de Segurança > 50%.
+Estrutura de Output: Diagnóstico Crítico, Mapa de Oportunidades, Novo Modelo (Canvas To Be), Plano de Ação Imediato.
+
+1.2 ÁREA 2 — EXECUÇÃO E QUALIDADE
+Objetivo: Garantir a implementação da estratégia com excelência operacional.
+Regra Camaleão: Agile para incerteza/inovação; Waterfall/Lean para estabilidade e escala.
+Hoshin Kanri: Desdobramento vertical da estratégia em todos os níveis.
+OKRs: Objetivos ambiciosos e Key Results trimestrais.
+Rituais de Gestão: Daily Stand-ups (15 min), Weekly Reviews (1h) e Monthly Deep Dives (2h-4h).
+Output: Diagnóstico de Maturidade, Matriz de OKRs, Calendário de Rituais, Plano de Incentivos.
+
+1.3 ÁREA 3 — LIDERANÇA E GOVERNANÇA (ATUALIZADA V2.4)
+Objetivo: Estruturar liderança de alta performance, planos de sucessão e governança corporativa sólida para PMEs.
+Fase 5 — Liderança e Cultura:
+● Mapeamento de Tiers: Tier A (Alta Performance / Liderança Estratégica), Tier B (Potencial de Execução), Tier C (Gaps de Competência com plano de ação em 90 dias).
+● Cultura de Meritocracia e Accountability.
+Fase 6 — Governança Corporativa PME em 2 Etapas:
+● Etapa 1 — Conselho Consultivo: Composto por até 5 membros, focado em aconselhamento estratégico, abertura de portas, orientação do fundador e estruturação das primeiras rotinas formais de governança.
+● Etapa 2 — Conselho de Administração: Evolução natural com 7 membros, dos quais no mínimo 50% devem ser conselheiros independentes, com comitês de apoio (Auditoria/Finanças e Pessoas/Remuneração), estatuto formal e regras claras de votação.
+● Plano de Sucessão: Mapeamento detalhado das top 10 posições críticas da empresa, identificando até 3 candidatos sucessores por vaga e atribuindo um Readiness Score objetivo (prontidão imediata, 1 a 2 anos, 3 a 5 anos), com Protocolo de Família quando houver base societária familiar.
+● Compliance e ESG: Alinhamento regulatório, ético e socioambiental com tolerância zero para desvios.
+Output: Diagnóstico de Liderança, Desenho de Governança em 2 Etapas, Plano de Sucessão Top 10, Código de Conduta e Estatuto/Rituais de Conselho.
+
+1.4 ÁREA 4 — INOVAÇÃO E TECNOLOGIA
+Objetivo: Transformar tecnologia em vantagem competitiva absoluta e fortalecimento do Moat.
+Auditoria de Legados e Nuvem: Migração de sistemas legados e redução de débitos técnicos.
+BI e Cultura Data-Driven: Dashboards executivos em tempo real para apoio à tomada de decisão.
+IA Generativa e RAG: Utilização de Retrieval-Augmented Generation para preservação e consulta do conhecimento proprietário.
+Automação de Processos Cognitivos: Otimização de fluxos de trabalho operacionais e administrativos.
+Regras de Ouro: Toda tecnologia deve ampliar o Moat ou reduzir o custo marginal em > 50%. Regra Camaleão aplicada à maturidade técnica da organização.
+Output: Diagnóstico de Maturidade Digital, Roadmap de Transformação Digital, Plano de IA e Automação, Análise de ROI no Moat.
+
+1.5 ÁREA 5 — MARKETING E VENDAS
+Foco: Construção de uma Máquina de Vendas Previsível.
+● ICP (Ideal Customer Profile): Definição de perfil que concentra 80% da receita saudável com taxa de conversão superior.
+● Pirâmide de Chet Holmes: Foco estruturado no topo e meio de funil, educando o mercado sobre os custos da ineficiência.
+● Operação SDR/CRM: Metas estruturadas de prospecção diária, gestão rigorosa de funil visual em 5 estágios e SLAs entre marketing e vendas.
+● Eficiência de Aquisição: Relação LTV/CAC > 4:1 com Payback inferior a 12 meses.
+● Upsell Estruturado: Cronograma contínuo de expansão de contas com meta de 30% de taxa de upsell anual.
+
+1.6 ÁREA 6 — FINANÇAS E ECONOMIA (ATUALIZADA V2.4)
+Foco: Engenharia Financeira, Proteção de Capital e Criação de Valor Intrínseco.
+Motor Determinístico (Embutido):
+● DRE Geral: Receita Bruta → Deduções → Receita Líquida → CPV → Margem Bruta → Custos Variáveis → Margem de Contribuição → OPEX (SG&A + P&D/R&D + Outros Custos Diretos) → EBITDA → D&A → EBIT → Resultado Financeiro Líquido → EBT → IR/CSLL → Lucro Líquido.
+
+SUBITEM 1.6.A — DRE INSTITUCIONAL TRADING / COMÉRCIO INTERNACIONAL (15 LINHAS):
+Para o setor de Comércio Internacional / Trading Company, adota-se a DRE institucional obrigatória estruturada em 15 linhas:
+1. Receita Bruta de Importação/Exportação (segregando formalmente operações por Encomenda vs. Conta e Ordem)
+2. (-) Deduções sobre a Receita Bruta (Alíquotas e deduções fixadas: Ano 1 = 6%, Ano 2 = 16%, Ano 3 em diante = 13%)
+3. (=) Receita Líquida Operacional
+4. (-) Custos Operacionais Diretos / CPV (Landed Cost: valor aduaneiro CIF, frete internacional marítimo/aéreo, seguro de carga internacional, taxa de armazenagem portuária/aeroportuária, tarifas portuárias de capatazia e custos aduaneiros diretos)
+5. (=) Margem Bruta de Comercialização
+6. (-) Custos Variáveis Comerciais e Operacionais (comissões de intermediação comercial, tarifas bancárias de fechamento de câmbio, seguros de transporte em território nacional)
+7. (=) Margem de Contribuição Comercial
+8. (-) OPEX Total (Despesas Administrativas, Equipe Comercial de Comex, P&D em Plataformas de Rastreabilidade e Outros Custos Diretos)
+9. (=) EBITDA Operacional
+10. (-) Depreciação e Amortização (D&A)
+11. (=) EBIT (Resultado Operacional antes do Financeiro)
+12. (+/-) Variação Cambial e Resultado Financeiro Líquido (ganhos/perdas em derivativos cambiais de hedge, variações ativas e passivas em contratos de importação/exportação)
+13. (=) EBT (Lucro antes dos Tributos sobre a Renda)
+14. (-) IR/CSLL
+15. (=) Lucro Líquido do Exercício
+
+VEDAÇÃO E DIRETRIZ TRIBUTÁRIA CRÍTICA (SUBITEM 1.6.A):
+É terminantemente proibido projetar benefícios fiscais estaduais transitórios (TTD, Pró-Emprego, diferimento de ICMS em portos secos/estados incentivadores) como margem operacional própria perene ou diferencial competitivo estrutural. A consultoria deve obrigatoriamente realizar o stress test do modelo econômico sem tais incentivos, alertando o cliente para o cronograma de transição da Reforma Tributária Nacional (CBS/IBS entre 2027 e 2033) e focando a geração de margem na eficiência de landed cost, inteligência logística e prestação de serviços aduaneiros de alto valor.
+
+● Fluxo de Caixa Livre: EBITDA (-) IR/CSLL Efetivo (-) CAPEX (-) Δ Capital de Giro = FCF.
+● Valuation Determinístico: FCD em 3 fases — Y1-Y5 explícito, Y6-Y9 transição com desaceleração linear de taxa de crescimento para 5% a.a., Y10+ perpetuidade de Gordon (g=5%).
+● WACC Determinístico Parametrizado por Estágio:
+WACC = Selic (13,75%) + Prêmio Risco Brasil (4,50%) + Prêmio Risco por Estágio
+  - Estágio Pré-Seed: Prêmio 4,50% (WACC = 22,75%)
+  - Estágio Seed: Prêmio 3,50% (WACC = 21,75%)
+  - Estágio Série A / PME Madura: Prêmio 2,50% (WACC = 20,75%)
+
+Thresholds da Lente de Buffett:
+Margem EBITDA: Saudável >30% | Alerta 20-30% | Crítico <20%
+ROIC vs. WACC: Saudável >WACC+5% | Alerta WACC a +5% | Crítico <WACC
+Dívida Líquida / EBITDA: Saudável <2,0x | Alerta 2,0-3,0x | Crítico >3,0x
+Margem de Segurança: Saudável >50% | Alerta 30-50% | Crítico <30%
+LTV/CAC: Saudável >4:1 | Alerta 3:1 a 4:1 | Crítico <3:1
+Geração de Caixa Livre: Saudável FCF>0 Y2 | Alerta FCF>0 Y3 | Crítico FCF negativo Y3+
+ROE: Saudável >20% | Alerta 12-20% | Crítico <12%
+
+1.7 ÁREA 7 — GESTÃO DE RISCOS E COMPLIANCE
+Foco: Blindagem do Moat e Perenidade.
+Matriz de Calor: Riscos mapeados por Probabilidade × Impacto. Riscos em zona vermelha devem possuir plano de contenção obrigatório em até 90 dias.
+Compliance Contratual: Auditoria periódica de 100% dos contratos ativos, governança de LGPD e proteção de segredos comerciais via NDAs robustos.
+Tolerância Zero: Desvios éticos ou fraudes financeiras geram rescisão e destituição imediata.
+
+1.8 ÁREA 8 — FORESIGHT ESTRATÉGICO
+Objetivo: Antecipar disrupções e transformar incerteza em vantagem competitiva.
+Framework Prospectivo: STEEP/PESTEL → Cone dos Futuros → Roda de Futuros → Cenários 2x2 → Backcasting (do futuro preferível até as ações do presente) → SWOT Dinâmica e OKRs Flexíveis.
+
+PARTE II — APÊNDICES OPERACIONAIS
+
+APÊNDICE A — Lente de Buffett Aplicada
+Checklist detalhado por indicador de saúde financeira, análise de sensibilidade em 3 cenários (Base, Otimista e Pessimista) e filtro de margem de segurança.
+
+APÊNDICE B — Lente de Hackman Detalhada
+KPIs para as 5 condições (Time Real, Direção Convincente, Estrutura Facilitadora, Contexto de Suporte e Coaching Especializado).
+
+APÊNDICE C — Canvas Parametrizável por Porte
+Matriz Canvas detalhada para PME (até R$ 5 mi), Média Empresa (R$ 5 a 50 mi) e Grande Empresa (acima de R$ 50 mi).
+
+APÊNDICE D — EREC Matrix Expandida (12 Setores)
+Matriz Eliminar, Reduzir, Elevar, Criar parametrizada para os 12 setores:
+1. Saúde: Eliminar glosas não auditadas; Reduzir espera; Elevar precisão de contas; Criar telemedicina preditiva.
+2. Serviços: Eliminar horas não faturadas; Reduzir dependência do sócio; Elevar margem por cliente; Criar precificação por valor.
+3. Indústria: Eliminar refugo; Reduzir paradas não programadas; Elevar OEE; Criar IoT fabril e manutenção preditiva.
+4. Varejo: Eliminar ruptura de estoque; Reduzir quebras e devoluções; Elevar ticket médio; Criar precificação dinâmica e CRM.
+5. Agronegócio: Eliminar perdas na colheita; Reduzir custo/ha; Elevar produtividade por talhão; Criar agricultura de precisão.
+6. Tecnologia: Eliminar débito técnico e churn; Reduzir onboarding; Elevar NRR e LTV/CAC; Criar IA embutida.
+7. Construção Civil: Eliminar desperdício e retrabalho; Reduzir atrasos; Elevar precisão orçamentária; Criar BIM e Curva S digital.
+8. Transporte/Logística: Eliminar km vazios; Reduzir custo por km; Elevar índice OTIF; Criar roteirização preditiva por IA.
+9. Educação: Eliminar evasão; Reduzir inadimplência; Elevar retenção e margem/curso; Criar trilhas adaptativas com IA.
+10. Academias: Eliminar cancelamentos precoces; Reduzir ociosidade em vale; Elevar retenção semestral; Criar app inteligente e treinos orientados por dados.
+11. Comércio Internacional / Trading Company: Eliminar dependência de incentivos estaduais como única margem, demurrage e desproteção cambial; Reduzir tempo de desembaraço aduaneiro e custos de armazenagem portuária; Elevar índice de canal verde e acurácia de landed cost; Criar plataforma de visibilidade aduaneira door-to-door e contratos protegidos para a transição CBS/IBS.
+12. Facilities e Serviços Terceirizados: Eliminar postos descobertos e contratos deficitários; Reduzir absenteísmo, turnover e passivos trabalhistas; Elevar índice de renovação espontânea e cumprimento rigoroso de SLA; Criar aplicativo de fiscalização geolocalizada e painel compartilhado de SLA com o cliente.
+
+APÊNDICE E — Curva de Valor Setorial Expandida (12 Setores)
+Posicionamento estratégico do JBP Gestão Master V7.2 no espaço vazio entre Big Four (caras e lentas) e IAs Genéricas (superficiais e propensas a alucinações), cobrindo os fatores específicos dos 12 setores.
+
+APÊNDICE F — Protocolo de Validação de Foresight
+Metodologia de aplicação prática e validação contínua da Área 8 em campo.

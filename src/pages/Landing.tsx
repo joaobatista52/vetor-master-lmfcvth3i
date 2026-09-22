@@ -12,11 +12,11 @@ const howItWorks = [
   {
     num: '01',
     title: 'Questionário Setorial',
-    desc: 'Selecione seu setor (10 disponíveis) e responda ao Questionário Estrutural dos 3 Pilares.',
+    desc: 'Selecione seu setor (12 disponíveis) e responda ao Questionário Estrutural dos 3 Pilares.',
   },
   {
     num: '02',
-    title: 'Diagnóstico com IA V6.5',
+    title: 'Diagnóstico com IA V7.2',
     desc: 'Nosso Expert processa as 8 Fases e cruza seus dados com 138 obras da Biblioteca proprietária.',
   },
   {
@@ -50,7 +50,7 @@ export default function Landing() {
         <div className="container relative py-24 md:py-32">
           <div className="max-w-3xl">
             <Badge variant="secondary" className="mb-4 bg-white/10 text-white border-white/20">
-              <Sparkles className="w-3 h-3 mr-1" /> JBP Gestão Master V 6.5
+              <Sparkles className="w-3 h-3 mr-1" /> JBP Gestão Master V 7.2
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
               Supere a Prisão do Fundador e Escale sua Empresa
@@ -88,14 +88,14 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* 10 Setores Atendidos */}
+      {/* 12 Setores Atendidos */}
       <section className="py-20">
         <div className="container">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-3">
               <Layers className="w-3 h-3 mr-1" /> Bloco Setorial Parametrizável
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight">10 Setores Atendidos</h2>
+            <h2 className="text-3xl font-bold tracking-tight">12 Setores Atendidos</h2>
             <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
               Cada setor possui um Questionário Estrutural dos 3 Pilares — Prisão do Fundador,
               Ineficiência Invisível e Abismo Estratégia vs. Execução — com micro-epifanias
@@ -253,7 +253,7 @@ export default function Landing() {
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <Logo className="h-8" showText={false} />
           <p className="text-sm text-muted-foreground">
-            © 2026 Vetor Master. JBP Gestão Master V 6.5.
+            © 2026 Vetor Master. JBP Gestão Master V 7.2.
           </p>
         </div>
       </footer>

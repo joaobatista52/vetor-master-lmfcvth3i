@@ -45,7 +45,7 @@ import {
   type StepDescriptor,
 } from '@/data/setores-questionario'
 
-// V6.5 — Questionário Consolidado completo (10 setores).
+// V7.2 — Questionário Consolidado completo (12 setores).
 // Fluxo: Setor → Identificação da Empresa → Seção 1 (Perfil) → Pilar 1 →
 //   Pilar 2 → Pilar 3 → Seção 5 (Hackman) → Seção 6 (Buffett) → Seção 7
 //   (Expectativas) → Seção 8 (Inovação) → Seção 9 (Próximos Passos) → Revisão.
