@@ -109,8 +109,7 @@ export function AppSidebar() {
               variant={isCollapsed ? 'icon' : 'horizontal'}
               size={isCollapsed ? 'md' : 'sm'}
               showTagline={!isCollapsed}
-              showVersion={!isCollapsed}
-              versionText="V7.2"
+              showVersion={false}
               negative
             />
           </Link>

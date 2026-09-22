@@ -1,7 +1,7 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
-import logo5aUrl from '@/assets/logo-5a.svg'
-import logo5eUrl from '@/assets/logo-5e.svg'
+import logo5aPng from '@/assets/logo-5a-vetor-master-14jul26-25ac8.png'
+import logo5ePng from '@/assets/logo-5e-vetor-master-14jul26-04e42.png'
 
 /**
  * VetorSymbol:
@@ -29,7 +29,7 @@ export function VetorSymbol({
       aria-label="Símbolo Vetor Master"
     >
       <img
-        src={logo5aUrl}
+        src={logo5aPng}
         alt="Vetor Master"
         className={cn(
           'w-full h-full object-contain select-none',
@@ -55,9 +55,9 @@ export interface LogoProps {
 
 /**
  * Componente oficial de Logomarca VETOR MASTER
- * Utiliza diretamente os vetores SVG oficiais mestre:
- * - logo-5e.svg: Versão horizontal oficial (1536x864) com símbolo e tipografia MASTER
- * - logo-5a.svg: Versão quadrada oficial (2400x2400) para vertical / ícone
+ * Utiliza diretamente os PNGs oficiais mestre (Plano B aprovado e garantido em dev e produção):
+ * - logo-5e PNG: Versão horizontal oficial (1536x864) com símbolo e tipografia MASTER
+ * - logo-5a PNG: Versão quadrada oficial (2400x2400) para vertical / ícone
  */
 export function Logo({
   className,
@@ -83,7 +83,7 @@ export function Logo({
     return (
       <div className={cn('inline-flex items-center justify-center shrink-0', className)}>
         <img
-          src={logo5aUrl}
+          src={logo5aPng}
           alt="Vetor Master"
           width={iconPixelSize}
           height={iconPixelSize}
@@ -105,7 +105,7 @@ export function Logo({
       >
         <div className="relative flex items-center justify-center">
           <img
-            src={logo5aUrl}
+            src={logo5aPng}
             alt="VETOR MASTER"
             className="object-contain select-none transition-all"
             style={{ height: verticalHeight, width: 'auto' }}
@@ -143,7 +143,7 @@ export function Logo({
   return (
     <div className={cn('inline-flex items-center select-none shrink-0 gap-2', className)}>
       <img
-        src={logo5eUrl}
+        src={logo5ePng}
         alt="VETOR MASTER"
         className="object-contain select-none transition-all"
         style={{ height: horizontalHeight, width: 'auto' }}
