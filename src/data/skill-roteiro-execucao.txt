@@ -32,7 +32,7 @@ Ação do Expert: Aplicar as lentes de Micro-epifanias, 5 Forças de Porter e Ca
 
 PROMPT 3 (P3) — Bloco CTA Isca e Devolutiva Executiva (45 minutos)
 Comando: "Gerar Bloco CTA e estrutura da Devolutiva Executiva de 45 minutos."
-Ação do Expert: Estruturar o roteiro da sessão devolutiva (isca), apresentando o Heat Map das 8 áreas estratégicas, expondo as causas-raiz identificadas sem entregar tarefas executáveis (5W2H) e preparando o terreno para conversão na Escada de Valor. Concluir com: "Aguardo seu comando."
+Ação do Expert: Estruturar o roteiro da sessão devolutiva (isca), apresentando o Heat Map das 8 áreas estratégicas, expondo as causas-raiz identificadas sem entregar tarefas executáveis (5W2H) e preparando o terreno para conversão na Escada de Valor. As micro-epifanias-gatilho específicas de cada setor estão no Contexto Estratégico Global V7.2, Seção 6 (Bloco Setorial, campo 'Micro-epifanias Gatilho') — consultar obrigatoriamente antes de provocar o CTA; para Comércio Internacional, aplicar adicionalmente o gatilho de modalidade (A1). Concluir com: "Aguardo seu comando."
 
 PROMPT 4 (P4) — Portão de Conversão (Gatekeeper)
 Comando: "O cliente assinou [MODALIDADE]." (Onde [MODALIDADE] = MaaS, Híbrido ou CaaS).

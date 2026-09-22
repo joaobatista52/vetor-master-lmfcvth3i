@@ -1,4 +1,59 @@
-João Batista de Paula (JBP)
+/// <reference path="../pb_data/types.d.ts" />
+// 0034 — Onda 1.1: Micro-epifanias Gatilho (System Prompt §5 e Skill P3)
+migrate(
+  (app) => {
+    // -------------------------------------------------------------
+    // 1. Atualizar registro na coleção 'skills' (Roteiro de Execução)
+    // -------------------------------------------------------------
+    try {
+      const skillRec = app.findFirstRecordByData('skills', 'slug', 'roteiro-execucao-13-prompts')
+      skillRec.set(
+        'conteudo',
+        `JBP GESTÃO MASTER V7.2
+SKILL: ROTEIRO DE EXECUÇÃO (13 PROMPTS FIXOS E AUTOMAÇÃO)
+21 de setembro de 2026
+DOCUMENTO OPERACIONAL EXCLUSIVO — SKILL SEPARADA DO SYSTEM PROMPT
+
+REGRAS DE OURO DA AUTOMAÇÃO:
+1. Avanço Estritamente Controlado: Nenhuma fase inicia sem comando explícito de avanço do usuário.
+2. Frase de Fechamento Obrigatória: Concluir sempre com "Aguardo seu comando."
+3. Documentos Internos Obrigatórios: Respostas em formato executivo formal com premissas e anexos tabulares.
+4. Anexos Tabulares Obrigatórios (A a G): BSC, EREC, Curva de Valor, Canvas As Is/To Be, OKRs, Roadmap, Rituais.
+5. Auditoria de Qualidade: SLA <= 2%, zero inferência setorial externa aos 12 setores.
+
+13 PROMPTS FIXOS:
+P1: Carga do Dossiê JSON e Reconhecimento
+P2: Fase 1 - Diagnóstico Profundo
+P3: Bloco CTA Isca e Devolutiva Executiva (45 minutos) — As micro-epifanias-gatilho específicas de cada setor estão no Contexto Estratégico Global V7.2, Seção 6 (Bloco Setorial, campo 'Micro-epifanias Gatilho') — consultar obrigatoriamente antes de provocar o CTA; para Comércio Internacional, aplicar adicionalmente o gatilho de modalidade (A1).
+P4: Portão de Conversão ("O cliente assinou [MODALIDADE]")
+P5: Fase 2 - Foresight Estratégico
+P6: Fase 3 - Estratégia e Diferenciação (Matriz EREC e Curva de Valor)
+P7: Fase 4 - Capacidade e Design Organizacional (Lente de Hackman)
+P8: Fase 5 - Execução e Roadmap (Regra Camaleão, Hoshin Kanri, OKRs)
+P9: Fase 6 - Validação Financeira e Alocação (DRE, FCF, FCD+Gordon, WACC parametrizado)
+P10: Fase 7 - Governança e Liderança (Conselho Consultivo -> Cons. Administração)
+P11: Fase 8 - Inovação e Tecnologia (Cloud, BI, IA/RAG, Moat)
+P12: Bloco Solução Completo como Documento Interno (Consolidação com Anexos A-G)
+P13: Auditoria de Conformidade e Encerramento do Projeto`,
+      )
+      app.save(skillRec)
+    } catch (err) {
+      console.log('Erro ao atualizar skill roteiro-execucao-13-prompts: ' + err.message)
+    }
+
+    // -------------------------------------------------------------
+    // 2. Redefinir Agente 'jbp-gestao-master' com System Prompt V7.2 atualizado (Onda 1.1)
+    // -------------------------------------------------------------
+    try {
+      $ai.agents.delete(app, 'jbp-gestao-master')
+    } catch (_) {}
+
+    $ai.agents.define(app, {
+      slug: 'jbp-gestao-master',
+      name: 'JBP Gestão Master V7.2',
+      description:
+        'Consultor Estratégico Sênior C-Level especializado na metodologia JBP Gestão Master V7.2 (8 Fases sequenciais) para diagnóstico estratégico de PMEs em 12 setores econômicos, libertação da prisão do fundador e geração de valor exponencial.',
+      systemPrompt: `João Batista de Paula (JBP)
 SYSTEM PROMPT: JBP GESTÃO MASTER V 7.2
 Versão refinada para substituição imediata das versões anteriores
 21 de setembro de 2026
@@ -217,4 +272,58 @@ REGRAS DO RELATÓRIO:
 - Máximo 800 palavras, sempre em português.
 - Tom C-Level, consultivo, autoridade socrática.
 - Não inclua tarefas, passos ou instruções de "como fazer" (conteúdo premium).
-- O "Caminho Estratégico" deve terminar com uma frase que gere desejo pela solução completa.
+- O "Caminho Estratégico" deve terminar com uma frase que gere desejo pela solução completa.`,
+      tier: 'reasoning',
+      tools: [
+        { collection: 'frameworks', perms: { read: true, list: true }, actAs: 'admin' },
+        { collection: 'livros', perms: { read: true, list: true }, actAs: 'admin' },
+        { collection: 'mapeamento_dores', perms: { read: true, list: true }, actAs: 'admin' },
+        { collection: 'setores', perms: { read: true, list: true }, actAs: 'admin' },
+      ],
+      memory: [
+        {
+          type: 'text',
+          payload: {
+            text: "JBP Gestão Master V7.2: metodologia de diagnóstico estratégico para PMEs focada em libertar o fundador da 'prisão do fundador'. 12 Setores Econômicos integrados. As 8 Fases (State Machine): 1-Diagnóstico Profundo, 2-Foresight Estratégico, 3-Estratégia e Diferenciação, 4-Capacidade e Design Organizacional (Hackman), 5-Execução e Roadmap, 6-Validação Financeira e Alocação (Buffett), 7-Governança e Liderança (PME 2 etapas), 8-Inovação e Tecnologia. Motor Determinístico: DRE Geral e DRE Trading (15 linhas, vedação de incentivos fiscais como margem, deduções Y1 6% / Y2 16% / Y3+ 13%), Fluxo de Caixa, Valuation FCD + Gordon com desaceleração linear. WACC parametrizado por estágio (Pre-Seed 4,5% / Seed 3,5% / Série A 2,5%). Lentes transversais: Hackman (5 condições), Buffett (Moats), Governança. Escada de Valor: MaaS, Híbrido, CaaS. Clean Text obrigatório. Biblioteca V2.4 = 138 obras. O diagnóstico gratuito é isca (apenas dores + heat map); 5W2H, OKRs e análises financeiras completas são premium.",
+          },
+        },
+      ],
+    })
+  },
+  (app) => {
+    // Reverter conteúdo da skill para versão sem a linha
+    try {
+      const skillRec = app.findFirstRecordByData('skills', 'slug', 'roteiro-execucao-13-prompts')
+      skillRec.set(
+        'conteudo',
+        `JBP GESTÃO MASTER V7.2
+SKILL: ROTEIRO DE EXECUÇÃO (13 PROMPTS FIXOS E AUTOMAÇÃO)
+21 de setembro de 2026
+DOCUMENTO OPERACIONAL EXCLUSIVO — SKILL SEPARADA DO SYSTEM PROMPT
+
+REGRAS DE OURO DA AUTOMAÇÃO:
+1. Avanço Estritamente Controlado: Nenhuma fase inicia sem comando explícito de avanço do usuário.
+2. Frase de Fechamento Obrigatória: Concluir sempre com "Aguardo seu comando."
+3. Documentos Internos Obrigatórios: Respostas em formato executivo formal com premissas e anexos tabulares.
+4. Anexos Tabulares Obrigatórios (A a G): BSC, EREC, Curva de Valor, Canvas As Is/To Be, OKRs, Roadmap, Rituais.
+5. Auditoria de Qualidade: SLA <= 2%, zero inferência setorial externa aos 12 setores.
+
+13 PROMPTS FIXOS:
+P1: Carga do Dossiê JSON e Reconhecimento
+P2: Fase 1 - Diagnóstico Profundo
+P3: Bloco CTA Isca e Devolutiva Executiva (45 minutos)
+P4: Portão de Conversão ("O cliente assinou [MODALIDADE]")
+P5: Fase 2 - Foresight Estratégico
+P6: Fase 3 - Estratégia e Diferenciação (Matriz EREC e Curva de Valor)
+P7: Fase 4 - Capacidade e Design Organizacional (Lente de Hackman)
+P8: Fase 5 - Execução e Roadmap (Regra Camaleão, Hoshin Kanri, OKRs)
+P9: Fase 6 - Validação Financeira e Alocação (DRE, FCF, FCD+Gordon, WACC parametrizado)
+P10: Fase 7 - Governança e Liderança (Conselho Consultivo -> Cons. Administração)
+P11: Fase 8 - Inovação e Tecnologia (Cloud, BI, IA/RAG, Moat)
+P12: Bloco Solução Completo como Documento Interno (Consolidação com Anexos A-G)
+P13: Auditoria de Conformidade e Encerramento do Projeto`,
+      )
+      app.save(skillRec)
+    } catch (_) {}
+  },
+)
