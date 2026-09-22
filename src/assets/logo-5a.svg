@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 2400 2400" width="2400" height="2400" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Filtro para remover fundo claro/branco (#fefefe / #ffffff) e torná-lo transparente -->
+    <filter id="remove-white-bg-5a" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+      <!-- Pega a imagem base -->
+      <feImage xlink:href="/src/assets/logo-5a-vetor-master-14jul26-25ac8.png" result="source" width="2400" height="2400" />
+      <!-- Extrai a luminância para gerar máscara alfa inversa de fundo claro -->
+      <feColorMatrix in="source" type="matrix"
+        values="0.333 0.333 0.333 0 0
+                0.333 0.333 0.333 0 0
+                0.333 0.333 0.333 0 0
+                -2.0  -2.0  -2.0  0 5.6"
+        result="alpha-mask" />
+      <feComposite in="source" in2="alpha-mask" operator="in" />
+    </filter>
+
+    <!-- Versão vetorial pura de backup e renderização nítida -->
+    <g id="master-symbol">
+      <!-- Círculo e Vetores Principais da Marca Vetor Master -->
+      <!-- Cores Oficiais: Azul Estratégico #0066CC, Verde Crescimento #22B14C, Laranja Decisão #FF9900 -->
+      <g transform="translate(1200, 1100)">
+        <!-- Nó central / Hexágono convergente -->
+        <circle cx="0" cy="0" r="140" fill="#0066CC" />
+        <!-- Vetor Ascendente Norte-Nordeste (Crescimento) -->
+        <path d="M 0,-40 L 420,-460 L 320,-460 L 460,-600 L 600,-460 L 500,-460 L 80,-20 Z" fill="#22B14C" />
+        <!-- Vetor Conector Leste (Conexão) -->
+        <path d="M 40,0 L 480,-60 L 480,-140 L 620,0 L 480,140 L 480,60 L 40,20 Z" fill="#0066CC" />
+        <!-- Vetor Alocação Sudeste / Base Estratégica -->
+        <path d="M 20,40 L 380,400 L 300,400 L 440,540 L 580,400 L 500,400 L 40,80 Z" fill="#0066CC" opacity="0.85" />
+        <!-- Vetor Direção Oeste / Liderança -->
+        <path d="M -40,-20 L -460,-240 L -460,-320 L -600,-180 L -460,-40 L -460,-120 L -40,0 Z" fill="#0066CC" />
+        <!-- Vetor Fundação Sudoeste / Governança -->
+        <path d="M -20,40 L -360,380 L -280,380 L -420,520 L -560,380 L -480,380 L -40,80 Z" fill="#FF9900" />
+      </g>
+    </g>
+  </defs>
+
+  <!-- Imagem oficial mestre com estilo limpo sem fundo claro -->
+  <g id="master-logo">
+    <image
+      href="/src/assets/logo-5a-vetor-master-14jul26-25ac8.png"
+      xlink:href="/src/assets/logo-5a-vetor-master-14jul26-25ac8.png"
+      x="0"
+      y="0"
+      width="2400"
+      height="2400"
+      style="mix-blend-mode: multiply;"
+    />
+  </g>
+</svg>

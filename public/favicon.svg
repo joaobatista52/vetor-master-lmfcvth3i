@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="vm-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0066CC" />
+      <stop offset="100%" stop-color="#004C99" />
+    </linearGradient>
+    <linearGradient id="vm-green" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22B14C" />
+      <stop offset="100%" stop-color="#2CD35C" />
+    </linearGradient>
+    <linearGradient id="vm-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9900" />
+      <stop offset="100%" stop-color="#E08800" />
+    </linearGradient>
+    <!-- Sombra sutil para destaque em qualquer fundo -->
+    <filter id="vm-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Fundo escuro corporativo arredondado opcional para alto contraste como app icon -->
+  <rect width="512" height="512" rx="112" fill="#1E293B" />
+
+  <g transform="translate(256, 256)" filter="url(#vm-shadow)">
+    <!-- Vetor Ascendente Norte-Nordeste (Verde Crescimento #22B14C) -->
+    <path d="M 0,-20 L 95,-115 L 75,-115 L 110,-155 L 145,-115 L 125,-115 L 20,-10 Z" fill="url(#vm-green)" />
+    
+    <!-- Vetor Leste Conexão (Azul Estratégico #0066CC) -->
+    <path d="M 15,0 L 115,-18 L 115,-38 L 155,0 L 115,38 L 115,18 L 15,6 Z" fill="url(#vm-blue)" />
+    
+    <!-- Vetor Sudeste Alocação / Base (Azul Escuro) -->
+    <path d="M 10,15 L 95,100 L 75,100 L 110,140 L 145,100 L 125,100 L 18,22 Z" fill="#0066CC" opacity="0.9" />
+
+    <!-- Vetor Sudoeste Governança / Solidez (Laranja Decisão #FF9900) -->
+    <path d="M -10,15 L -90,95 L -70,95 L -105,135 L -140,95 L -120,95 L -18,20 Z" fill="url(#vm-orange)" />
+
+    <!-- Vetor Oeste Direção / Liderança (Azul Estratégico #0066CC) -->
+    <path d="M -15,-6 L -115,-58 L -115,-78 L -155,-42 L -115,-6 L -115,-26 L -15,0 Z" fill="url(#vm-blue)" />
+
+    <!-- Nó Central Hexagonal / Centro Estratégico Determinístico -->
+    <circle cx="0" cy="0" r="38" fill="url(#vm-blue)" stroke="#FFFFFF" stroke-width="4" />
+    <circle cx="0" cy="0" r="16" fill="#22B14C" />
+  </g>
+</svg>

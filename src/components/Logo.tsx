@@ -13,27 +13,30 @@ import logo5eUrl from '@/assets/logo-5e.svg'
 export function VetorSymbol({
   className,
   monochromeNegative = false,
-  size = 40,
+  size = 48,
 }: {
   className?: string
   monochromeNegative?: boolean
   size?: number | string
 }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="100 400 1300 1300"
+    <div
       className={cn(
-        'shrink-0 select-none object-contain transition-all',
-        monochromeNegative && 'brightness-0 invert',
+        'shrink-0 select-none inline-flex items-center justify-center transition-all',
         className,
       )}
+      style={{ width: size, height: size }}
       aria-label="Símbolo Vetor Master"
     >
-      <use href={`${logo5aUrl}#master-logo`} xlinkHref={logo5aUrl} />
-      <image href={logo5aUrl} x="0" y="0" width="2400" height="2400" />
-    </svg>
+      <img
+        src={logo5aUrl}
+        alt="Vetor Master"
+        className={cn(
+          'w-full h-full object-contain select-none',
+          monochromeNegative && 'brightness-0 invert',
+        )}
+      />
+    </div>
   )
 }
 
@@ -68,10 +71,13 @@ export function Logo({
 }: LogoProps) {
   const effectiveVariant = !showText ? 'icon' : variant
 
-  // Dimensões proporcionais por tamanho
-  const iconPixelSize = size === 'sm' ? 28 : size === 'md' ? 36 : size === 'lg' ? 48 : 64
-  const horizontalHeight = size === 'sm' ? 34 : size === 'md' ? 44 : size === 'lg' ? 56 : 72
-  const verticalHeight = size === 'sm' ? 52 : size === 'md' ? 72 : size === 'lg' ? 96 : 130
+  // Dimensões proporcionais atualizadas:
+  // - horizontal: ~56–64px no padrão/sm e maior conforme escala
+  // - ícone: ~48px
+  // - vertical: maior no Login (xl: ~160-180px)
+  const iconPixelSize = size === 'sm' ? 40 : size === 'md' ? 48 : size === 'lg' ? 56 : 64
+  const horizontalHeight = size === 'sm' ? 56 : size === 'md' ? 64 : size === 'lg' ? 72 : 88
+  const verticalHeight = size === 'sm' ? 72 : size === 'md' ? 96 : size === 'lg' ? 128 : 170
 
   if (effectiveVariant === 'icon') {
     return (
@@ -81,10 +87,7 @@ export function Logo({
           alt="Vetor Master"
           width={iconPixelSize}
           height={iconPixelSize}
-          className={cn(
-            'shrink-0 object-contain select-none transition-all',
-            negative && 'brightness-0 invert',
-          )}
+          className="shrink-0 object-contain select-none transition-all"
           style={{ width: iconPixelSize, height: iconPixelSize }}
           loading="eager"
         />
@@ -104,10 +107,7 @@ export function Logo({
           <img
             src={logo5aUrl}
             alt="VETOR MASTER"
-            className={cn(
-              'object-contain select-none transition-all',
-              negative && 'brightness-0 invert',
-            )}
+            className="object-contain select-none transition-all"
             style={{ height: verticalHeight, width: 'auto' }}
             loading="eager"
           />
@@ -116,7 +116,7 @@ export function Logo({
               className={cn(
                 'absolute -bottom-1.5 right-0 text-[10px] font-bold tracking-tight px-1.5 py-0.5 rounded-[3px] shadow-sm',
                 negative
-                  ? 'bg-white/20 text-white border border-white/30'
+                  ? 'bg-[#0066CC] text-white border border-white/20'
                   : 'bg-[#0066CC]/10 text-[#0066CC] border border-[#0066CC]/20',
               )}
             >
@@ -127,8 +127,8 @@ export function Logo({
         {showTagline && (
           <span
             className={cn(
-              'text-[8px] md:text-[9px] tracking-[0.2em] uppercase mt-2 font-semibold',
-              negative ? 'text-white/80' : 'text-[#333333]',
+              'text-[9px] md:text-[10px] tracking-[0.2em] uppercase mt-2 font-semibold',
+              negative ? 'text-white/90' : 'text-[#333333]',
             )}
           >
             DIREÇÃO • CONEXÃO • CRESCIMENTO
@@ -139,16 +139,13 @@ export function Logo({
   }
 
   // Versão Horizontal (padrão para Header, Sidebar, Landing, etc.)
-  // Usa o vetor oficial logo-5e.svg (1536x864, formato master horizontal oficial)
+  // Exibe o logo COLORIDO sobre fundo claro ou escuro (sem brightness-0 invert)
   return (
-    <div className={cn('inline-flex items-center select-none shrink-0 gap-1.5', className)}>
+    <div className={cn('inline-flex items-center select-none shrink-0 gap-2', className)}>
       <img
         src={logo5eUrl}
         alt="VETOR MASTER"
-        className={cn(
-          'object-contain select-none transition-all',
-          negative && 'brightness-0 invert',
-        )}
+        className="object-contain select-none transition-all"
         style={{ height: horizontalHeight, width: 'auto' }}
         loading="eager"
       />
@@ -157,7 +154,7 @@ export function Logo({
           className={cn(
             'text-[9px] font-bold tracking-tight px-1.5 py-0.5 rounded-[3px] shrink-0 self-center',
             negative
-              ? 'bg-white/20 text-white border border-white/30'
+              ? 'bg-[#0066CC] text-white border border-white/20'
               : 'bg-[#0066CC]/10 text-[#0066CC] border border-[#0066CC]/20',
           )}
         >

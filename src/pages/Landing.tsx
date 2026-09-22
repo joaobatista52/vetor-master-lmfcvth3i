@@ -30,7 +30,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b border-[#E0E0E0] bg-white/95 backdrop-blur-sm">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-20 items-center justify-between">
           <Logo variant="horizontal" size="sm" showTagline showVersion versionText="V7.2" />
           <nav className="flex items-center gap-3">
             <Button
