@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1536" height="864" viewBox="0 0 1536 864" shape-rendering="geometricPrecision">
   <defs>
     <style>
-      .bg { fill: #ffffff; }
+      .bg { fill: transparent; }
     </style>
   </defs>
-  <rect width="1536" height="864" fill="#ffffff" />
-  <!-- Importado do Master Vetor Master logo-5e.svg oficial -->
+  <!-- Vetor Master logo horizontal -->
   <g transform="translate(0, 0)">
     <use href="#master" />
   </g>
