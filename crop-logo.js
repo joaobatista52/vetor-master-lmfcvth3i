@@ -24,8 +24,6 @@ function decodePng(filePath) {
   }
   const decompressed = zlib.inflateSync(Buffer.concat(idatChunks))
 
-  // Reconstruct unfilter scanlines (colorType 6 = RGBA, 8 bits/channel)
-  // Each line starts with 1 byte filter type + w * 4 bytes
   const bytesPerPixel = 4
   const stride = w * bytesPerPixel
   const pixels = Buffer.alloc(w * h * bytesPerPixel)
@@ -46,20 +44,19 @@ function decodePng(filePath) {
       const c = x >= bpp ? prevLine[x - bpp] : 0
 
       switch (filter) {
-        case 0: // None
+        case 0:
           val = raw
           break
-        case 1: // Sub
+        case 1:
           val = (raw + a) & 0xff
           break
-        case 2: // Up
+        case 2:
           val = (raw + b) & 0xff
           break
-        case 3: // Average
+        case 3:
           val = (raw + Math.floor((a + b) / 2)) & 0xff
           break
         case 4: {
-          // Paeth
           const p = a + b - c
           const pa = Math.abs(p - a)
           const pb = Math.abs(p - b)
@@ -85,32 +82,54 @@ function decodePng(filePath) {
 }
 
 const orig = decodePng('src/assets/logo-5e-vetor-master-14jul26-04e42.png')
-console.log('Original dimensions:', orig.w, orig.h)
 
-// Bounding box finding: non-transparent pixels (alpha > 0)
-// Also check if any pixels are almost white or if background is truly transparent
 let minX = orig.w,
   maxX = 0,
   minY = orig.h,
   maxY = 0
-let transparentCount = 0
-let visibleCount = 0
 
 for (let y = 0; y < orig.h; y++) {
   for (let x = 0; x < orig.w; x++) {
     const idx = (y * orig.w + x) * 4
     const a = orig.pixels[idx + 3]
     if (a > 10) {
-      // visible pixel
-      visibleCount++
       if (x < minX) minX = x
       if (x > maxX) maxX = x
       if (y < minY) minY = y
       if (y > maxY) maxY = y
-    } else {
-      transparentCount++
     }
   }
 }
 
-throw new Error(`DEBUG: minX=${minX}, maxX=${maxX}, minY=${minY}, maxY=${maxY}, w=${orig.w}, h=${orig.h}`)
+let clean = null
+try {
+  clean = decodePng('src/assets/logo-5e-clean.png')
+} catch (e) {
+  // ignore
+}
+
+let cleanMinX = clean ? clean.w : 0
+let cleanMaxX = 0
+let cleanMinY = clean ? clean.h : 0
+let cleanMaxY = 0
+if (clean) {
+  for (let y = 0; y < clean.h; y++) {
+    for (let x = 0; x < clean.w; x++) {
+      const idx = (y * clean.w + x) * 4
+      const a = clean.pixels[idx + 3]
+      if (a > 10) {
+        if (x < cleanMinX) cleanMinX = x
+        if (x > cleanMaxX) cleanMaxX = x
+        if (y < cleanMinY) cleanMinY = y
+        if (y > cleanMaxY) cleanMaxY = y
+      }
+    }
+  }
+}
+
+throw new Error(
+  JSON.stringify({
+    orig: { w: orig.w, h: orig.h, minX, maxX, minY, maxY },
+    clean: clean ? { w: clean.w, h: clean.h, cleanMinX, cleanMaxX, cleanMinY, cleanMaxY } : null,
+  }),
+)
