@@ -66,23 +66,28 @@ export function Logo({
   const effectiveVariant = !showText ? 'icon' : variant
 
   // Alturas calibradas conforme especificação:
-  // - horizontal: ~72–80px no menu lateral e cabeçalho (sm: 72px, md: 76px, lg: 80px, xl: 88px)
-  // - ícone: ~48px (sm: 40px, md: 48px, lg: 56px, xl: 64px)
-  // - vertical: ~170px no Login (xl: 170px, lg: 150px, md: 120px, sm: 96px)
+  // - horizontal: ~56–60px no cabeçalho do menu lateral (cabeçalho h-24)
+  // - ícone: ~48px
+  // - vertical: ~170px no Login
   const iconPixelSize = size === 'sm' ? 40 : size === 'md' ? 48 : size === 'lg' ? 56 : 64
-  const horizontalHeight = size === 'sm' ? 72 : size === 'md' ? 76 : size === 'lg' ? 80 : 88
+  const horizontalHeight = size === 'sm' ? 56 : size === 'md' ? 58 : size === 'lg' ? 60 : 64
   const verticalHeight = size === 'xl' ? 170 : size === 'lg' ? 150 : size === 'md' ? 120 : 96
 
   if (effectiveVariant === 'icon') {
     return (
-      <div className={cn('inline-flex items-center justify-center shrink-0', className)}>
+      <div
+        className={cn(
+          'inline-flex items-center justify-center shrink-0 overflow-hidden',
+          className,
+        )}
+        style={{ width: iconPixelSize, height: iconPixelSize }}
+      >
         <img
           src={logo5aClean}
           alt="Vetor Master"
           width={iconPixelSize}
           height={iconPixelSize}
-          className="shrink-0 object-contain select-none transition-all"
-          style={{ width: iconPixelSize, height: iconPixelSize }}
+          className="w-full h-full object-contain select-none transition-all p-0.5"
           loading="eager"
         />
       </div>
@@ -93,16 +98,18 @@ export function Logo({
     return (
       <div
         className={cn(
-          'inline-flex flex-col items-center text-center select-none shrink-0',
+          'inline-flex flex-col items-center text-center select-none shrink-0 max-w-full',
           className,
         )}
       >
-        <div className="relative flex items-center justify-center">
+        <div
+          className="relative flex items-center justify-center overflow-hidden max-w-full"
+          style={{ height: verticalHeight, width: 'auto' }}
+        >
           <img
             src={logo5aClean}
             alt="VETOR MASTER"
-            className="object-contain select-none transition-all"
-            style={{ height: verticalHeight, width: 'auto' }}
+            className="w-auto h-full object-contain select-none transition-all p-1"
             loading="eager"
           />
         </div>
@@ -122,13 +129,20 @@ export function Logo({
 
   // Versão Horizontal (padrão para Header, Sidebar, Landing, etc.)
   // Sempre COLORIDO com as cores oficiais da marca em qualquer fundo
+  // Enquadramento via container overflow-hidden com object-contain + padding e object-position para garantir
+  // que nenhuma letra (especialmente o "R" final de "MASTER") seja cortada.
   return (
-    <div className={cn('inline-flex items-center select-none shrink-0', className)}>
+    <div
+      className={cn(
+        'inline-flex items-center justify-center select-none shrink-0 overflow-hidden max-w-full',
+        className,
+      )}
+      style={{ height: horizontalHeight, width: 'auto' }}
+    >
       <img
         src={logo5eClean}
         alt="VETOR MASTER"
-        className="object-contain select-none transition-all"
-        style={{ height: horizontalHeight, width: 'auto' }}
+        className="h-full w-auto max-w-full object-contain object-center px-1.5 py-0.5 select-none transition-all"
         loading="eager"
       />
     </div>
