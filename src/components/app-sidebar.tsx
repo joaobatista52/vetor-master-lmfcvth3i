@@ -1,15 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard,
-  Stethoscope,
+  Home,
+  Activity,
+  Award,
   ListTodo,
-  FileText,
-  LineChart,
+  LayoutDashboard,
+  BookOpen,
+  Layers,
   Settings,
-  StickyNote,
   Shield,
   History,
   Mail,
+  StickyNote,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -24,23 +26,37 @@ import {
   SidebarMenuButton,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   useSidebar,
 } from '@/components/ui/sidebar'
 
-const navItems = [
-  { title: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { title: 'Diagnósticos', path: '/diagnosticos', icon: Stethoscope },
-  { title: 'Plano de Ação', path: '/plano-de-acao', icon: ListTodo },
-  { title: 'Modelos de Negócio', path: '/modelos', icon: FileText },
-  { title: 'Notas', path: '/notas', icon: StickyNote },
-  { title: 'Resultados', path: '/resultados', icon: LineChart },
+/**
+ * MENU LATERAL OFICIAL VETOR MASTER — Ordem exata da jornada do cliente:
+ * 1. Início (/)
+ * 2. Diagnóstico (/diagnosticos)
+ * 3. Resultados e Devolutiva (/resultados)
+ * 4. Plano de Ação (/plano-de-acao)
+ * 5. Dashboard (/dashboard)
+ * 6. Biblioteca (/biblioteca)
+ * 7. Níveis e Planos (/niveis-e-planos)
+ */
+const clientJourneyNavItems = [
+  { title: 'Início', path: '/', icon: Home, step: '1' },
+  { title: 'Diagnóstico', path: '/diagnosticos', icon: Activity, step: '2' },
+  { title: 'Resultados e Devolutiva', path: '/resultados', icon: Award, step: '3' },
+  { title: 'Plano de Ação', path: '/plano-de-acao', icon: ListTodo, step: '4' },
+  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '5' },
+  { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '6' },
+  { title: 'Níveis e Planos', path: '/niveis-e-planos', icon: Layers, step: '7' },
 ]
 
+const complementaryNavItems = [{ title: 'Notas do Projeto', path: '/notas', icon: StickyNote }]
+
 const adminNavItems = [
-  { title: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-  { title: 'Logs', path: '/admin/logs', icon: History },
-  { title: 'Convites', path: '/admin/convites', icon: Mail },
-  { title: 'Painel Admin', path: '/admin', icon: Shield },
+  { title: 'Painel Geral', path: '/admin', icon: Shield },
+  { title: 'Métricas Admin', path: '/admin/dashboard', icon: LayoutDashboard },
+  { title: 'Logs de Auditoria', path: '/admin/logs', icon: History },
+  { title: 'Gestão de Convites', path: '/admin/convites', icon: Mail },
 ]
 
 export function AppSidebar() {
@@ -51,22 +67,33 @@ export function AppSidebar() {
 
   const navItemClass = (isActive: boolean) =>
     cn(
-      'flex items-center gap-3 px-3 py-2.5 transition-all duration-200 rounded-md mx-2',
+      'flex items-center gap-3 px-3 py-2 transition-all duration-200 rounded-[4px] mx-2 text-xs font-medium',
       isActive
-        ? 'bg-sidebar-accent text-sidebar-foreground font-medium before:absolute before:left-0 before:h-8 before:w-1 before:bg-primary before:rounded-r-full'
-        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+        ? 'bg-[#0066CC] text-white shadow-sm font-semibold'
+        : 'text-white/80 hover:bg-white/10 hover:text-white',
     )
 
-  const iconClass = (isActive: boolean) => cn('w-5 h-5 shrink-0', isActive ? 'text-primary' : '')
+  const iconClass = (isActive: boolean) =>
+    cn('w-4 h-4 shrink-0 transition-colors', isActive ? 'text-[#22B14C]' : 'text-white/70')
 
-  const renderItem = (item: (typeof navItems)[number]) => {
+  const renderItem = (item: { title: string; path: string; icon: any; step?: string }) => {
     const isActive = location.pathname === item.path
     return (
       <SidebarMenuItem key={item.path}>
         <SidebarMenuButton asChild tooltip={item.title}>
           <Link to={item.path} className={navItemClass(isActive)}>
             <item.icon className={iconClass(isActive)} />
-            {!isCollapsed && <span>{item.title}</span>}
+            {!isCollapsed && <span className="flex-1 truncate tracking-tight">{item.title}</span>}
+            {!isCollapsed && item.step && (
+              <span
+                className={cn(
+                  'text-[10px] font-mono px-1.5 py-0.2 rounded',
+                  isActive ? 'bg-white/20 text-white' : 'text-white/40',
+                )}
+              >
+                0{item.step}
+              </span>
+            )}
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -74,42 +101,64 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-sidebar-border/50">
+    <Sidebar className="border-r border-[#333333] bg-[#333333] text-white">
+      <SidebarHeader className="h-16 flex items-center justify-between px-4 border-b border-white/10">
         <div className="flex items-center w-full overflow-hidden whitespace-nowrap">
           <Logo
-            className={cn('shrink-0', isCollapsed ? 'h-12 w-12' : 'h-[3.75rem]')}
-            variant={isCollapsed ? 'icon' : 'full'}
-            showText={!isCollapsed}
+            variant={isCollapsed ? 'icon' : 'horizontal'}
+            size={isCollapsed ? 'sm' : 'sm'}
+            showTagline={!isCollapsed}
+            showVersion={!isCollapsed}
+            versionText="V7.2"
+            negative
           />
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="space-y-2 py-2">
         <SidebarGroup>
+          {!isCollapsed && (
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-white/50 px-4">
+              Jornada Estratégica
+            </SidebarGroupLabel>
+          )}
           <SidebarGroupContent>
-            <SidebarMenu className="mt-4 gap-2">
-              {navItems.map(renderItem)}
-              {isAdmin && adminNavItems.map(renderItem)}
-            </SidebarMenu>
+            <SidebarMenu className="gap-1">{clientJourneyNavItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          {!isCollapsed && (
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-white/50 px-4">
+              Apoio Operacional
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">{complementaryNavItems.map(renderItem)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            {!isCollapsed && (
+              <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#FF9900] px-4 flex items-center gap-1.5">
+                <Shield className="w-3 h-3" /> Governança & Admin
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">{adminNavItems.map(renderItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/50 p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Configurações">
-              <Link
-                to="#"
-                className="flex items-center gap-3 px-3 py-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all duration-200 mx-2 rounded-md"
-              >
-                <Settings className="w-5 h-5 shrink-0" />
-                {!isCollapsed && <span>Configurações</span>}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-white/10 p-2">
+        <div className="px-3 py-2 flex items-center justify-between text-[11px] text-white/60">
+          {!isCollapsed && <span>VETOR MASTER</span>}
+          <span className="font-mono text-[10px] text-[#22B14C] font-semibold">
+            V7.2 DETERMINÍSTICO
+          </span>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

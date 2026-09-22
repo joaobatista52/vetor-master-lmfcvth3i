@@ -62,15 +62,19 @@ export default function Modelos() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-primary text-primary-foreground p-8 rounded-2xl relative overflow-hidden shadow-lg">
-        <div className="absolute right-0 top-0 opacity-10 translate-x-1/4 -translate-y-1/4">
-          <LayoutTemplate className="w-64 h-64" />
-        </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-[#F5F5F5] border border-[#E0E0E0] p-6 rounded-[4px] relative overflow-hidden shadow-sm">
         <div className="relative z-10 max-w-xl">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Modelos de Negócio</h1>
-          <p className="text-primary-foreground/80 text-lg">
-            Biblioteca de ativos estratégicos. Não reinvente a roda, baixe e aplique metodologias
-            validadas.
+          <div className="flex items-center gap-2 text-[10px] font-bold text-[#0066CC] uppercase tracking-wider mb-1">
+            <span>Modelos & Templates</span>
+            <span className="text-[#808080]">•</span>
+            <span>Vetor Master V7.2</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC] mb-2">
+            Modelos de Negócio e Templates
+          </h1>
+          <p className="text-[#333333] text-sm leading-relaxed">
+            Biblioteca operacional de ativos e ferramentas táticas. Não reinvente a roda: baixe e
+            aplique metodologias validadas pela governança C-Level.
           </p>
         </div>
       </div>

@@ -91,10 +91,23 @@ export default function AdminMetrics() {
   }
 
   return (
-    <div className="space-y-6 p-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Métricas do Projeto</h1>
-        <p className="text-muted-foreground mt-1">Visão geral das notas do projeto em tempo real</p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Banner de Topo VETOR MASTER */}
+      <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-[#0066CC] uppercase tracking-wider">
+            <span>Passo 05 da Jornada</span>
+            <span className="text-[#808080]">•</span>
+            <span>Inteligência Determinística V7.2</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+            Dashboard Executivo
+          </h1>
+          <p className="text-xs md:text-sm text-[#333333]">
+            Visão consolidada do progresso das iniciativas estratégicas, distribuição de tarefas e
+            indicadores operacionais em tempo real.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

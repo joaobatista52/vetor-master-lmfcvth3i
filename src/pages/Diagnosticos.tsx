@@ -103,66 +103,106 @@ export default function Diagnosticos() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Central de Diagnósticos</h1>
-        <p className="text-muted-foreground mt-1">
-          Identifique os gargalos que estão prendendo você na operação.
-        </p>
+      {/* Banner Principal de Diagnóstico VETOR MASTER */}
+      <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-[#0066CC] uppercase tracking-wider">
+            <span>Passo 02 da Jornada</span>
+            <span className="text-[#808080]">•</span>
+            <span>Vetor Master V7.2</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+            Central de Diagnósticos Estratégicos
+          </h1>
+          <p className="text-xs md:text-sm text-[#333333]">
+            Identifique os gargalos operacionais e vazamentos invisíveis que prendem o fundador na
+            operação diária.
+          </p>
+        </div>
+        <Button
+          asChild
+          className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] gap-2 shadow-sm shrink-0 font-medium"
+        >
+          <a href="/questionario">
+            <Play className="w-4 h-4" />
+            Iniciar Questionário dos 12 Setores
+          </a>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         {categories.map((cat) => (
           <Card
             key={cat.id}
-            className="transition-all hover:shadow-md hover:border-primary/50 group"
+            className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] transition-all hover:border-[#0066CC] hover:shadow-sm group"
           >
-            <CardHeader className="flex flex-row items-start gap-4 space-y-0">
-              <div className={`p-3 rounded-xl ${cat.bg} ${cat.color} shrink-0`}>
-                <cat.icon className="w-6 h-6" />
+            <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-5 pb-3">
+              <div className="p-3 rounded-[4px] bg-white border border-[#E0E0E0] text-[#0066CC] shrink-0">
+                <cat.icon className="w-5 h-5" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                  <CardTitle className="text-base font-bold text-[#333333] group-hover:text-[#0066CC] transition-colors">
                     {cat.title}
                   </CardTitle>
                   {cat.score > 0 ? (
                     <Badge
-                      variant={
-                        cat.score > 70 ? 'default' : cat.score > 50 ? 'secondary' : 'destructive'
-                      }
+                      variant="outline"
+                      className={`text-[10px] rounded-[3px] font-semibold ${
+                        cat.score > 70
+                          ? 'border-[#22B14C] text-[#22B14C] bg-white'
+                          : cat.score > 50
+                            ? 'border-[#FF9900] text-[#FF9900] bg-white'
+                            : 'border-red-500 text-red-500 bg-white'
+                      }`}
                     >
                       {cat.score}% Saúde
                     </Badge>
                   ) : (
-                    <Badge variant="outline">Novo</Badge>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] text-[#808080] border-[#E0E0E0] bg-white"
+                    >
+                      Novo
+                    </Badge>
                   )}
                 </div>
-                <CardDescription className="mt-2 line-clamp-2">{cat.desc}</CardDescription>
+                <CardDescription className="mt-1 text-xs text-[#808080] line-clamp-2">
+                  {cat.desc}
+                </CardDescription>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-5 py-2">
               {cat.score > 0 ? (
-                <div className="space-y-2 mt-2">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Progresso Atual</span>
-                    <span className="font-medium text-foreground">{cat.score}%</span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs text-[#808080]">
+                    <span>Nível de Autonomia</span>
+                    <span className="font-semibold text-[#333333]">{cat.score}%</span>
                   </div>
-                  <Progress value={cat.score} className="h-2" />
+                  <Progress value={cat.score} className="h-2 rounded-[2px]" />
                 </div>
               ) : (
-                <div className="py-3 px-4 bg-secondary/50 rounded-lg text-sm text-muted-foreground flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" /> Avaliação pendente
+                <div className="py-2.5 px-3 bg-white border border-[#E0E0E0] rounded-[4px] text-xs text-[#808080] flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-[#FF9900]" /> Avaliação preliminar pendente
                 </div>
               )}
             </CardContent>
-            <CardFooter>
+            <CardFooter className="p-5 pt-3">
               <Button
                 variant={cat.score === 0 ? 'default' : 'outline'}
-                className="w-full gap-2"
+                className={`w-full gap-2 rounded-[4px] text-xs font-medium ${
+                  cat.score === 0
+                    ? 'bg-[#0066CC] hover:bg-[#22B14C] text-white'
+                    : 'border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white'
+                }`}
                 onClick={() => handleStart(cat)}
               >
-                {cat.score === 0 ? <Play className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-                {cat.score === 0 ? 'Iniciar Diagnóstico' : 'Refazer Avaliação'}
+                {cat.score === 0 ? (
+                  <Play className="w-3.5 h-3.5" />
+                ) : (
+                  <Settings className="w-3.5 h-3.5" />
+                )}
+                {cat.score === 0 ? 'Iniciar Avaliação Rápida' : 'Refazer Avaliação'}
               </Button>
             </CardFooter>
           </Card>

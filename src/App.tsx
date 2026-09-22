@@ -12,6 +12,8 @@ import PlanoDeAcao from './pages/PlanoDeAcao'
 import Modelos from './pages/Modelos'
 import Notas from './pages/Notas'
 import Resultados from './pages/Resultados'
+import Biblioteca from './pages/Biblioteca'
+import NiveisEPlanos from './pages/NiveisEPlanos'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminMetrics from './pages/AdminMetrics'
 import AdminLogsPage from './pages/AdminLogs'
@@ -33,14 +35,20 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
+              {/* Jornada Oficial Vetor Master V7.2 */}
               <Route path="/" element={<Index />} />
               <Route path="/diagnosticos" element={<Diagnosticos />} />
-              <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
-              <Route path="/modelos" element={<Modelos />} />
-              <Route path="/notas" element={<Notas />} />
               <Route path="/resultados" element={<Resultados />} />
+              <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
+              <Route path="/dashboard" element={<AdminMetrics />} />
+              <Route path="/biblioteca" element={<Biblioteca />} />
+              <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
+
+              {/* Fluxos de Questionário e Recursos Complementares */}
               <Route path="/questionario" element={<Questionario />} />
               <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
+              <Route path="/notas" element={<Notas />} />
+              <Route path="/modelos" element={<Modelos />} />
             </Route>
           </Route>
           <Route element={<AdminRoute />}>

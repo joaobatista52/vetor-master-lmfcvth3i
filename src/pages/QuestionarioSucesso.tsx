@@ -84,10 +84,12 @@ export default function QuestionarioSucesso() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center py-12">
               <Loader2 className="w-12 h-12 animate-spin text-primary mb-6" />
-              <h2 className="text-xl font-semibold mb-2">Gerando seu diagnóstico estratégico</h2>
-              <p className="text-muted-foreground">{loadingMessages[msgIndex]}</p>
-              <p className="text-xs text-muted-foreground mt-4">
-                Nossa IA está analisando seus dados com a metodologia JBP Gestão Master V 6.4
+              <h2 className="text-xl font-semibold mb-2 text-[#333333]">
+                Gerando seu diagnóstico estratégico
+              </h2>
+              <p className="text-[#808080] text-sm">{loadingMessages[msgIndex]}</p>
+              <p className="text-xs text-[#0066CC] mt-4 font-medium">
+                Algoritmo determinístico analisando seus dados com a metodologia Vetor Master V7.2
               </p>
             </div>
           </CardContent>
@@ -101,12 +103,14 @@ export default function QuestionarioSucesso() {
   return (
     <div className="max-w-5xl mx-auto animate-fade-in space-y-6">
       <div>
-        <Badge className="mb-2 bg-green-100 text-green-700 hover:bg-green-200">
+        <Badge className="mb-2 bg-[#22B14C]/15 text-[#22B14C] hover:bg-[#22B14C]/20 border border-[#22B14C]/30 font-semibold rounded-[3px]">
           Diagnóstico Concluído
         </Badge>
-        <h1 className="text-3xl font-bold tracking-tight">Relatório Estratégico Executivo</h1>
-        <p className="text-muted-foreground mt-1">
-          Análise baseada na metodologia JBP Gestão Master V 6.4
+        <h1 className="text-3xl font-bold tracking-tight text-[#0066CC]">
+          Relatório Estratégico Executivo
+        </h1>
+        <p className="text-sm text-[#808080] mt-1">
+          Devolutiva Estratégica Determinística • Vetor Master V7.2
         </p>
       </div>
 

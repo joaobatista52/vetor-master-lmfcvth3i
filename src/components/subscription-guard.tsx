@@ -23,32 +23,32 @@ export function SubscriptionGuard({ children }: { children: ReactNode }) {
             </div>
             <h2 className="text-2xl font-bold tracking-tight mb-3">Desbloquear Solução Completa</h2>
             <p className="text-muted-foreground mb-8 max-w-md">
-              Seu diagnóstico estratégico está pronto. Para acessar os planos de ação detalhados,
-              OKRs e direção assistida de especialistas, assine a solução completa JBP Gestão
-              Master.
+              Seu diagnóstico estratégico foi processado. Para acessar os planos de ação detalhados,
+              desdobramento de OKRs e mentoria C-Level continuada, acesse a solução completa Vetor
+              Master V7.2.
             </p>
 
             <div className="grid gap-3 w-full max-w-md mb-8 text-left">
               {[
-                'Planos de Ação 5W2H personalizados',
-                'OKRs com acompanhamento de progresso',
-                'Direção assistida por consultores',
-                'Templates e ferramentas exclusivas',
+                'Planos de Ação 5W2H personalizados por setor',
+                'OKRs trimestrais com alinhamento Hoshin Kanri',
+                'Direção assistida de C-Level as a Service',
+                'Acesso a 138 obras e matrizes da Biblioteca JBP V2.4',
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                  <span className="text-sm">{item}</span>
+                  <CheckCircle2 className="w-5 h-5 text-[#22B14C] shrink-0" />
+                  <span className="text-sm text-[#333333]">{item}</span>
                 </div>
               ))}
             </div>
 
             <Button
               size="lg"
-              className="w-full max-w-sm gap-2"
-              onClick={() => navigate('/resultados')}
+              className="w-full max-w-sm gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px]"
+              onClick={() => navigate('/niveis-e-planos')}
             >
               <Sparkles className="w-4 h-4" />
-              Desbloquear Agora
+              Conhecer Níveis e Planos
               <ArrowRight className="w-4 h-4" />
             </Button>
 

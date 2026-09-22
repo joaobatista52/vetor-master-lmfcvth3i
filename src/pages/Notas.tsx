@@ -241,34 +241,48 @@ export default function Notas() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notas do Projeto</h1>
-          <p className="text-muted-foreground mt-1">
-            Registre decisões importantes e mantenha o histórico do seu projeto.
+          <div className="flex items-center gap-2 text-[10px] font-bold text-[#0066CC] uppercase tracking-wider mb-1">
+            <span>Apoio Operacional</span>
+            <span className="text-[#808080]">•</span>
+            <span>Vetor Master V7.2</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+            Notas do Projeto & Decisões
+          </h1>
+          <p className="text-xs md:text-sm text-[#333333] mt-1">
+            Registre decisões estratégicas, mantenha o histórico e alimente a governança do seu
+            negócio.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 shadow-sm">
-                <Download className="w-4 h-4" />
+              <Button
+                variant="outline"
+                className="border-[#E0E0E0] text-[#333333] hover:bg-[#F5F5F5] rounded-[4px] text-xs gap-1.5 shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5 text-[#0066CC]" />
                 Exportar
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportText} className="gap-2 cursor-pointer">
-                <FileText className="w-4 h-4" />
-                Exportar como Texto
+            <DropdownMenuContent align="end" className="bg-white border-[#E0E0E0] rounded-[4px]">
+              <DropdownMenuItem onClick={handleExportText} className="gap-2 cursor-pointer text-xs">
+                <FileText className="w-3.5 h-3.5" />
+                Exportar como Texto (.txt)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
-                <FileArchive className="w-4 h-4" />
+              <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer text-xs">
+                <FileArchive className="w-3.5 h-3.5" />
                 Exportar como PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button className="gap-2 shadow-sm" onClick={openCreate}>
-            <Plus className="w-4 h-4" />
+          <Button
+            className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs gap-1.5 shadow-sm font-medium"
+            onClick={openCreate}
+          >
+            <Plus className="w-3.5 h-3.5" />
             Nova Nota
           </Button>
         </div>

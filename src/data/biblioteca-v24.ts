@@ -1,4 +1,4 @@
-// Base de Conhecimento V6.5 — Biblioteca Profissional JBP V2.4
+// Base de Conhecimento V7.2 — Biblioteca Profissional JBP V2.4
 // Fonte: biblioteca-profissional-jbp-estrutura-v2.4 (31jul26)
 // 138 obras organizadas por áreas e sub-temas.
 

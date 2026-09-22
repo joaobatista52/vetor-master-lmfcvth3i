@@ -49,11 +49,20 @@ export default function AdminLogs() {
 
   return (
     <div className="space-y-6 p-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Logs de Auditoria</h1>
-        <p className="text-muted-foreground mt-1">
-          Registro de todas as atividades realizadas nas notas do projeto
-        </p>
+      <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-[#FF9900] uppercase tracking-wider mb-1">
+            <span>Auditoria & Segurança</span>
+            <span className="text-[#808080]">•</span>
+            <span>Vetor Master V7.2</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+            Logs de Auditoria
+          </h1>
+          <p className="text-xs md:text-sm text-[#333333] mt-1">
+            Registro de todas as atividades realizadas no ecossistema e notas do projeto.
+          </p>
+        </div>
       </div>
 
       <Card>

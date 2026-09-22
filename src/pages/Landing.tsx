@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Logo } from '@/components/Logo'
 import { strategicAreas } from '@/lib/strategic-areas'
 import { setores } from '@/data/setores-questionario'
-import { fasesStateMachineV65, escadaDeValor } from '@/data/master-framework-v65'
+import { fasesStateMachineV72, escadaDeValorV72 } from '@/data/master-framework-v72'
 
 const howItWorks = [
   {
@@ -28,61 +28,81 @@ const howItWorks = [
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg">
+    <div className="min-h-screen bg-white">
+      <header className="sticky top-0 z-50 border-b border-[#E0E0E0] bg-white/95 backdrop-blur-sm">
         <div className="container flex h-16 items-center justify-between">
-          <Logo className="h-10" showText={false} />
-          <nav className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/login">Entrar</Link>
+          <Logo variant="horizontal" size="sm" showTagline showVersion versionText="V7.2" />
+          <nav className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-[#333333] hover:text-[#0066CC] rounded-[4px] text-xs"
+            >
+              <Link to="/login">Entrar na Plataforma</Link>
             </Button>
-            <Button size="sm" asChild className="gap-2">
+            <Button
+              size="sm"
+              asChild
+              className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-medium gap-1.5 shadow-sm"
+            >
               <Link to="/questionario">
-                Iniciar Diagnóstico <ArrowRight className="w-4 h-4" />
+                Iniciar Diagnóstico <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </Button>
           </nav>
         </div>
       </header>
 
-      <section className="relative overflow-hidden bg-[hsl(215_28%_17%)] text-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(215_28%_17%)] via-[hsl(215_28%_20%)] to-[hsl(217_91%_60%)]/20" />
-        <div className="container relative py-24 md:py-32">
+      <section className="relative overflow-hidden bg-[#333333] text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#333333] via-[#222222] to-[#0066CC]/20 hex-watermark-dark" />
+        <div className="container relative py-20 md:py-28">
           <div className="max-w-3xl">
-            <Badge variant="secondary" className="mb-4 bg-white/10 text-white border-white/20">
-              <Sparkles className="w-3 h-3 mr-1" /> JBP Gestão Master V 7.2
+            <Badge
+              variant="secondary"
+              className="mb-4 bg-white/10 text-white border-white/20 rounded-[3px] text-xs font-medium"
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#22B14C]" /> C-Level as a Service &
+              Mentorship as a Software • V7.2
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-white font-['Inter']">
               Supere a Prisão do Fundador e Escale sua Empresa
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl">
-              A metodologia Vetor Master opera em 8 Fases sequenciais, com Motor Determinístico de
-              Valuation e lentes de Hackman e Buffett, para diagnosticar gargalos estratégicos e
-              gerar planos de ação assistidos por IA.
+            <p className="mt-5 text-base md:text-lg text-white/80 max-w-2xl leading-relaxed">
+              Inteligência Estratégica Determinística operando estritamente sem alucinações. Mais de
+              40 anos de liderança executiva convertidos em algoritmos que estancam os vazamentos
+              invisíveis e fecham o abismo entre estratégia e execução.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild className="gap-2">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <Button
+                size="lg"
+                asChild
+                className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-medium gap-2"
+              >
                 <Link to="/questionario">
-                  Iniciar Diagnóstico Gratuito <ArrowRight className="w-5 h-5" />
+                  Iniciar Diagnóstico Gratuito <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 asChild
-                className="border-white/20 text-white hover:bg-white/10 hover:text-white"
+                className="border-white/30 text-white hover:bg-white/10 hover:text-white rounded-[4px]"
               >
-                <Link to="/login">Já tenho conta</Link>
+                <Link to="/niveis-e-planos">Conhecer Níveis e Planos</Link>
               </Button>
             </div>
-            <div className="mt-12 flex flex-wrap gap-8 text-sm text-white/60">
-              {['Diagnóstico em 8 áreas', 'Relatório estratégico com IA', 'Plano de ação 5W2H'].map(
-                (t) => (
-                  <div key={t} className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[hsl(160_84%_39%)]" /> {t}
-                  </div>
-                ),
-              )}
+            <div className="mt-10 flex flex-wrap gap-6 text-xs text-white/70">
+              {[
+                'Zero Alucinação',
+                '12 Setores Parametrizados',
+                'Plano 5W2H e OKRs',
+                '138 Obras Catalogadas',
+              ].map((t) => (
+                <div key={t} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#22B14C]" /> {t}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -164,16 +184,21 @@ export default function Landing() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {fasesStateMachineV65.map((fase) => (
-              <Card key={fase.numero} className="border-l-4 border-l-primary/60">
+            {fasesStateMachineV72.map((fase) => (
+              <Card
+                key={fase.numero}
+                className="border-l-4 border-l-[#0066CC] rounded-[4px] bg-[#F5F5F5] border-[#E0E0E0]"
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-bold text-primary tabular-nums">
+                    <span className="text-xs font-bold text-[#0066CC] tabular-nums">
                       FASE {fase.numero}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-sm leading-tight mb-1">{fase.titulo}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-3">{fase.foco}</p>
+                  <h3 className="font-semibold text-sm leading-tight mb-1 text-[#333333]">
+                    {fase.titulo}
+                  </h3>
+                  <p className="text-xs text-[#808080] line-clamp-3">{fase.foco}</p>
                 </CardContent>
               </Card>
             ))}
@@ -192,16 +217,22 @@ export default function Landing() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {escadaDeValor.map((nivel) => (
-              <Card key={nivel.nivel} className="text-center">
+            {escadaDeValorV72.map((nivel) => (
+              <Card
+                key={nivel.nivel}
+                className="text-center bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px]"
+              >
                 <CardHeader>
-                  <Badge variant="secondary" className="mx-auto w-fit">
+                  <Badge
+                    variant="secondary"
+                    className="mx-auto w-fit text-[#0066CC] bg-[#0066CC]/10"
+                  >
                     {nivel.nivel}
                   </Badge>
-                  <CardTitle className="text-lg mt-2">{nivel.nome}</CardTitle>
+                  <CardTitle className="text-lg mt-2 text-[#333333]">{nivel.nome}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{nivel.descricao}</p>
+                  <p className="text-sm text-[#808080]">{nivel.descricao}</p>
                 </CardContent>
               </Card>
             ))}
@@ -249,11 +280,11 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-8">
+      <footer className="border-t border-[#E0E0E0] py-8 bg-[#F5F5F5]">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo className="h-8" showText={false} />
-          <p className="text-sm text-muted-foreground">
-            © 2026 Vetor Master. JBP Gestão Master V 7.2.
+          <Logo variant="horizontal" size="sm" showTagline showVersion versionText="V7.2" />
+          <p className="text-xs text-[#808080]">
+            © 2026 Vetor Master. C-Level as a Service & Mentorship as a Software • V7.2.
           </p>
         </div>
       </footer>

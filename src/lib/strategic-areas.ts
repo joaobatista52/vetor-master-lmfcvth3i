@@ -1,7 +1,7 @@
 import { Target, DollarSign, Settings, Users, TrendingUp, Cpu, Shield, Eye } from 'lucide-react'
 
-// V6.5 — 8 Áreas Estratégicas (Master Framework Consolidado V2.0)
-// Área 8 (Foresight Estratégico) adicionada no upgrade V6.4 → V6.5.
+// V7.2 — 8 Áreas Estratégicas (Master Framework Consolidado V2.4)
+// Área 8 (Foresight Estratégico) consolidada no upgrade V7.2.
 export const strategicAreas = [
   {
     numero: 1,

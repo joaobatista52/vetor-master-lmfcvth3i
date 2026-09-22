@@ -24,14 +24,19 @@ import {
 } from '@/components/ui/breadcrumb'
 
 const routeNames: Record<string, string> = {
-  '/': 'Dashboard Principal',
-  '/diagnosticos': 'Central de Diagnósticos',
-  '/plano-de-acao': 'Plano de Ação Estratégico',
-  '/modelos': 'Modelos & Templates',
+  '/': 'Início',
+  '/diagnosticos': 'Diagnóstico',
+  '/resultados': 'Resultados e Devolutiva',
+  '/plano-de-acao': 'Plano de Ação',
+  '/dashboard': 'Dashboard',
+  '/biblioteca': 'Biblioteca',
+  '/niveis-e-planos': 'Níveis e Planos',
+  '/questionario': 'Questionário Estrutural V7.2',
+  '/questionario/sucesso': 'Relatório Devolutivo V7.2',
   '/notas': 'Notas do Projeto',
-  '/resultados': 'Avaliação de Resultados',
-  '/admin': 'Painel Administrativo',
-  '/admin/dashboard': 'Dashboard de Métricas',
+  '/modelos': 'Modelos & Templates',
+  '/admin': 'Painel Geral Admin',
+  '/admin/dashboard': 'Métricas do Projeto',
   '/admin/logs': 'Logs de Auditoria',
   '/admin/convites': 'Gestão de Convites',
 }
@@ -44,26 +49,25 @@ export default function Layout() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-background w-full">
+      <div className="flex min-h-screen bg-white w-full">
         <AppSidebar />
         <SidebarInset className="flex flex-col flex-1 w-full overflow-hidden">
-          <header className="h-16 flex items-center justify-between px-6 border-b border-sidebar-border bg-sidebar z-10 sticky top-0">
+          <header className="h-16 flex items-center justify-between px-6 border-b border-[#E0E0E0] bg-white z-10 sticky top-0">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors" />
-              <Logo className="h-12 shrink-0" showText={false} />
+              <SidebarTrigger className="text-[#333333] hover:text-[#0066CC] transition-colors" />
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
                   <BreadcrumbItem>
                     <BreadcrumbLink
                       href="/"
-                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors"
+                      className="text-[#808080] hover:text-[#0066CC] transition-colors text-xs font-medium"
                     >
                       Início
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="text-sidebar-foreground/40" />
+                  <BreadcrumbSeparator className="text-[#808080]/50" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="font-medium text-sidebar-foreground">
+                    <BreadcrumbPage className="font-semibold text-[#0066CC] text-xs">
                       {currentPage}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -71,41 +75,55 @@ export default function Layout() {
               </Breadcrumb>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="relative hidden md:flex items-center">
-                <Search className="w-4 h-4 absolute left-3 text-sidebar-foreground/50" />
+                <Search className="w-3.5 h-3.5 absolute left-3 text-[#808080]" />
                 <Input
-                  placeholder="Buscar estratégias..."
-                  className="pl-9 w-64 bg-sidebar-accent/50 border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus-visible:ring-1 focus-visible:ring-primary"
+                  placeholder="Buscar estratégias, frameworks..."
+                  className="pl-8 h-8 w-60 bg-[#F5F5F5] border-[#E0E0E0] text-xs text-[#333333] placeholder:text-[#808080] rounded-[4px] focus-visible:ring-1 focus-visible:ring-[#0066CC]"
                 />
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative hover:bg-sidebar-accent transition-colors"
+                className="relative h-8 w-8 text-[#333333] hover:bg-[#F5F5F5] rounded-[4px] transition-colors"
               >
-                <Bell className="w-5 h-5 text-sidebar-foreground/70" />
-                <span className="absolute top-2 right-2.5 w-2 h-2 bg-accent rounded-full border border-sidebar" />
+                <Bell className="w-4 h-4 text-[#333333]" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#22B14C] rounded-full" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full bg-sidebar-accent text-sidebar-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="h-8 w-8 rounded-[4px] bg-[#F5F5F5] border border-[#E0E0E0] text-[#0066CC] hover:bg-[#0066CC] hover:text-white transition-colors"
                   >
-                    <User className="w-5 h-5" />
+                    <User className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Perfil do Fundador</DropdownMenuItem>
-                  <DropdownMenuItem>Assinatura & Faturamento</DropdownMenuItem>
-                  <DropdownMenuItem>Configurações da Empresa</DropdownMenuItem>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-white border border-[#E0E0E0] rounded-[4px] shadow-md"
+                >
+                  <DropdownMenuLabel className="text-xs text-[#333333]">
+                    Minha Conta
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-destructive"
+                    className="text-xs cursor-pointer hover:bg-[#F5F5F5]"
+                    onClick={() => navigate('/niveis-e-planos')}
+                  >
+                    Níveis e Planos (Escada de Valor)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-xs cursor-pointer hover:bg-[#F5F5F5]"
+                    onClick={() => navigate('/biblioteca')}
+                  >
+                    Biblioteca Estratégica (138 Obras)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-xs text-red-600 cursor-pointer hover:bg-red-50"
                     onClick={() => {
                       signOut()
                       navigate('/login')
@@ -118,7 +136,7 @@ export default function Layout() {
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in">
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in bg-white">
             <div className="max-w-7xl mx-auto w-full">
               <Outlet />
             </div>

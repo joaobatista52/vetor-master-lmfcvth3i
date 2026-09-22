@@ -51,30 +51,42 @@ export default function PlanoDeAcao() {
 
   return (
     <SubscriptionGuard>
-      <div className="space-y-8 animate-fade-in h-full flex flex-col">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Plano de Ação Estratégico</h1>
-            <p className="text-muted-foreground mt-2 text-lg">
-              Transforme diagnósticos em execução prática e previsível.
+      <div className="space-y-6 animate-fade-in h-full flex flex-col">
+        {/* Banner Institucional VETOR MASTER */}
+        <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-[#0066CC] uppercase tracking-wider">
+              <span>Passo 04 da Jornada</span>
+              <span className="text-[#808080]">•</span>
+              <span>Metodologia 5W2H & Hoshin Kanri V7.2</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+              Plano de Ação Estratégico
+            </h1>
+            <p className="text-xs md:text-sm text-[#333333]">
+              Fechar o abismo entre estratégia e execução através de cadências previsíveis, donos
+              claros e tarefas auditáveis.
             </p>
           </div>
         </div>
 
         <Tabs defaultValue="todo" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid w-full max-w-md grid-cols-3 mb-10">
-            <TabsTrigger value="todo" className="data-[state=active]:bg-background">
+          <TabsList className="grid w-full max-w-md grid-cols-3 mb-6 bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-1">
+            <TabsTrigger
+              value="todo"
+              className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
+            >
               A Fazer (1)
             </TabsTrigger>
             <TabsTrigger
               value="doing"
-              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+              className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
             >
               Em Andamento (1)
             </TabsTrigger>
             <TabsTrigger
               value="done"
-              className="data-[state=active]:bg-green-50 data-[state=active]:text-green-700"
+              className="data-[state=active]:bg-[#22B14C] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
             >
               Concluídas (1)
             </TabsTrigger>
@@ -137,7 +149,7 @@ export default function PlanoDeAcao() {
                             <ScrollArea className="flex-1 px-6 py-6">
                               <div className="space-y-6">
                                 <div className="aspect-video bg-slate-900 rounded-lg flex flex-col items-center justify-center text-white relative overflow-hidden group/vid cursor-pointer shadow-lg">
-                                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=600&auto=format&fit=crop')] bg-cover opacity-40 mix-blend-overlay group-hover/vid:opacity-50 transition-opacity" />
+                                  <div className="absolute inset-0 bg-[url('https://img.usecurling.com/p/600/600?q=abstract')] bg-cover opacity-40 mix-blend-overlay group-hover/vid:opacity-50 transition-opacity" />
                                   <PlayCircle className="w-12 h-12 mb-2 group-hover/vid:scale-110 transition-transform z-10" />
                                   <span className="text-sm font-medium z-10">
                                     Assistir Aula Prática (5 min)

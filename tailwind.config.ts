@@ -27,8 +27,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter var', 'SF Pro Display', 'system-ui', 'sans-serif'],
-        display: ['SF Pro Display', 'Inter var', 'system-ui', 'sans-serif'],
+        sans: ['Roboto', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['Inter', 'system-ui', 'sans-serif'],
+        logo: ['Michroma', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -73,6 +75,16 @@ export default {
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
+        },
+        vetor: {
+          blue: '#0066CC',
+          gray: '#333333',
+          green: '#22B14C',
+          orange: '#FF9900',
+          white: '#FFFFFF',
+          light: '#F5F5F5',
+          border: '#E0E0E0',
+          caption: '#808080',
         },
         chart: {
           1: 'hsl(var(--chart-1))',

@@ -22,7 +22,7 @@ import {
   type HeatMap,
 } from '@/services/diagnosticos'
 import { strategicAreas } from '@/lib/strategic-areas'
-import { fasesStateMachineV65 } from '@/data/master-framework-v65'
+import { fasesStateMachineV72 } from '@/data/master-framework-v72'
 
 const evolutionData = [
   { month: 'Jan', score: 35 },
@@ -69,55 +69,79 @@ export default function Resultados() {
   if (!diagnostico) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Avaliação de Resultados</h1>
-          <p className="text-muted-foreground mt-1">
-            V7.2 — Acompanhe sua jornada rumo a uma empresa autogerenciável.
-          </p>
+        {/* Banner de topo */}
+        <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-[#0066CC] uppercase tracking-wider">
+              <span>Passo 03 da Jornada</span>
+              <span className="text-[#808080]">•</span>
+              <span>Vetor Master V7.2</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+              Resultados e Devolutiva Executiva
+            </h1>
+            <p className="text-xs md:text-sm text-[#333333]">
+              Acompanhe sua jornada rumo a uma empresa autogerenciável e examine a devolutiva das 8
+              áreas estratégicas.
+            </p>
+          </div>
+          <Button
+            asChild
+            className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] shadow-sm shrink-0 font-medium"
+          >
+            <a href="/questionario">Realizar Diagnóstico Agora</a>
+          </Button>
         </div>
 
-        <Card className="shadow-sm border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary" />
+        <Card className="bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px] shadow-sm">
+          <CardHeader className="p-5 pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-bold text-[#333333]">
+              <Target className="w-5 h-5 text-[#0066CC]" />
               Heat Map das 8 Áreas Estratégicas
             </CardTitle>
-            <CardDescription>
-              Inicie um diagnóstico setorial para preencher seu heat map real.
+            <CardDescription className="text-xs text-[#808080]">
+              Inicie um diagnóstico setorial para preencher seu heat map com os limiares
+              determinísticos reais.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {strategicAreas.map((a) => (
                 <div
                   key={a.numero}
-                  className={`border rounded-lg p-3 ${a.bg} border-border opacity-60`}
+                  className="border border-[#E0E0E0] rounded-[4px] p-3 bg-white opacity-75"
                 >
-                  <a.icon className={`w-5 h-5 ${a.cor} mb-2`} />
-                  <p className="text-xs font-medium leading-tight">{a.titulo}</p>
-                  <p className="text-xs text-muted-foreground mt-1">—</p>
+                  <a.icon className="w-5 h-5 text-[#0066CC] mb-2" />
+                  <p className="text-xs font-semibold text-[#333333] leading-tight">{a.titulo}</p>
+                  <p className="text-[11px] text-[#808080] mt-1">— Aguardando dados</p>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              As 8 Fases da Metodologia V7.2
+        <Card className="bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px] shadow-sm">
+          <CardHeader className="p-5 pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-bold text-[#333333]">
+              <TrendingUp className="w-5 h-5 text-[#0066CC]" />
+              As 8 Fases da Metodologia Vetor Master V7.2
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5 pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {fasesStateMachineV65.map((f) => (
-                <div key={f.numero} className="border rounded-lg p-3">
-                  <Badge variant="outline" className="mb-1">
+              {fasesStateMachineV72.map((f) => (
+                <div
+                  key={f.numero}
+                  className="border border-[#E0E0E0] rounded-[4px] p-3.5 bg-white"
+                >
+                  <Badge
+                    variant="outline"
+                    className="mb-1 text-[10px] text-[#0066CC] border-[#0066CC]/30 font-semibold bg-[#0066CC]/5"
+                  >
                     Fase {f.numero}
                   </Badge>
-                  <p className="font-medium text-sm">{f.titulo}</p>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{f.foco}</p>
+                  <p className="font-semibold text-sm text-[#333333]">{f.titulo}</p>
+                  <p className="text-xs text-[#808080] mt-1 line-clamp-2">{f.foco}</p>
                 </div>
               ))}
             </div>
@@ -132,11 +156,27 @@ export default function Resultados() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Avaliação de Resultados</h1>
-        <p className="text-muted-foreground mt-1">
-          JBP Gestão Master V 7.2 — Diagnóstico Executivo Estratégico
-        </p>
+      <div className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-[#22B14C] uppercase tracking-wider mb-1">
+            <span>Diagnóstico Processado</span>
+            <span className="text-[#808080]">•</span>
+            <span>Vetor Master V7.2</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC]">
+            Resultados e Devolutiva Estratégica
+          </h1>
+          <p className="text-xs md:text-sm text-[#808080] mt-1">
+            Análise determinística e identificação dos vazamentos operacionais
+          </p>
+        </div>
+        <Button
+          asChild
+          variant="outline"
+          className="border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white rounded-[4px] text-xs"
+        >
+          <a href="/questionario">Novo Diagnóstico</a>
+        </Button>
       </div>
 
       {/* Heat Map das 8 áreas (isca gratuita) */}

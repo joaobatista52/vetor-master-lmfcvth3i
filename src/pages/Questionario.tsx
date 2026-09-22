@@ -172,7 +172,7 @@ export default function Questionario() {
           secao_7_expectativas: respostasPorSecao['expectativas'],
           secao_8_inovacao: respostasPorSecao['inovacao'],
           secao_9_proximos_passos: respostasPorSecao['proximos-passos'],
-          questionario_version: '6.5-consolidado-pdf-19ago26',
+          questionario_version: '7.2-consolidado-12setores-18set26',
           submetido_em: new Date().toISOString(),
         },
       })
@@ -203,9 +203,12 @@ export default function Questionario() {
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Diagnóstico Estratégico Setorial</h1>
-        <p className="text-muted-foreground mt-1">
-          JBP Gestão Master V 6.5 — Etapa {stepIdx + 1} de {totalSteps}
+        <h1 className="text-3xl font-bold tracking-tight text-[#0066CC]">
+          Diagnóstico Estratégico Setorial
+        </h1>
+        <p className="text-sm text-[#808080] mt-1">
+          Vetor Master V7.2 — Inteligência Estratégica Determinística • Etapa {stepIdx + 1} de{' '}
+          {totalSteps}
         </p>
       </div>
       <Progress value={((stepIdx + 1) / totalSteps) * 100} className="h-2 mb-6" />

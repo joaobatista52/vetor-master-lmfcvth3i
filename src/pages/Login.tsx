@@ -83,16 +83,20 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/30 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <Logo className="h-36 shrink-0" variant="full" showText />
+    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF] hex-watermark p-4">
+      <Card className="w-full max-w-md bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] shadow-md">
+        <CardHeader className="text-center space-y-4 pb-4">
+          <div className="flex justify-center py-2">
+            <Logo variant="vertical" size="xl" showTagline showVersion versionText="V7.2" />
           </div>
           <div>
-            <CardTitle className="text-2xl">Vetor Master</CardTitle>
-            <CardDescription className="mt-1">
-              {isLogin ? 'Entre na sua conta' : 'Crie a sua conta'}
+            <CardTitle className="text-xl font-bold text-[#333333]">
+              {isLogin ? 'Acesse sua Conta Executiva' : 'Criar Nova Conta'}
+            </CardTitle>
+            <CardDescription className="text-xs text-[#808080] mt-1">
+              {isLogin
+                ? 'Plataforma de Inteligência Estratégica Determinística'
+                : 'Inicie sua jornada rumo a uma empresa autogerenciável'}
             </CardDescription>
           </div>
         </CardHeader>
@@ -162,20 +166,27 @@ export default function Login() {
                 </div>
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-medium transition-colors"
+              disabled={loading}
+            >
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isLogin ? 'Entrar' : 'Criar Conta'}
+              {isLogin ? 'Acessar Plataforma' : 'Criar Conta e Iniciar'}
             </Button>
           </form>
-          <div className="text-center mt-4 text-sm text-muted-foreground">
+          <div className="text-center mt-4 text-xs text-[#808080]">
             {isLogin ? 'Não tem conta? ' : 'Já tem conta? '}
             <button
               type="button"
               onClick={switchMode}
-              className="text-primary hover:underline font-medium"
+              className="text-[#0066CC] hover:text-[#22B14C] font-semibold underline underline-offset-2 transition-colors"
             >
               {isLogin ? 'Criar conta' : 'Entrar'}
             </button>
+          </div>
+          <div className="mt-6 pt-4 border-t border-[#E0E0E0] text-center text-[10px] text-[#808080]">
+            C-Level as a Service & Mentorship as a Software • V7.2
           </div>
         </CardContent>
       </Card>
