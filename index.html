@@ -8,6 +8,29 @@
       name="description"
       content="VETOR MASTER — Inteligência Estratégica Determinística. Diagnósticos estratégicos e planos de ação para superar a prisão do fundador."
     />
+    <script>
+      /* Proteção contra SecurityError ao acessar cssRules em stylesheets cross-origin (ex.: html-to-image / bibliotecas de screenshot) */
+      (function() {
+        try {
+          var proto = CSSStyleSheet.prototype;
+          var desc = Object.getOwnPropertyDescriptor(proto, 'cssRules');
+          if (desc && desc.get) {
+            var origGet = desc.get;
+            Object.defineProperty(proto, 'cssRules', {
+              get: function() {
+                try {
+                  return origGet.call(this);
+                } catch (e) {
+                  return undefined;
+                }
+              },
+              enumerable: desc.enumerable,
+              configurable: desc.configurable,
+            });
+          }
+        } catch (_) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
