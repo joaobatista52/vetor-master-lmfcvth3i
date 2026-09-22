@@ -87,7 +87,7 @@ export default function Login() {
       <Card className="w-full max-w-md bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] shadow-md">
         <CardHeader className="text-center space-y-4 pb-4">
           <div className="flex justify-center py-2">
-            <Logo variant="vertical" size="xl" showTagline showVersion versionText="V7.2" />
+            <Logo variant="vertical" size="xl" showTagline />
           </div>
           <div>
             <CardTitle className="text-xl font-bold text-[#333333]">

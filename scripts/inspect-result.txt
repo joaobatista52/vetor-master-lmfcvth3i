@@ -1,0 +1,4 @@
+logo-5a-vetor-master-14jul26-25ac8.png: 1024x1024, size=687996 bytes
+logo-5a-clean.png: 706x615, size=310172 bytes
+logo-5e-vetor-master-14jul26-04e42.png: 1536x864, size=882305 bytes
+logo-5e-clean.png: 1359x407, size=373242 bytes

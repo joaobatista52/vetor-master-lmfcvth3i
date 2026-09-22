@@ -102,7 +102,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-[#333333] bg-[#333333] text-white">
-      <SidebarHeader className="h-20 flex items-center justify-between px-3 border-b border-white/10">
+      <SidebarHeader className="h-24 flex items-center justify-between px-3 border-b border-white/10">
         <div className="flex items-center w-full overflow-hidden whitespace-nowrap">
           <Link to="/" className="flex items-center w-full focus:outline-none py-1">
             <Logo

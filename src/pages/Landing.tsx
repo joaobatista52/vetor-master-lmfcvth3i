@@ -30,8 +30,8 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-50 border-b border-[#E0E0E0] bg-white/95 backdrop-blur-sm">
-        <div className="container flex h-20 items-center justify-between">
-          <Logo variant="horizontal" size="sm" showTagline showVersion versionText="V7.2" />
+        <div className="container flex h-24 items-center justify-between">
+          <Logo variant="horizontal" size="sm" showTagline />
           <nav className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -282,7 +282,7 @@ export default function Landing() {
 
       <footer className="border-t border-[#E0E0E0] py-8 bg-[#F5F5F5]">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo variant="horizontal" size="sm" showTagline showVersion versionText="V7.2" />
+          <Logo variant="horizontal" size="sm" showTagline />
           <p className="text-xs text-[#808080]">
             © 2026 Vetor Master. C-Level as a Service & Mentorship as a Software • V7.2.
           </p>
