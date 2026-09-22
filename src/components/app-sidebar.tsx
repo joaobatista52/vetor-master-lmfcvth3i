@@ -102,16 +102,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-[#333333] bg-[#333333] text-white">
-      <SidebarHeader className="h-16 flex items-center justify-between px-4 border-b border-white/10">
+      <SidebarHeader className="h-16 flex items-center justify-between px-3 border-b border-white/10">
         <div className="flex items-center w-full overflow-hidden whitespace-nowrap">
-          <Logo
-            variant={isCollapsed ? 'icon' : 'horizontal'}
-            size={isCollapsed ? 'sm' : 'sm'}
-            showTagline={!isCollapsed}
-            showVersion={!isCollapsed}
-            versionText="V7.2"
-            negative
-          />
+          <Link to="/" className="flex items-center w-full focus:outline-none">
+            <Logo
+              variant={isCollapsed ? 'icon' : 'horizontal'}
+              size={isCollapsed ? 'sm' : 'sm'}
+              showTagline={!isCollapsed}
+              showVersion={!isCollapsed}
+              versionText="V7.2"
+              negative
+            />
+          </Link>
         </div>
       </SidebarHeader>
 
