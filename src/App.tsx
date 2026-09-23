@@ -14,6 +14,7 @@ import Notas from './pages/Notas'
 import Resultados from './pages/Resultados'
 import Biblioteca from './pages/Biblioteca'
 import NiveisEPlanos from './pages/NiveisEPlanos'
+import Dashboard from './pages/Dashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminMetrics from './pages/AdminMetrics'
 import AdminLogsPage from './pages/AdminLogs'
@@ -40,7 +41,7 @@ const App = () => (
               <Route path="/diagnosticos" element={<Diagnosticos />} />
               <Route path="/resultados" element={<Resultados />} />
               <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
-              <Route path="/dashboard" element={<AdminMetrics />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/biblioteca" element={<Biblioteca />} />
               <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
 
