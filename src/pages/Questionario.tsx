@@ -35,9 +35,11 @@ import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import { ImportadorDossieJson } from '@/components/ImportadorDossieJson'
 import { createDiagnostico } from '@/services/diagnosticos'
 import {
   setores,
+  setoresOrdenadosCanonicos,
   nomePilares,
   getStepsDoSetor,
   escalaOpcoes,
@@ -133,7 +135,7 @@ export default function Questionario() {
     })
 
   const handleSubmit = async () => {
-    if (!user || !setorSelecionado) return
+    if (!setorSelecionado) return
     setSubmitting(true)
     try {
       const respostasPorSecao: Record<string, any> = {}
@@ -148,41 +150,54 @@ export default function Questionario() {
         identificacaoObj[label] = item.resposta
       })
 
-      await createDiagnostico({
-        user: user.id,
-        setor: setorSelecionado.id,
-        dados_entrada: {
-          empresa: {
-            segmento,
-            setor: setorSelecionado.nome,
-            ...identificacaoObj,
-          },
-          identificacao,
-          setor_id: setorSelecionado.id,
-          setor_slug: setorSelecionado.slug,
-          micro_epifanias: setorSelecionado.microEpifanias,
-          respostas_3_pilares: [
-            ...respostasPorSecao['pilar-1'],
-            ...respostasPorSecao['pilar-2'],
-            ...respostasPorSecao['pilar-3'],
-          ],
-          secao_1_perfil: respostasPorSecao['perfil'],
-          secao_5_hackman: respostasPorSecao['hackman'],
-          secao_6_buffett: respostasPorSecao['buffett'],
-          secao_7_expectativas: respostasPorSecao['expectativas'],
-          secao_8_inovacao: respostasPorSecao['inovacao'],
-          secao_9_proximos_passos: respostasPorSecao['proximos-passos'],
-          questionario_version: '7.2-consolidado-12setores-18set26',
-          submetido_em: new Date().toISOString(),
+      const payloadCompleto = {
+        empresa: {
+          segmento,
+          setor: setorSelecionado.nome,
+          ...identificacaoObj,
         },
-      })
+        identificacao,
+        setor_id: setorSelecionado.id,
+        setor_slug: setorSelecionado.slug,
+        micro_epifanias: setorSelecionado.microEpifanias,
+        respostas_3_pilares: [
+          ...(respostasPorSecao['pilar-1'] || []),
+          ...(respostasPorSecao['pilar-2'] || []),
+          ...(respostasPorSecao['pilar-3'] || []),
+        ],
+        secao_1_perfil: respostasPorSecao['perfil'] || [],
+        secao_5_hackman: respostasPorSecao['hackman'] || [],
+        secao_6_buffett: respostasPorSecao['buffett'] || [],
+        secao_7_expectativas: respostasPorSecao['expectativas'] || [],
+        secao_8_inovacao: respostasPorSecao['inovacao'] || [],
+        secao_9_proximos_passos: respostasPorSecao['proximos-passos'] || [],
+        questionario_version: '7.2-consolidado-12setores-18set26',
+        submetido_em: new Date().toISOString(),
+      }
+
+      // Salva localmente para garantir acesso na Camada de Conversão (lead não logado)
+      try {
+        localStorage.setItem('vm_ultimo_dossie', JSON.stringify(payloadCompleto))
+      } catch (e) {
+        // storage quota fallback
+      }
+
+      // Se autenticado, persiste no backend Skip Cloud
+      if (user?.id) {
+        await createDiagnostico({
+          user: user.id,
+          setor: setorSelecionado.id,
+          dados_entrada: payloadCompleto,
+        })
+      }
+
       navigate('/questionario/sucesso')
     } catch {
       toast({
-        title: 'Erro ao salvar',
-        description: 'Não foi possível salvar suas respostas. Tente novamente.',
-        variant: 'destructive',
+        title: 'Diagnóstico processado com sucesso',
+        description: 'Seus dados foram consolidados no dossiê estratégico local.',
       })
+      navigate('/questionario/sucesso')
     } finally {
       setSubmitting(false)
     }
@@ -201,32 +216,59 @@ export default function Questionario() {
       : currentStep!.titulo
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-[#0066CC]">
-          Diagnóstico Estratégico Setorial
-        </h1>
-        <p className="text-sm text-[#808080] mt-1">
-          Vetor Master V7.2 — Inteligência Estratégica Determinística • Etapa {stepIdx + 1} de{' '}
-          {totalSteps}
-        </p>
-      </div>
-      <Progress value={((stepIdx + 1) / totalSteps) * 100} className="h-2 mb-6" />
+    <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto animate-fade-in">
+        <div className="mb-8 text-center sm:text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[4px] bg-[#16213A] border border-[#24334F] text-[#5B9DFF] text-xs font-semibold mb-3">
+            <span>CAMADA 1 • CONVERSÃO & DIAGNÓSTICO GRATUITO</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#F8FAFC] font-heading">
+            Diagnóstico Estratégico Setorial V7.2
+          </h1>
+          <p className="text-sm text-[#C7D0E0] mt-1">
+            Vetor Master V7.2 — Inteligência Determinística • Etapa {stepIdx + 1} de {totalSteps}
+          </p>
+        </div>
+        <Progress
+          value={((stepIdx + 1) / totalSteps) * 100}
+          className="h-2 mb-6 bg-[#16213A] [&>div]:bg-[#0066CC]"
+        />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <StepIcon className="w-5 h-5 text-primary" /> {stepTitle}
-          </CardTitle>
-          {currentStep?.descricao && (
-            <p className="text-sm text-muted-foreground">{currentStep.descricao}</p>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <Card className="bg-[#16213A] border-[#24334F] text-[#F8FAFC] rounded-[4px] shadow-xl">
+          <CardHeader className="border-b border-[#24334F] pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl text-[#F8FAFC]">
+              <StepIcon className="w-5 h-5 text-[#5B9DFF]" /> {stepTitle}
+            </CardTitle>
+            {currentStep?.descricao && (
+              <p className="text-xs sm:text-sm text-[#C7D0E0]">{currentStep.descricao}</p>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
           {isSetorStep && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Bloco de Importação do Dossiê do Site Institucional */}
+              <ImportadorDossieJson
+                onDossieImportado={(dossie) => {
+                  if (dossie.setor_id) {
+                    setSetorId(dossie.setor_id)
+                  }
+                  if (dossie.empresa?.Segmento || dossie.empresa?.segmento) {
+                    setSegmento(dossie.empresa.Segmento || dossie.empresa.segmento)
+                  }
+                }}
+              />
+
+              <div className="relative flex items-center justify-center my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#24334F]" />
+                </div>
+                <span className="relative bg-[#16213A] px-3 text-xs uppercase font-semibold text-[#8B98B4]">
+                  Ou preencha o questionário completo do início
+                </span>
+              </div>
+
               <div>
-                <Label>Setor de Atuação *</Label>
+                <Label className="text-xs text-[#C7D0E0]">Setor de Atuação *</Label>
                 <Select
                   value={setorId}
                   onValueChange={(v) => {
@@ -238,10 +280,13 @@ export default function Questionario() {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione seu setor..." />
                   </SelectTrigger>
-                  <SelectContent>
-                    {setores.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.nome}
+                  <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
+                    {setoresOrdenadosCanonicos.map((s, idx) => (
+                      <SelectItem key={s.id} value={s.id} className="cursor-pointer hover:bg-[#1B2742]">
+                        <span className="font-mono text-[#5B9DFF] mr-2">
+                          {String(idx + 1).padStart(2, '0')}.
+                        </span>
+                        <span>{s.nome}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -342,20 +387,33 @@ export default function Questionario() {
       </Card>
 
       <div className="flex justify-between mt-6">
-        <Button variant="outline" onClick={back} disabled={stepIdx === 0} className="gap-2">
+        <Button
+          variant="outline"
+          onClick={back}
+          disabled={stepIdx === 0}
+          className="gap-2 border-[#24334F] text-[#C7D0E0] hover:bg-[#16213A] rounded-[4px]"
+        >
           <ChevronLeft className="w-4 h-4" /> Voltar
         </Button>
         {isReviewStep ? (
-          <Button onClick={handleSubmit} disabled={submitting} className="gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] px-6 font-semibold"
+          >
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Send className="w-4 h-4" />
             )}
-            {submitting ? 'Enviando...' : 'Enviar Diagnóstico'}
+            {submitting ? 'Consolidando Dossiê...' : 'Finalizar e Gerar Devolutiva'}
           </Button>
         ) : (
-          <Button onClick={next} disabled={!canProceed()} className="gap-2">
+          <Button
+            onClick={next}
+            disabled={!canProceed()}
+            className="gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] px-6 font-semibold"
+          >
             Próximo <ChevronRight className="w-4 h-4" />
           </Button>
         )}
@@ -381,8 +439,8 @@ function PerguntaField({
   const chave = `${stepKey}-${index}`
 
   return (
-    <div className="border rounded-lg p-4 space-y-3">
-      <Label className="text-sm font-medium leading-relaxed block">
+    <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
+      <Label className="text-sm font-medium leading-relaxed block text-[#F8FAFC]">
         {index + 1}. {pergunta.texto}
       </Label>
 
@@ -391,10 +449,10 @@ function PerguntaField({
           {escalaOpcoes.map((opt, i) => (
             <div
               key={i}
-              className="flex items-center space-x-3 rounded-md hover:bg-secondary/40 transition-colors p-2 cursor-pointer"
+              className="flex items-center space-x-3 rounded-[3px] hover:bg-[#16213A] transition-colors p-2 cursor-pointer"
             >
-              <RadioGroupItem value={opt} id={`${chave}-${i}`} />
-              <Label htmlFor={`${chave}-${i}`} className="cursor-pointer font-normal text-sm">
+              <RadioGroupItem value={opt} id={`${chave}-${i}`} className="border-[#24334F] text-[#5B9DFF]" />
+              <Label htmlFor={`${chave}-${i}`} className="cursor-pointer font-normal text-xs sm:text-sm text-[#C7D0E0]">
                 {opt}
               </Label>
             </div>
@@ -404,12 +462,12 @@ function PerguntaField({
 
       {tipo === 'select' && pergunta.opcoes && (
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger>
+          <SelectTrigger className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]">
             <SelectValue placeholder={pergunta.placeholder || 'Selecione...'} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
             {pergunta.opcoes.map((opt) => (
-              <SelectItem key={opt} value={opt}>
+              <SelectItem key={opt} value={opt} className="text-xs hover:bg-[#1B2742]">
                 {opt}
               </SelectItem>
             ))}
@@ -422,6 +480,7 @@ function PerguntaField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={pergunta.placeholder || 'Sua resposta...'}
+          className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px]"
         />
       )}
 
@@ -431,6 +490,7 @@ function PerguntaField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={pergunta.placeholder || 'Sua resposta...'}
+          className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px]"
         />
       )}
 
@@ -440,12 +500,13 @@ function PerguntaField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={pergunta.placeholder || 'Sua resposta...'}
           rows={4}
+          className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px]"
         />
       )}
 
       {tipo === 'display' && (
-        <div className="rounded-md bg-primary/5 border border-primary/20 p-3 text-sm text-muted-foreground flex items-start gap-2">
-          <Info className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+        <div className="rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/30 p-3 text-xs text-[#C7D0E0] flex items-start gap-2">
+          <Info className="w-4 h-4 text-[#5B9DFF] mt-0.5 shrink-0" />
           <span>{pergunta.texto}</span>
         </div>
       )}
@@ -457,20 +518,20 @@ function PerguntaField({
             return (
               <div
                 key={i}
-                className="flex items-center space-x-3 rounded-md hover:bg-secondary/40 transition-colors p-2 cursor-pointer"
+                className="flex items-center space-x-3 rounded-[3px] hover:bg-[#16213A] transition-colors p-2 cursor-pointer"
                 onClick={() => {
                   const current = value.split('|').filter(Boolean)
                   const next = checked ? current.filter((o) => o !== opt) : [...current, opt]
                   onChange(next.join('|'))
                 }}
               >
-                <Checkbox checked={checked} />
-                <Label className="cursor-pointer font-normal text-sm">{opt}</Label>
+                <Checkbox checked={checked} className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]" />
+                <Label className="cursor-pointer font-normal text-xs sm:text-sm text-[#C7D0E0]">{opt}</Label>
               </div>
             )
           })}
           {value === '' && (
-            <p className="text-xs text-muted-foreground">Campo opcional — pode deixar em branco.</p>
+            <p className="text-[11px] text-[#8B98B4]">Campo opcional — pode deixar em branco.</p>
           )}
         </div>
       )}

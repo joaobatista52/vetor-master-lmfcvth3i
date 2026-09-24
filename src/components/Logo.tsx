@@ -128,13 +128,12 @@ export function Logo({
   }
 
   // Versão Horizontal (padrão para Header, Sidebar, Landing, etc.)
-  // Sempre COLORIDO com as cores oficiais da marca em qualquer fundo
-  // Enquadramento via container overflow-hidden com object-contain + padding e object-position para garantir
-  // que nenhuma letra (especialmente o "R" final de "MASTER") seja cortada.
+  // Aplica classe CSS para tratamento negativo luminoso em navbar escura sem distorcer o logo oficial
   return (
     <div
       className={cn(
         'inline-flex items-center justify-center select-none shrink-0 overflow-hidden max-w-full',
+        negative && 'drop-shadow-[0_0_12px_rgba(91,157,255,0.2)]',
         className,
       )}
       style={{ height: horizontalHeight, width: 'auto' }}
@@ -142,7 +141,10 @@ export function Logo({
       <img
         src={logo5eClean}
         alt="VETOR MASTER"
-        className="h-full w-auto max-w-full object-contain object-center px-1.5 py-0.5 select-none transition-all"
+        className={cn(
+          'h-full w-auto max-w-full object-contain object-center px-1.5 py-0.5 select-none transition-all',
+          negative && 'brightness-110 contrast-105',
+        )}
         loading="eager"
       />
     </div>

@@ -102,12 +102,18 @@ const documentacaoAdicionalOpcoes = [
 
 export function buildSecaoIdentificacao(segmentos: string[]): PerguntaSecao[] {
   return [
-    { texto: 'Razão Social:', tipo: 'texto' },
-    { texto: 'CNPJ:', tipo: 'texto' },
+    { texto: 'Razão Social:', tipo: 'texto', placeholder: 'Nome oficial da empresa' },
+    { texto: 'CNPJ:', tipo: 'texto', placeholder: '00.000.000/0000-00' },
     { texto: 'Data:', tipo: 'texto', placeholder: '//______' },
     { texto: 'Segmento:', tipo: 'select', opcoes: [...segmentos, 'Outro'] },
-    { texto: 'Respondente:', tipo: 'texto' },
-    { texto: 'Cargo:', tipo: 'texto' },
+    { texto: 'Respondente:', tipo: 'texto', placeholder: 'Nome completo do executivo' },
+    { texto: 'Cargo:', tipo: 'texto', placeholder: 'Ex.: CEO, Fundador, Diretor' },
+    {
+      texto: 'E-mail Corporativo (Dossiê Estratégico):',
+      tipo: 'texto',
+      placeholder: 'diretoria@empresa.com.br',
+    },
+    { texto: 'WhatsApp / Telefone:', tipo: 'texto', placeholder: '(11) 99999-9999' },
   ]
 }
 
@@ -1752,7 +1758,7 @@ export interface StepDescriptor {
 }
 
 export const tituloSecao: Record<TipoStep, string> = {
-  identificacao: 'Identificação da Empresa',
+  identificacao: 'Identificação da Empresa & Lead',
   perfil: 'Seção 1 — Perfil da Empresa e Contexto',
   pilar: '', // preenchido dinamicamente
   hackman: 'Seção 5 — Hackman',
@@ -1761,6 +1767,32 @@ export const tituloSecao: Record<TipoStep, string> = {
   inovacao: 'Seção 8 — Inovação e Tecnologia',
   'proximos-passos': 'Seção 9 — Próximos Passos',
 }
+
+/**
+ * Ordenação dos setores na sequência canônica oficial V1.3:
+ * 01 Saúde · 02 Varejo · 03 Serviços · 04 Trading · 05 Facilities · 06 Indústria ·
+ * 07 Tech · 08 Construção · 09 Logística · 10 Educação · 11 Agronegócio · 12 Academias
+ */
+const ordemCanonicasIds: string[] = [
+  'saude',
+  'varejo',
+  'servicos',
+  'trading',
+  'facilities',
+  'industria',
+  'tecnologia',
+  'construcao',
+  'transporte',
+  'educacao',
+  'agronegocio',
+  'academias',
+]
+
+export const setoresOrdenadosCanonicos: Setor[] = [...setores].sort((a, b) => {
+  const ia = ordemCanonicasIds.indexOf(a.id)
+  const ib = ordemCanonicasIds.indexOf(b.id)
+  return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+})
 
 export function getStepsDoSetor(setor: Setor): StepDescriptor[] {
   const steps: StepDescriptor[] = [

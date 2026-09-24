@@ -41,11 +41,11 @@ import {
  * 7. Níveis e Planos (/niveis-e-planos)
  */
 const clientJourneyNavItems = [
-  { title: 'Início', path: '/', icon: Home, step: '1' },
-  { title: 'Diagnóstico', path: '/diagnosticos', icon: Activity, step: '2' },
-  { title: 'Resultados e Devolutiva', path: '/resultados', icon: Award, step: '3' },
-  { title: 'Plano de Ação', path: '/plano-de-acao', icon: ListTodo, step: '4' },
-  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '5' },
+  { title: 'Início Jornada', path: '/app', icon: Home, step: '1' },
+  { title: 'Plano de Ação (+ Consultor)', path: '/plano-de-acao', icon: ListTodo, step: '2' },
+  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '3' },
+  { title: 'Devolutiva & Heat Map', path: '/resultados', icon: Award, step: '4' },
+  { title: 'Áreas da Empresa', path: '/areas-da-empresa', icon: Activity, step: '5' },
   { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '6' },
   { title: 'Níveis e Planos', path: '/niveis-e-planos', icon: Layers, step: '7' },
 ]
@@ -70,12 +70,12 @@ export function AppSidebar() {
     cn(
       'flex items-center gap-3 px-3 py-2 transition-all duration-200 rounded-[4px] mx-2 text-xs font-medium',
       isActive
-        ? 'bg-[#0066CC] text-white shadow-sm font-semibold'
-        : 'text-white/80 hover:bg-white/10 hover:text-white',
+        ? 'bg-[#16213A] border border-[#5B9DFF]/40 text-[#F8FAFC] shadow-sm font-semibold'
+        : 'text-[#C7D0E0] hover:bg-[#16213A] hover:text-[#F8FAFC]',
     )
 
   const iconClass = (isActive: boolean) =>
-    cn('w-4 h-4 shrink-0 transition-colors', isActive ? 'text-[#22B14C]' : 'text-white/70')
+    cn('w-4 h-4 shrink-0 transition-colors', isActive ? 'text-[#3DDC74]' : 'text-[#8B98B4]')
 
   const renderItem = (item: { title: string; path: string; icon: any; step?: string }) => {
     const isActive = location.pathname === item.path
@@ -102,8 +102,8 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="border-r border-[#333333] bg-[#333333] text-white">
-      <SidebarHeader className="h-24 flex items-center justify-center px-2 border-b border-white/10">
+    <Sidebar className="border-r border-[#24334F] bg-[#111A2E] text-[#F8FAFC]">
+      <SidebarHeader className="h-24 flex items-center justify-center px-2 border-b border-[#24334F]">
         <div className="flex items-center justify-center w-full overflow-hidden">
           <Link to="/" className="flex items-center justify-center w-full focus:outline-none py-1">
             <Logo
@@ -120,8 +120,8 @@ export function AppSidebar() {
       <SidebarContent className="space-y-2 py-2">
         <SidebarGroup>
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-white/50 px-4">
-              Jornada Estratégica
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#8B98B4] px-4">
+              Jornada Estratégica (Assinante)
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
@@ -131,7 +131,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-white/50 px-4">
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#8B98B4] px-4">
               Apoio Operacional
             </SidebarGroupLabel>
           )}
@@ -143,7 +143,7 @@ export function AppSidebar() {
         {isAdmin && (
           <SidebarGroup>
             {!isCollapsed && (
-              <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#FF9900] px-4 flex items-center gap-1.5">
+              <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#FFB84D] px-4 flex items-center gap-1.5">
                 <Shield className="w-3 h-3" /> Governança & Admin
               </SidebarGroupLabel>
             )}
@@ -154,10 +154,10 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/10 p-2">
-        <div className="px-3 py-2 flex items-center justify-between text-[11px] text-white/60">
+      <SidebarFooter className="border-t border-[#24334F] p-2 bg-[#0B1120]/50">
+        <div className="px-3 py-2 flex items-center justify-between text-[11px] text-[#8B98B4]">
           {!isCollapsed && <span>VETOR MASTER</span>}
-          <span className="font-mono text-[10px] text-[#22B14C] font-semibold">
+          <span className="font-mono text-[10px] text-[#3DDC74] font-semibold">
             V7.2 DETERMINÍSTICO
           </span>
         </div>

@@ -20,9 +20,11 @@ import AdminMetrics from './pages/AdminMetrics'
 import AdminLogsPage from './pages/AdminLogs'
 import AdminInvitesPage from './pages/AdminInvites'
 import BibliotecaProfissional from './pages/BibliotecaProfissional'
+import AreasDaEmpresa from './pages/AreasDaEmpresa'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
+import InstitucionalVendedora from './pages/InstitucionalVendedora'
 import Questionario from './pages/Questionario'
 import QuestionarioSucesso from './pages/QuestionarioSucesso'
 
@@ -33,21 +35,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
+          {/* Camada 0: Institucional/Vendedora como 1ª tela para todos */}
+          <Route path="/" element={<InstitucionalVendedora />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
+          <Route path="/questionario" element={<Questionario />} />
+          <Route path="/planos" element={<NiveisEPlanos />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              {/* Jornada Oficial Vetor Master V7.2 */}
-              <Route path="/" element={<Index />} />
+              {/* Jornada do Assinante Vetor Master V7.2 / V1.3 */}
+              <Route path="/app" element={<Index />} />
               <Route path="/diagnosticos" element={<Diagnosticos />} />
               <Route path="/resultados" element={<Resultados />} />
               <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/areas-da-empresa" element={<AreasDaEmpresa />} />
               <Route path="/biblioteca" element={<Biblioteca />} />
               <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
 
-              {/* Fluxos de Questionário e Recursos Complementares */}
-              <Route path="/questionario" element={<Questionario />} />
+              {/* Fluxos Complementares */}
               <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
               <Route path="/notas" element={<Notas />} />
               <Route path="/modelos" element={<Modelos />} />
