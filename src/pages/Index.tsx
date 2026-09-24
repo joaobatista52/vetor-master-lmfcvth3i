@@ -1,13 +1,7 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Target,
-  DollarSign,
-  Settings,
-  Users,
   TrendingUp,
-  Cpu,
-  Shield,
   ArrowRight,
   Activity,
   BrainCircuit,
@@ -15,48 +9,11 @@ import {
   BookOpen,
   ListTodo,
   Stethoscope,
-  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { getFrameworks, type Framework } from '@/services/frameworks'
-import { useRealtime } from '@/hooks/use-realtime'
-
-const areaIcons = [Target, DollarSign, Settings, Users, TrendingUp, Cpu, Shield]
-const areaColors = [
-  'text-blue-500 bg-blue-50',
-  'text-green-500 bg-green-50',
-  'text-orange-500 bg-orange-50',
-  'text-purple-500 bg-purple-50',
-  'text-cyan-500 bg-cyan-50',
-  'text-indigo-500 bg-indigo-50',
-  'text-red-500 bg-red-50',
-]
 
 export default function Index() {
-  const [frameworks, setFrameworks] = useState<Framework[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const loadData = async () => {
-    try {
-      const data = await getFrameworks()
-      setFrameworks(data)
-    } catch {
-      setFrameworks([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [])
-  useRealtime('frameworks', () => {
-    loadData()
-  })
-
   return (
     <div className="space-y-6">
       {/* Banner de Boas-Vindas Institucional VETOR MASTER */}
@@ -200,69 +157,6 @@ export default function Index() {
             <p className="text-xs text-[#0066CC] mt-1 font-medium">Metodologia Vetor Master V7.2</p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Áreas Estratégicas */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight text-[#333333] flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#0066CC]" /> 8 Áreas do Master Framework V2.4
-            </h2>
-            <p className="text-xs text-[#808080] mt-1">
-              Pilares determinísticos para governança, escala e mitigação de riscos em PMEs
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {loading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px]">
-                  <CardContent className="p-5">
-                    <Skeleton className="h-24 w-full" />
-                  </CardContent>
-                </Card>
-              ))
-            : frameworks.map((fw) => {
-                const Icon = areaIcons[fw.area_numero - 1] || Target
-                return (
-                  <Card
-                    key={fw.id}
-                    className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] hover:border-[#0066CC] transition-all hover:shadow-sm group flex flex-col justify-between"
-                  >
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-mono text-[#0066CC] border-[#0066CC]/30 bg-white"
-                        >
-                          ÁREA 0{fw.area_numero}
-                        </Badge>
-                        <div className="w-8 h-8 rounded-[4px] bg-white border border-[#E0E0E0] flex items-center justify-center text-[#0066CC]">
-                          <Icon className="w-4 h-4" />
-                        </div>
-                      </div>
-                      <CardTitle className="text-sm font-bold text-[#333333] group-hover:text-[#0066CC] transition-colors leading-tight">
-                        {fw.titulo}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-1 flex-1 flex flex-col justify-between">
-                      <p className="text-xs text-[#808080] line-clamp-3 mb-3 leading-relaxed">
-                        {fw.conteudo}
-                      </p>
-                      {fw.regras_ouro && (
-                        <div className="bg-white rounded-[4px] p-2 border border-[#E0E0E0]">
-                          <p className="text-[11px] text-[#333333] line-clamp-2">
-                            <span className="font-semibold text-[#0066CC]">Regra de Ouro: </span>
-                            {fw.regras_ouro}
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
