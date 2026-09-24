@@ -149,70 +149,73 @@ export default function QuestionarioSucesso() {
 
         {heatMap && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-[#F8FAFC]">Heat Map de Criticalidade (8 Áreas)</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-[#F8FAFC]">
+              Heat Map de Criticalidade (8 Áreas)
+            </h2>
             <HeatMapVisualization heatMap={heatMap} />
           </div>
         )}
 
-      {/* Portão P3 -> P4 de Conversão: Transição da Devolutiva (P3) para o Plano Executável (P4) sob assinatura */}
-      <Card className="border-[#24334F] bg-[#16213A] rounded-[4px] shadow-xl">
-        <CardContent className="p-6 md:p-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-[4px] bg-[#0066CC]/15 border border-[#5B9DFF]/30 flex items-center justify-center shrink-0">
-                <Lock className="w-6 h-6 text-[#5B9DFF]" />
+        {/* Portão P3 -> P4 de Conversão: Transição da Devolutiva (P3) para o Plano Executável (P4) sob assinatura */}
+        <Card className="border-[#24334F] bg-[#16213A] rounded-[4px] shadow-xl">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-[4px] bg-[#0066CC]/15 border border-[#5B9DFF]/30 flex items-center justify-center shrink-0">
+                  <Lock className="w-6 h-6 text-[#5B9DFF]" />
+                </div>
+                <div className="space-y-1">
+                  <Badge className="bg-[#FF9900]/15 text-[#FFB84D] border-[#FF9900]/30 text-[10px] font-semibold uppercase">
+                    Portão P3 → P4: Conversão Estruturada
+                  </Badge>
+                  <h3 className="font-bold text-lg md:text-xl text-[#F8FAFC]">
+                    Caminho Estratégico Completo & Consultor Digital
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#C7D0E0] max-w-2xl leading-relaxed">
+                    A devolutiva revelou as causas-raiz estruturais. Para destravar a execução via
+                    roadmap 5W2H parametrizado, rotinas semanais de OKRs e atendimento contínuo do
+                    Consultor Digital, selecione sua modalidade na Escada de Valor.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Badge className="bg-[#FF9900]/15 text-[#FFB84D] border-[#FF9900]/30 text-[10px] font-semibold uppercase">
-                  Portão P3 → P4: Conversão Estruturada
-                </Badge>
-                <h3 className="font-bold text-lg md:text-xl text-[#F8FAFC]">
-                  Caminho Estratégico Completo & Consultor Digital
-                </h3>
-                <p className="text-xs sm:text-sm text-[#C7D0E0] max-w-2xl leading-relaxed">
-                  A devolutiva revelou as causas-raiz estruturais. Para destravar a execução via
-                  roadmap 5W2H parametrizado, rotinas semanais de OKRs e atendimento contínuo do
-                  Consultor Digital, selecione sua modalidade na Escada de Valor.
-                </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
+                <Button
+                  className="w-full sm:w-auto bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-semibold text-xs py-5 px-6 gap-2"
+                  onClick={() => navigate('/niveis-e-planos')}
+                >
+                  <Sparkles className="w-4 h-4 text-[#3DDC74]" />
+                  <span>Contratar / Ver Planos</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto border-[#24334F] text-[#C7D0E0] hover:bg-[#111A2E] rounded-[4px] text-xs py-5"
+                  onClick={() => navigate('/plano-de-acao')}
+                >
+                  Acessar Área do Assinante
+                </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
-              <Button
-                className="w-full sm:w-auto bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-semibold text-xs py-5 px-6 gap-2"
-                onClick={() => navigate('/niveis-e-planos')}
-              >
-                <Sparkles className="w-4 h-4 text-[#3DDC74]" />
-                <span>Contratar / Ver Planos</span>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto border-[#24334F] text-[#C7D0E0] hover:bg-[#111A2E] rounded-[4px] text-xs py-5"
-                onClick={() => navigate('/plano-de-acao')}
-              >
-                Acessar Área do Assinante
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-between pt-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate('/questionario')}
-          className="border-[#24334F] text-[#C7D0E0] hover:bg-[#16213A] rounded-[4px] text-xs"
-        >
-          Novo Diagnóstico
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] text-xs"
-        >
-          Voltar à Tela Inicial
-        </Button>
+        <div className="flex justify-between pt-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/questionario')}
+            className="border-[#24334F] text-[#C7D0E0] hover:bg-[#16213A] rounded-[4px] text-xs"
+          >
+            Novo Diagnóstico
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] text-xs"
+          >
+            Voltar à Tela Inicial
+          </Button>
+        </div>
       </div>
     </div>
   )

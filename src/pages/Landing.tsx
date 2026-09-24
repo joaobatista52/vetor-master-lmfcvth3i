@@ -220,19 +220,36 @@ export default function Landing() {
             {escadaDeValorV72.map((nivel) => (
               <Card
                 key={nivel.nivel}
-                className="text-center bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px]"
+                className="text-center bg-[#16213A] border-[#24334F] text-[#F8FAFC] rounded-[4px] shadow-sm flex flex-col justify-between"
               >
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <Badge
                     variant="secondary"
-                    className="mx-auto w-fit text-[#0066CC] bg-[#0066CC]/10"
+                    className="mx-auto w-fit text-[#5B9DFF] bg-[#0066CC]/15 border border-[#5B9DFF]/30 text-xs font-semibold"
                   >
                     {nivel.nivel}
                   </Badge>
-                  <CardTitle className="text-lg mt-2 text-[#333333]">{nivel.nome}</CardTitle>
+                  <CardTitle className="text-lg mt-3 text-[#F8FAFC]">{nivel.nome}</CardTitle>
+                  <div className="text-2xl font-bold text-[#F8FAFC] mt-2 font-mono">
+                    {nivel.preco}
+                  </div>
+                  {nivel.adicionais && nivel.adicionais !== '—' && (
+                    <p className="text-[11px] text-[#FFB84D] font-medium mt-1">
+                      {nivel.adicionais}
+                    </p>
+                  )}
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-[#808080]">{nivel.descricao}</p>
+                <CardContent className="pt-2 pb-6">
+                  <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed mb-4">
+                    {nivel.descricao}
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="w-full bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-semibold"
+                  >
+                    <Link to="/niveis-e-planos">Ver Detalhes do Nível</Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}

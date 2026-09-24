@@ -209,9 +209,9 @@ export default function NiveisEPlanos() {
             <Button
               variant="outline"
               className="border-[#24334F] text-[#C7D0E0] hover:bg-[#111A2E] rounded-[4px] text-xs"
-              onClick={() => navigate('/biblioteca')}
+              onClick={() => navigate('/areas-da-empresa')}
             >
-              Explorar Metodologia
+              Ver Áreas da Empresa
             </Button>
             <Button
               className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-semibold"

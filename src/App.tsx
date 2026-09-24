@@ -41,7 +41,9 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
           <Route path="/questionario" element={<Questionario />} />
+          <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
           <Route path="/planos" element={<NiveisEPlanos />} />
+          <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               {/* Jornada do Assinante Vetor Master V7.2 / V1.3 */}
@@ -52,10 +54,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/areas-da-empresa" element={<AreasDaEmpresa />} />
               <Route path="/biblioteca" element={<Biblioteca />} />
-              <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
 
               {/* Fluxos Complementares */}
-              <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
               <Route path="/notas" element={<Notas />} />
               <Route path="/modelos" element={<Modelos />} />
             </Route>

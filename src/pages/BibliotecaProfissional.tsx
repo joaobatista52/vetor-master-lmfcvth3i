@@ -89,7 +89,7 @@ export default function BibliotecaProfissional() {
         </div>
         <div className="relative z-10 max-w-3xl">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-[#FF9900] text-black">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-[#FF9900] text-[#0B1120]">
               Área Restrita do Administrador
             </span>
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-[#0066CC] text-white">
@@ -508,7 +508,7 @@ export default function BibliotecaProfissional() {
                               p.pilar === 1
                                 ? 'bg-[#0066CC] text-white'
                                 : p.pilar === 2
-                                  ? 'bg-[#FF9900] text-black'
+                                  ? 'bg-[#FF9900] text-[#0B1120]'
                                   : 'bg-[#22B14C] text-white'
                             }`}
                           >

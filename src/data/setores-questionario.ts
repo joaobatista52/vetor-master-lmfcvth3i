@@ -74,7 +74,7 @@ export const escalaOpcoes = [
   'Não / não sei informar.',
 ] as const
 
-// Opções fiéis ao PDF V6.5 (Questionários Consolidados)
+// Opções fiéis aos Questionários Consolidados V7.2
 export const simNaoParcialmenteOpcoes = ['Sim', 'Não', 'Parcialmente']
 export const simNaoOpcoes = ['Sim', 'Não']
 export const disposicaoOpcoes = ['Alto', 'Médio', 'Baixo']
@@ -119,7 +119,7 @@ export function buildSecaoIdentificacao(segmentos: string[]): PerguntaSecao[] {
 
 // ============================================================
 // Seção 1 — Perfil da Empresa e Contexto (setorial, 10 versões)
-// Extraída palavra por palavra do PDF V6.5 (19ago26).
+// Extraída palavra por palavra dos Questionários Consolidados V7.2.
 // ============================================================
 
 // Perfil específico — Saúde (8 campos)
@@ -291,7 +291,7 @@ const secaoPerfilAcademias: PerguntaSecao[] = [
 // Seções compartilhadas (idênticas para todos os 10 setores)
 // ============================================================
 
-// Seção 5 — Hackman (6 perguntas) — fiel ao PDF V6.5
+// Seção 5 — Hackman (6 perguntas) — fiel ao Questionário V7.2
 export const secaoHackman: PerguntaSecao[] = [
   {
     texto: 'Existe um time real, com limites claros e interdependência definida?',
@@ -324,7 +324,7 @@ export const secaoHackman: PerguntaSecao[] = [
   },
 ]
 
-// Seção 6 — Buffett (6 perguntas) — fiel ao PDF V6.5
+// Seção 6 — Buffett (6 perguntas) — fiel ao Questionário V7.2
 // Versão padrão (9 setores): 6.6 = "reserva de capital de giro para 3 meses"
 export const secaoBuffett: PerguntaSecao[] = [
   { texto: 'Qual a margem EBITDA atual aproximada?', tipo: 'texto' },
@@ -344,7 +344,7 @@ export const secaoBuffett: PerguntaSecao[] = [
 ]
 
 // Seção 6 — Buffett — versão Tecnologia/Startups (6 perguntas).
-// Fiel ao PDF V6.5: 6.6 = "A empresa possui reserva de capital (runway) para
+// Fiel ao Questionário V7.2: 6.6 = "A empresa possui reserva de capital (runway) para
 // 12 meses de operação?" — não há Seção 6.6 separada; a pergunta de runway
 // é a 6.6 da própria Seção 6 de Tecnologia.
 export const secaoBuffettTecnologia: PerguntaSecao[] = [
@@ -364,7 +364,7 @@ export const secaoBuffettTecnologia: PerguntaSecao[] = [
   },
 ]
 
-// Seção 7 — Expectativas e Ambição (5 perguntas) — fiel ao PDF V6.5
+// Seção 7 — Expectativas e Ambição (5 perguntas) — fiel ao Questionário V7.2
 export const secaoExpectativas: PerguntaSecao[] = [
   { texto: 'O que o levou a buscar este diagnóstico?', tipo: 'textarea' },
   { texto: 'Qual o principal problema a resolver nos próximos 12 meses?', tipo: 'textarea' },
@@ -376,7 +376,7 @@ export const secaoExpectativas: PerguntaSecao[] = [
   },
 ]
 
-// Seção 9 — Próximos Passos (4 campos + Documentação Adicional) — fiel ao PDF V6.5
+// Seção 9 — Próximos Passos (4 campos + Documentação Adicional) — fiel ao Questionário V7.2
 // 9.1 é puramente informativo (tipo display), não exige resposta.
 // Ao final, "Documentação Adicional (Opcional)" como checkboxes (multi-seleção).
 export const secaoProximosPassos: PerguntaSecao[] = [
@@ -419,7 +419,7 @@ export const secaoProximosPassosTrading: PerguntaSecao[] = [
 
 // ============================================================
 // Seção 8 — Inovação e Tecnologia (setorial, 7 perguntas cada)
-// Extraída fielmente do PDF V6.5 para cada um dos 10 setores.
+// Extraída fielmente dos Questionários Consolidados V7.2 para cada setor.
 // ============================================================
 
 const secaoInovacaoSaude: PerguntaSecao[] = [

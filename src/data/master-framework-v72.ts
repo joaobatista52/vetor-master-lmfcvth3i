@@ -225,19 +225,27 @@ export const fasesStateMachineV72: FaseStateMachine[] = [
 
 export const escadaDeValorV72 = [
   {
-    nivel: 'MaaS',
-    nome: 'Management as a Service',
-    descricao: 'Assinatura mensal para diagnóstico contínuo, monitoramento de KPIs e dashboards.',
-  },
-  {
-    nivel: 'Híbrido',
-    nome: 'Modelo Híbrido',
-    descricao: 'Consultoria estratégica quinzenal C-Level combinada com a plataforma de software.',
-  },
-  {
-    nivel: 'CaaS',
-    nome: 'Consulting as a Service',
+    nivel: 'SaaS Puro',
+    nome: 'SaaS Puro',
+    preco: 'R$ 1.190,00/mês',
+    adicionais: '—',
     descricao:
-      'Projetos sob medida de alta complexidade (M&A, Sucessão, Turnaround) com Success Fee.',
+      'Consultor digital em autosserviço total; tarefas executáveis simplificadas e diagnósticos contínuos.',
+  },
+  {
+    nivel: 'MaaS Híbrido',
+    nome: 'MaaS Híbrido',
+    preco: 'R$ 3.290,00/mês',
+    adicionais: '+ R$ 890,00/reunião extra (90 min)',
+    descricao:
+      'Tudo do SaaS + profundidade metodológica + 2 reuniões virtuais de 90 min/mês com Consultor Executivo.',
+  },
+  {
+    nivel: 'Bespoke CaaS',
+    nome: 'Bespoke CaaS',
+    preco: 'R$ 15.750,00/mês',
+    adicionais: '+ R$ 790,00/hora adicional',
+    descricao:
+      'Tudo do MaaS + 12 h/mês presenciais com Consultor Executivo para turnaround, sucessão ou M&A.',
   },
 ]

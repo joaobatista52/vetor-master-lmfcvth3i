@@ -244,179 +244,184 @@ export default function Questionario() {
             )}
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
-          {isSetorStep && (
-            <div className="space-y-6">
-              {/* Bloco de Importação do Dossiê do Site Institucional */}
-              <ImportadorDossieJson
-                onDossieImportado={(dossie) => {
-                  if (dossie.setor_id) {
-                    setSetorId(dossie.setor_id)
-                  }
-                  if (dossie.empresa?.Segmento || dossie.empresa?.segmento) {
-                    setSegmento(dossie.empresa.Segmento || dossie.empresa.segmento)
-                  }
-                }}
-              />
-
-              <div className="relative flex items-center justify-center my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#24334F]" />
-                </div>
-                <span className="relative bg-[#16213A] px-3 text-xs uppercase font-semibold text-[#8B98B4]">
-                  Ou preencha o questionário completo do início
-                </span>
-              </div>
-
-              <div>
-                <Label className="text-xs text-[#C7D0E0]">Setor de Atuação *</Label>
-                <Select
-                  value={setorId}
-                  onValueChange={(v) => {
-                    setSetorId(v)
-                    setSegmento('')
-                    setStepIdx(0)
+            {isSetorStep && (
+              <div className="space-y-6">
+                {/* Bloco de Importação do Dossiê do Site Institucional */}
+                <ImportadorDossieJson
+                  onDossieImportado={(dossie) => {
+                    if (dossie.setor_id) {
+                      setSetorId(dossie.setor_id)
+                    }
+                    if (dossie.empresa?.Segmento || dossie.empresa?.segmento) {
+                      setSegmento(dossie.empresa.Segmento || dossie.empresa.segmento)
+                    }
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione seu setor..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
-                    {setoresOrdenadosCanonicos.map((s, idx) => (
-                      <SelectItem key={s.id} value={s.id} className="cursor-pointer hover:bg-[#1B2742]">
-                        <span className="font-mono text-[#5B9DFF] mr-2">
-                          {String(idx + 1).padStart(2, '0')}.
-                        </span>
-                        <span>{s.nome}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {setorSelecionado && (
-                <>
-                  <div>
-                    <Label>Segmento *</Label>
-                    <Select value={segmento} onValueChange={setSegmento}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o segmento..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {setorSelecionado.segmentos.map((seg) => (
-                          <SelectItem key={seg} value={seg}>
-                            {seg}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="bg-secondary/40 rounded-lg p-4 space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Micro-epifanias deste setor
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {setorSelecionado.microEpifanias.map((m) => (
-                        <Badge key={m} variant="outline" className="text-xs">
-                          {m}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {currentStep && (
-            <div className="space-y-4">
-              {currentStep.tipo === 'identificacao' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary">Identificação</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Setor: {setorSelecionado?.nome}
-                  </span>
-                </div>
-              )}
-              {currentStep.tipo === 'pilar' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary">{nomePilares[currentStep.pilar!]}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Setor: {setorSelecionado?.nome} · {currentStep.perguntas.length} perguntas
-                  </span>
-                </div>
-              )}
-              {currentStep.perguntas.map((p, idx) => (
-                <PerguntaField
-                  key={`${currentStep.key}-${idx}`}
-                  pergunta={p}
-                  index={idx}
-                  stepKey={currentStep.key}
-                  value={respostas[`${currentStep.key}-${idx}`] || ''}
-                  onChange={(v) => setResposta(currentStep.key, idx, v)}
                 />
-              ))}
-            </div>
-          )}
 
-          {isReviewStep && setorSelecionado && (
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="text-muted-foreground">Setor / Segmento:</span>{' '}
-                {setorSelecionado.nome} — {segmento}
-              </div>
-              {steps.map((step) => {
-                const perguntasInput = step.perguntas
-                  .map((p, idx) => ({ p, idx }))
-                  .filter(({ p }) => (p.tipo || 'escala') !== 'display')
-                const respondidas = perguntasInput.filter(
-                  ({ idx }) => !!respostas[`${step.key}-${idx}`],
-                ).length
-                return (
-                  <div key={step.key} className="flex items-center justify-between border-b pb-2">
-                    <span>{step.titulo}</span>
-                    <Badge
-                      variant={respondidas === perguntasInput.length ? 'default' : 'secondary'}
-                    >
-                      {respondidas}/{perguntasInput.length}
-                    </Badge>
+                <div className="relative flex items-center justify-center my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#24334F]" />
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <span className="relative bg-[#16213A] px-3 text-xs uppercase font-semibold text-[#8B98B4]">
+                    Ou preencha o questionário completo do início
+                  </span>
+                </div>
 
-      <div className="flex justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={back}
-          disabled={stepIdx === 0}
-          className="gap-2 border-[#24334F] text-[#C7D0E0] hover:bg-[#16213A] rounded-[4px]"
-        >
-          <ChevronLeft className="w-4 h-4" /> Voltar
-        </Button>
-        {isReviewStep ? (
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] px-6 font-semibold"
-          >
-            {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
+                <div>
+                  <Label className="text-xs text-[#C7D0E0]">Setor de Atuação *</Label>
+                  <Select
+                    value={setorId}
+                    onValueChange={(v) => {
+                      setSetorId(v)
+                      setSegmento('')
+                      setStepIdx(0)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione seu setor..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
+                      {setoresOrdenadosCanonicos.map((s, idx) => (
+                        <SelectItem
+                          key={s.id}
+                          value={s.id}
+                          className="cursor-pointer hover:bg-[#1B2742]"
+                        >
+                          <span className="font-mono text-[#5B9DFF] mr-2">
+                            {String(idx + 1).padStart(2, '0')}.
+                          </span>
+                          <span>{s.nome}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {setorSelecionado && (
+                  <>
+                    <div>
+                      <Label>Segmento *</Label>
+                      <Select value={segmento} onValueChange={setSegmento}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o segmento..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {setorSelecionado.segmentos.map((seg) => (
+                            <SelectItem key={seg} value={seg}>
+                              {seg}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="bg-secondary/40 rounded-lg p-4 space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Micro-epifanias deste setor
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {setorSelecionado.microEpifanias.map((m) => (
+                          <Badge key={m} variant="outline" className="text-xs">
+                            {m}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
-            {submitting ? 'Consolidando Dossiê...' : 'Finalizar e Gerar Devolutiva'}
-          </Button>
-        ) : (
+
+            {currentStep && (
+              <div className="space-y-4">
+                {currentStep.tipo === 'identificacao' && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary">Identificação</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      Setor: {setorSelecionado?.nome}
+                    </span>
+                  </div>
+                )}
+                {currentStep.tipo === 'pilar' && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary">{nomePilares[currentStep.pilar!]}</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      Setor: {setorSelecionado?.nome} · {currentStep.perguntas.length} perguntas
+                    </span>
+                  </div>
+                )}
+                {currentStep.perguntas.map((p, idx) => (
+                  <PerguntaField
+                    key={`${currentStep.key}-${idx}`}
+                    pergunta={p}
+                    index={idx}
+                    stepKey={currentStep.key}
+                    value={respostas[`${currentStep.key}-${idx}`] || ''}
+                    onChange={(v) => setResposta(currentStep.key, idx, v)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {isReviewStep && setorSelecionado && (
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Setor / Segmento:</span>{' '}
+                  {setorSelecionado.nome} — {segmento}
+                </div>
+                {steps.map((step) => {
+                  const perguntasInput = step.perguntas
+                    .map((p, idx) => ({ p, idx }))
+                    .filter(({ p }) => (p.tipo || 'escala') !== 'display')
+                  const respondidas = perguntasInput.filter(
+                    ({ idx }) => !!respostas[`${step.key}-${idx}`],
+                  ).length
+                  return (
+                    <div key={step.key} className="flex items-center justify-between border-b pb-2">
+                      <span>{step.titulo}</span>
+                      <Badge
+                        variant={respondidas === perguntasInput.length ? 'default' : 'secondary'}
+                      >
+                        {respondidas}/{perguntasInput.length}
+                      </Badge>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-between mt-6">
           <Button
-            onClick={next}
-            disabled={!canProceed()}
-            className="gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] px-6 font-semibold"
+            variant="outline"
+            onClick={back}
+            disabled={stepIdx === 0}
+            className="gap-2 border-[#24334F] text-[#C7D0E0] hover:bg-[#16213A] rounded-[4px]"
           >
-            Próximo <ChevronRight className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" /> Voltar
           </Button>
-        )}
+          {isReviewStep ? (
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] px-6 font-semibold"
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {submitting ? 'Consolidando Dossiê...' : 'Finalizar e Gerar Devolutiva'}
+            </Button>
+          ) : (
+            <Button
+              onClick={next}
+              disabled={!canProceed()}
+              className="gap-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] px-6 font-semibold"
+            >
+              Próximo <ChevronRight className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -451,8 +456,15 @@ function PerguntaField({
               key={i}
               className="flex items-center space-x-3 rounded-[3px] hover:bg-[#16213A] transition-colors p-2 cursor-pointer"
             >
-              <RadioGroupItem value={opt} id={`${chave}-${i}`} className="border-[#24334F] text-[#5B9DFF]" />
-              <Label htmlFor={`${chave}-${i}`} className="cursor-pointer font-normal text-xs sm:text-sm text-[#C7D0E0]">
+              <RadioGroupItem
+                value={opt}
+                id={`${chave}-${i}`}
+                className="border-[#24334F] text-[#5B9DFF]"
+              />
+              <Label
+                htmlFor={`${chave}-${i}`}
+                className="cursor-pointer font-normal text-xs sm:text-sm text-[#C7D0E0]"
+              >
                 {opt}
               </Label>
             </div>
@@ -525,8 +537,13 @@ function PerguntaField({
                   onChange(next.join('|'))
                 }}
               >
-                <Checkbox checked={checked} className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]" />
-                <Label className="cursor-pointer font-normal text-xs sm:text-sm text-[#C7D0E0]">{opt}</Label>
+                <Checkbox
+                  checked={checked}
+                  className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
+                />
+                <Label className="cursor-pointer font-normal text-xs sm:text-sm text-[#C7D0E0]">
+                  {opt}
+                </Label>
               </div>
             )
           })}

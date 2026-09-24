@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PlayCircle, Clock, CheckCircle2, ChevronRight, FileText, ArrowRight } from 'lucide-react'
+import { PlayCircle, CheckCircle2, FileText, ArrowRight, Bot, MessageSquare } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { SubscriptionGuard } from '@/components/subscription-guard'
+import { ChatConsultorDigital } from '@/components/ChatConsultorDigital'
 
 const mockTasks = [
   {
@@ -71,26 +72,33 @@ export default function PlanoDeAcao() {
         </div>
 
         <Tabs defaultValue="todo" className="w-full flex-1 flex flex-col">
-          <TabsList className="grid w-full max-w-md grid-cols-3 mb-6 bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-1">
-            <TabsTrigger
-              value="todo"
-              className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
-            >
-              A Fazer (1)
-            </TabsTrigger>
-            <TabsTrigger
-              value="doing"
-              className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
-            >
-              Em Andamento (1)
-            </TabsTrigger>
-            <TabsTrigger
-              value="done"
-              className="data-[state=active]:bg-[#22B14C] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
-            >
-              Concluídas (1)
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <TabsList className="grid w-full sm:w-auto max-w-md grid-cols-3 bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-1">
+              <TabsTrigger
+                value="todo"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
+              >
+                A Fazer (1)
+              </TabsTrigger>
+              <TabsTrigger
+                value="doing"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
+              >
+                Em Andamento (1)
+              </TabsTrigger>
+              <TabsTrigger
+                value="done"
+                className="data-[state=active]:bg-[#22B14C] data-[state=active]:text-white rounded-[3px] text-xs font-medium"
+              >
+                Concluídas (1)
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="inline-flex items-center gap-2 text-xs text-[#8B98B4]">
+              <Bot className="w-4 h-4 text-[#5B9DFF]" />
+              <span>Consultor Digital integrado abaixo com 13 Prompts e Portões</span>
+            </div>
+          </div>
 
           {['todo', 'doing', 'done'].map((status) => (
             <TabsContent key={status} value={status} className="flex-1 mt-0">
@@ -233,6 +241,17 @@ export default function PlanoDeAcao() {
             </TabsContent>
           ))}
         </Tabs>
+
+        {/* Chat do Consultor Digital Integrado na Camada 2 — Item 2c */}
+        <div className="pt-4 mt-auto">
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="w-4 h-4 text-[#5B9DFF]" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#F8FAFC]">
+              Consultor Digital Guiado • Roteiro de 13 Prompts Fixos
+            </h2>
+          </div>
+          <ChatConsultorDigital />
+        </div>
       </div>
     </SubscriptionGuard>
   )
