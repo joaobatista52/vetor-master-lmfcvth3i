@@ -55,6 +55,7 @@ const complementaryNavItems = [{ title: 'Notas do Projeto', path: '/notas', icon
 const adminNavItems = [
   { title: 'Painel Geral', path: '/admin', icon: Shield },
   { title: 'Métricas Admin', path: '/admin/dashboard', icon: LayoutDashboard },
+  { title: 'Biblioteca Profissional', path: '/admin/biblioteca', icon: BookOpen },
   { title: 'Logs de Auditoria', path: '/admin/logs', icon: History },
   { title: 'Gestão de Convites', path: '/admin/convites', icon: Mail },
 ]

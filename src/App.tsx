@@ -19,6 +19,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import AdminMetrics from './pages/AdminMetrics'
 import AdminLogsPage from './pages/AdminLogs'
 import AdminInvitesPage from './pages/AdminInvites'
+import BibliotecaProfissional from './pages/BibliotecaProfissional'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
@@ -56,6 +57,7 @@ const App = () => (
             <Route element={<Layout />}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/dashboard" element={<AdminMetrics />} />
+              <Route path="/admin/biblioteca" element={<BibliotecaProfissional />} />
               <Route path="/admin/logs" element={<AdminLogsPage />} />
               <Route path="/admin/convites" element={<AdminInvitesPage />} />
             </Route>

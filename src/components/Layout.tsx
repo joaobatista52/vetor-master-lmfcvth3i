@@ -37,6 +37,7 @@ const routeNames: Record<string, string> = {
   '/modelos': 'Modelos & Templates',
   '/admin': 'Painel Geral Admin',
   '/admin/dashboard': 'Métricas do Projeto',
+  '/admin/biblioteca': 'Biblioteca Profissional (Admin)',
   '/admin/logs': 'Logs de Auditoria',
   '/admin/convites': 'Gestão de Convites',
 }
@@ -119,7 +120,7 @@ export default function Layout() {
                     className="text-xs cursor-pointer hover:bg-[#F5F5F5]"
                     onClick={() => navigate('/biblioteca')}
                   >
-                    Biblioteca Estratégica (138 Obras)
+                    Biblioteca (Perguntas, Respostas & Insights)
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

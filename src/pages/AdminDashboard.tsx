@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, History, Mail, Shield, ArrowRight } from 'lucide-react'
+import { LayoutDashboard, History, Mail, Shield, BookOpen, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const adminTools = [
@@ -8,6 +8,13 @@ const adminTools = [
     description: 'Visualize estatísticas das notas por status e prioridade em tempo real.',
     icon: LayoutDashboard,
     path: '/admin/dashboard',
+  },
+  {
+    title: 'Biblioteca Profissional',
+    description:
+      'Curadoria e governança do acervo intelectual: 138 obras V2.4, Master Frameworks e 12 setores.',
+    icon: BookOpen,
+    path: '/admin/biblioteca',
   },
   {
     title: 'Gerenciar Convites',

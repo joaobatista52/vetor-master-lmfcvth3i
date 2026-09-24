@@ -133,7 +133,7 @@ export default function Index() {
             {
               step: '05',
               title: 'Biblioteca',
-              desc: '138 Obras do Framework',
+              desc: 'FAQ & Insights (Em breve)',
               path: '/biblioteca',
               active: false,
             },
@@ -322,20 +322,19 @@ export default function Index() {
         </div>
         <CardHeader className="p-6 pb-2">
           <div className="flex items-center gap-2 text-[10px] font-bold text-[#22B14C] uppercase tracking-wider mb-1">
-            <span>Ativo Intelectual V7.2</span>
+            <span>Central de Conhecimento</span>
             <span>•</span>
-            <span>138 Obras Fundamentadas</span>
+            <span>Publicação em Breve</span>
           </div>
           <CardTitle className="text-white text-xl flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#22B14C]" />
-            Biblioteca Estratégica Vetor Master
+            Biblioteca do Cliente Vetor Master
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 pt-2 relative z-10 space-y-4">
           <p className="text-xs md:text-sm text-white/80 leading-relaxed max-w-3xl">
-            Base proprietária de 138 obras clássicas e contemporâneas mapeadas diretamente às 8
-            Áreas e às lentes de Hackman, Buffett e Matriz ERRC. O conhecimento consultivo que guia
-            as decisões determinísticas do app.
+            Perguntas e respostas estratégicas aos clientes, estudos de caso e insights acionáveis
+            para apoiar a implementação dos planos de ação e a maturidade de gestão nos 12 setores.
           </p>
           <div className="flex items-center gap-3">
             <Button
@@ -343,7 +342,7 @@ export default function Index() {
               size="sm"
               className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-medium"
             >
-              <Link to="/biblioteca">Explorar Biblioteca</Link>
+              <Link to="/biblioteca">Acessar Biblioteca</Link>
             </Button>
             <Button
               asChild
