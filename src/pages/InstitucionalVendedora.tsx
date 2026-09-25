@@ -46,11 +46,11 @@ export default function InstitucionalVendedora() {
 
   return (
     <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] selection:bg-[#0066CC] selection:text-white">
-      {/* 1. NAVBAR OFICIAL — Logotipo negativo na navbar escura + CTA Completo */}
+      {/* 1. NAVBAR OFICIAL — Logomarca colorida limpa na navbar escura + CTA Completo */}
       <header className="sticky top-0 z-50 border-b border-[#24334F] bg-[#111A2E]/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3 focus:outline-none">
-            <Logo variant="horizontal" size="sm" showTagline negative />
+            <Logo variant="horizontal" size="sm" showTagline />
           </Link>
 
           <nav className="flex items-center gap-2 sm:gap-3">
@@ -712,11 +712,11 @@ export default function InstitucionalVendedora() {
         </div>
       </section>
 
-      {/* 10. RODAPÉ OFICIAL V1.3 — Fundo #0B1120 / #111A2E com logo negativo */}
+      {/* 10. RODAPÉ OFICIAL V1.3 — Fundo #0B1120 / #111A2E com logomarca colorida */}
       <footer className="border-t border-[#24334F] py-10 bg-[#0B1120] text-[#8B98B4]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <Logo variant="horizontal" size="sm" showTagline negative />
+            <Logo variant="horizontal" size="sm" showTagline />
             <p className="text-xs text-[#8B98B4] mt-1">
               Expertise Executiva. Velocidade Tecnológica. Preço Acessível.
             </p>

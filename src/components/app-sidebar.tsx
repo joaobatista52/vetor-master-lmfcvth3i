@@ -111,7 +111,6 @@ export function AppSidebar() {
               size={isCollapsed ? 'md' : 'sm'}
               showTagline={!isCollapsed}
               showVersion={false}
-              negative
             />
           </Link>
         </div>
