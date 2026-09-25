@@ -620,8 +620,15 @@ export default function InstitucionalVendedora() {
                         : 'bg-[#111A2E] hover:bg-[#5B9DFF]/20 text-[#5B9DFF] border border-[#24334F]'
                     }`}
                   >
-                    <Link to="/questionario" className="flex items-center justify-center gap-2">
-                      <span>{plano.ctaText}</span>
+                    <Link
+                      to={plano.id === 'saas-puro' ? '/lista-prioridade' : '/questionario'}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <span>
+                        {plano.id === 'saas-puro'
+                          ? 'Entrar na lista de prioridade'
+                          : plano.ctaText}
+                      </span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </Button>
