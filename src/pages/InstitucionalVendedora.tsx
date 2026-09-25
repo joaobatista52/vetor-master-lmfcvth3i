@@ -93,7 +93,7 @@ export default function InstitucionalVendedora() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-[4px] bg-[#16213A] border border-[#24334F] text-[#5B9DFF] text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-[#3DDC74]" />
-            <span>DIREÇÃO • CONEXÃO • CRESCIMENTO — VETOR MASTER V1.3</span>
+            <span>DIREÇÃO • CONEXÃO • CRESCIMENTO</span>
           </div>
 
           <div className="p-8 md:p-12 rounded-[6px] bg-[#111A2E]/90 border border-[#24334F] shadow-2xl relative">
