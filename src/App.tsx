@@ -27,6 +27,7 @@ import Landing from './pages/Landing'
 import InstitucionalVendedora from './pages/InstitucionalVendedora'
 import Questionario from './pages/Questionario'
 import QuestionarioSucesso from './pages/QuestionarioSucesso'
+import ListaPrioridade from './pages/ListaPrioridade'
 
 const App = () => (
   <BrowserRouter>
@@ -42,6 +43,7 @@ const App = () => (
           {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
           <Route path="/questionario" element={<Questionario />} />
           <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
+          <Route path="/lista-prioridade" element={<ListaPrioridade />} />
           <Route path="/planos" element={<NiveisEPlanos />} />
           <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
           <Route element={<ProtectedRoute />}>

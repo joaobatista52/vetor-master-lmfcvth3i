@@ -43,7 +43,8 @@ export default function NiveisEPlanos() {
         'Dashboards executivos de indicadores e acompanhamento',
         'Acesso à base curada de micro-lições por setor',
       ],
-      ctaText: 'Iniciar com SaaS Puro',
+      ctaText: 'Entrar na lista de prioridade',
+      ctaLink: '/lista-prioridade',
     },
     {
       id: 'maas-hibrido',
@@ -65,6 +66,7 @@ export default function NiveisEPlanos() {
         'Reunião extra disponível por R$ 890,00 / sessão de 90 min',
       ],
       ctaText: 'Acelerar com MaaS Híbrido',
+      ctaLink: '/questionario',
     },
     {
       id: 'bespoke-caas',
@@ -86,6 +88,7 @@ export default function NiveisEPlanos() {
         'Horas adicionais disponíveis por R$ 790,00 / hora presencial',
       ],
       ctaText: 'Falar com Consultor C-Level',
+      ctaLink: '/questionario',
     },
   ]
 

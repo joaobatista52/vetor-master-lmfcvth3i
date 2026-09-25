@@ -625,9 +625,7 @@ export default function InstitucionalVendedora() {
                       className="flex items-center justify-center gap-2"
                     >
                       <span>
-                        {plano.id === 'saas-puro'
-                          ? 'Entrar na lista de prioridade'
-                          : plano.ctaText}
+                        {plano.id === 'saas-puro' ? 'Entrar na lista de prioridade' : plano.ctaText}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>

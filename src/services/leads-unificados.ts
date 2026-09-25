@@ -6,6 +6,7 @@ import PocketBase from 'pocketbase'
 // Caso contrário, opera em modo local resiliente (localStorage + fila para sincronização).
 
 const sitePbUrl =
+  (import.meta.env.VITE_POCKETBASE_URL as string | undefined) ||
   (import.meta.env.VITE_LEADS_PB_URL as string | undefined) ||
   (import.meta.env.VITE_SITE_POCKETBASE_URL as string | undefined) ||
   ''
