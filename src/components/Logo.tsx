@@ -2,11 +2,13 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import logo5aClean from '@/assets/logo-5a-clean.png'
 import logo5eClean from '@/assets/logo-5e-clean.png'
+// Logomarca oficial negativa (branca com fundo transparente real) fornecida pelo usuário:
+import logo5eNegative from '@/assets/logo-5e-t-vetor-master-23set26-3a0ef.png'
 
 /**
  * VetorSymbol:
  * Exibe o símbolo do vetor oficial VETOR MASTER usando a versão limpa e recortada (logo-5a-clean.png).
- * Mantém as cores originais da marca em fundos claros e escuros.
+ * Mantém as cores originais da marca em fundos claros e escuros conforme manual (sem inventar variantes não fornecidas).
  */
 export function VetorSymbol({
   className,
@@ -42,18 +44,20 @@ export interface LogoProps {
   showTagline?: boolean
   showVersion?: boolean
   versionText?: string
-  negative?: boolean // compatibilidade de tipagem para fundo escuro
+  negative?: boolean // true quando renderizado sobre fundo escuro (navbar, sidebar, faixas escuras)
   size?: 'sm' | 'md' | 'lg' | 'xl'
   showText?: boolean // compatibilidade legada
 }
 
 /**
  * Componente oficial de Logomarca VETOR MASTER
- * Utiliza as versões limpas e com fundo transparente recortado:
- * - logo-5e-clean.png: Versão horizontal oficial (~72–80px no cabeçalho e menu lateral)
- * - logo-5a-clean.png: Versão vertical / ícone (~48px ícone, ~170px vertical no Login)
- * Logo SEMPRE COLORIDO (cores oficiais da marca) tanto em fundo claro quanto escuro, SEM brightness-0 invert.
- * Sem badge/selo "V7.2".
+ * Fidelidade ao Manual de Marca:
+ * - Em fundos escuros (negative={true}): utiliza a LOGOMARCA NEGATIVA OFICIAL (logo 5e horizontal, branca,
+ *   fundo transparente real com slogan embutido "DIREÇÃO • CONEXÃO • CRESCIMENTO").
+ * - Em fundos claros (negative={false}): mantém a versão colorida oficial limpa (logo-5e-clean.png).
+ * - Ícone compacto: mantém o ícone oficial 5a (logo-5a-clean.png) com alta legibilidade.
+ * - Login: mantém o logo vertical colorido sobre fundo claro, clicável apontando para "/".
+ * - Favicon: permanece o ícone 5a oficial, sem alterações.
  */
 export function Logo({
   className,
@@ -117,7 +121,7 @@ export function Logo({
           <span
             className={cn(
               'text-[9px] md:text-[10px] tracking-[0.2em] uppercase mt-2 font-semibold',
-              negative ? 'text-white/90' : 'text-[#333333]',
+              negative ? 'text-white/95' : 'text-[#333333]',
             )}
           >
             DIREÇÃO • CONEXÃO • CRESCIMENTO
@@ -127,24 +131,24 @@ export function Logo({
     )
   }
 
-  // Versão Horizontal (padrão para Header, Sidebar, Landing, etc.)
-  // Aplica classe CSS para tratamento negativo luminoso em navbar escura sem distorcer o logo oficial
+  // Versão Horizontal (padrão para Header, Sidebar, Landing, Institucional, etc.)
+  // Quando negative={true} (navbar escura, sidebar escura, rodapé escuro):
+  // usa a LOGOMARCA NEGATIVA OFICIAL anexada pelo usuário (branca, transparente real, com slogan).
+  // Quando negative={false} (fundos claros): usa a versão colorida limpa.
+  const horizontalSrc = negative ? logo5eNegative : logo5eClean
+
   return (
     <div
       className={cn(
         'inline-flex items-center justify-center select-none shrink-0 overflow-hidden max-w-full',
-        negative && 'drop-shadow-[0_0_12px_rgba(91,157,255,0.2)]',
         className,
       )}
       style={{ height: horizontalHeight, width: 'auto' }}
     >
       <img
-        src={logo5eClean}
-        alt="VETOR MASTER"
-        className={cn(
-          'h-full w-auto max-w-full object-contain object-center px-1.5 py-0.5 select-none transition-all',
-          negative && 'brightness-110 contrast-105',
-        )}
+        src={horizontalSrc}
+        alt="VETOR MASTER — Direção • Conexão • Crescimento"
+        className="h-full w-auto max-w-full object-contain object-center px-1.5 py-0.5 select-none transition-all"
         loading="eager"
       />
     </div>
