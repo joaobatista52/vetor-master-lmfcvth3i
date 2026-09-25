@@ -271,7 +271,7 @@ export default function InstitucionalVendedora() {
               Passo a Passo
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#F8FAFC] font-heading">
-              A Jornada Determinística da Sua Empresa (01–05)
+              A Jornada Determinística da Sua Empresa
             </h2>
             <p className="text-sm sm:text-base text-[#C7D0E0]">
               Uma esteira clara e sequencial que transforma dores declaradas em autonomia e
