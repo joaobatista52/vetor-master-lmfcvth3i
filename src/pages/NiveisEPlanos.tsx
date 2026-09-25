@@ -178,7 +178,7 @@ export default function NiveisEPlanos() {
                     ? 'bg-[#0066CC] hover:bg-[#22B14C] text-white shadow-md'
                     : 'bg-[#111A2E] hover:bg-[#5B9DFF]/20 text-[#5B9DFF] border border-[#24334F]'
                 }`}
-                onClick={() => navigate('/plano-de-acao')}
+                onClick={() => navigate(plan.ctaLink || '/plano-de-acao')}
               >
                 <span>{plan.ctaText}</span>
                 <ArrowRight className="w-4 h-4" />

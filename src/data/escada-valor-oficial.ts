@@ -32,8 +32,8 @@ export const ESCADA_DE_VALOR_OFICIAL: NivelEscadaValor[] = [
     incluso: 'Consultor digital em autosserviço total; tarefas executáveis simplificadas.',
     adicionais: '—',
     destaque: false,
-    badge: 'Autosserviço',
-    ctaText: 'Iniciar com SaaS Puro',
+    badge: 'Lista de Prioridade',
+    ctaText: 'Entrar na Lista de Prioridade',
     itens: [
       'Acesso contínuo ao Consultor Digital V7.2 em autosserviço',
       'Diagnósticos estratégicos determinísticos com SLA 72h',
