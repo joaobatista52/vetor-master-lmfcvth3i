@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, AlertCircle, MailWarning } from 'lucide-react'
+import { Loader2, AlertCircle, MailWarning, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractFieldErrors, getErrorMessage, type FieldErrors } from '@/lib/pocketbase/errors'
 
@@ -83,11 +83,29 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF] hex-watermark p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF] hex-watermark p-4 relative">
+      {/* Botão/Link no topo para retornar à tela institucional */}
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-[#666666] hover:text-[#0066CC] transition-colors py-1.5 px-2.5 rounded hover:bg-[#F5F5F5]"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Voltar</span>
+        </Link>
+      </div>
+
       <Card className="w-full max-w-md bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] shadow-md">
         <CardHeader className="text-center space-y-4 pb-4">
           <div className="flex justify-center py-2">
-            <Logo variant="vertical" size="xl" showTagline />
+            <Link
+              to="/"
+              className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0066CC] rounded-sm transition-opacity hover:opacity-90 cursor-pointer"
+              title="Voltar para a página inicial"
+              aria-label="Voltar para a página inicial"
+            >
+              <Logo variant="vertical" size="xl" showTagline />
+            </Link>
           </div>
           <div>
             <CardTitle className="text-xl font-bold text-[#333333]">
