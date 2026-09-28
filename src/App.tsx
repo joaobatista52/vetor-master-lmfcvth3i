@@ -42,6 +42,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
           <Route path="/questionario" element={<Questionario />} />
+          <Route path="/questionario/:setorParam" element={<Questionario />} />
           <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
           <Route path="/lista-prioridade" element={<ListaPrioridade />} />
           <Route path="/planos" element={<NiveisEPlanos />} />

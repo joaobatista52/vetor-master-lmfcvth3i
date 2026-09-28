@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate, Link, useParams } from 'react-router-dom'
 import {
   ChevronLeft,
   ChevronRight,
@@ -169,8 +169,8 @@ const ETAPAS_INFO: EtapaInfo[] = [
   {
     numero: 11,
     key: 'documentacao',
-    titulo: 'Documentação — Adendo Formal',
-    subtitulo: 'Anexação comprobatória e responsável legal pelos dados',
+    titulo: 'Documentação — Anexos Comprobatórios',
+    subtitulo: 'Demonstrativos dos 3 últimos anos (opcional para maior precisão)',
     icone: FileCheck2,
   },
   {
@@ -187,43 +187,316 @@ export default function Questionario() {
   const { user } = useAuth()
   const { toast } = useToast()
 
-  const [etapaAtual, setEtapaAtual] = useState<number>(1) // 1..12
+  const { setorParam } = useParams<{ setorParam?: string }>()
+
+  // Setor Selecionado
+  const [setorId, setSetorId] = useState<string>(() => {
+    if (setorParam) {
+      const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam)
+      if (match) return match.id
+    }
+    try {
+      const salvo = localStorage.getItem('vm_questionario_progresso')
+      if (salvo) {
+        const parsed = JSON.parse(salvo)
+        if (parsed.setorId) return parsed.setorId
+      }
+    } catch {
+      /* intentionally ignored */
+    }
+    return 'saude'
+  })
+  const [setorAbertoVisualizacao, setSetorAbertoVisualizacao] = useState<string>(setorId)
+
+  const [etapaAtual, setEtapaAtual] = useState<number>(() => {
+    try {
+      const salvo = localStorage.getItem('vm_questionario_progresso')
+      if (salvo) {
+        const parsed = JSON.parse(salvo)
+        if (parsed.etapaAtual && typeof parsed.etapaAtual === 'number') {
+          return Math.min(Math.max(parsed.etapaAtual, 1), 12)
+        }
+      }
+    } catch {
+      /* intentionally ignored */
+    }
+    return 1
+  }) // 1..12
+
   const [submitting, setSubmitting] = useState(false)
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null)
   const [modoArmazenamento, setModoArmazenamento] = useState<'remoto' | 'local_fila'>('remoto')
 
-  // Setor Selecionado
-  const [setorId, setSetorId] = useState<string>('saude')
-  const [setorAbertoVisualizacao, setSetorAbertoVisualizacao] = useState<string>('saude')
-
   // Etapa 02: Identificação do Lead & Empresa
-  const [razaoSocial, setRazaoSocial] = useState('')
-  const [cnpj, setCnpj] = useState('')
-  const [dataPreenchimento, setDataPreenchimento] = useState(new Date().toLocaleDateString('pt-BR'))
-  const [segmento, setSegmento] = useState('')
-  const [segmentoOutro, setSegmentoOutro] = useState('')
-  const [modalidadeTrading, setModalidadeTrading] = useState('')
-  const [respondente, setRespondente] = useState('')
-  const [cargo, setCargo] = useState('')
-  const [emailCorporativo, setEmailCorporativo] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
+  const [razaoSocial, setRazaoSocial] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).razaoSocial || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [cnpj, setCnpj] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).cnpj || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [dataPreenchimento, setDataPreenchimento] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p && JSON.parse(p).dataPreenchimento) return JSON.parse(p).dataPreenchimento
+    } catch {
+      /* intentionally ignored */
+    }
+    return new Date().toLocaleDateString('pt-BR')
+  })
+  const [segmento, setSegmento] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).segmento || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [segmentoOutro, setSegmentoOutro] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).segmentoOutro || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [modalidadeTrading, setModalidadeTrading] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).modalidadeTrading || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [respondente, setRespondente] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).respondente || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [cargo, setCargo] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).cargo || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [emailCorporativo, setEmailCorporativo] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).emailCorporativo || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [whatsapp, setWhatsapp] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).whatsapp || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
 
   // Respostas estruturadas por chave: `${secao}-${index}`
-  const [respostas, setRespostas] = useState<Record<string, string>>({})
+  const [respostas, setRespostas] = useState<Record<string, string>>(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p && JSON.parse(p).respostas) return JSON.parse(p).respostas
+    } catch {
+      /* intentionally ignored */
+    }
+    return {}
+  })
 
-  // Etapa 11: Documentação (Adendo Obrigatório)
-  const [balancoNome, setBalancoNome] = useState('')
-  const [balancoObs, setBalancoObs] = useState('')
-  const [dreNome, setDreNome] = useState('')
-  const [dreObs, setDreObs] = useState('')
-  const [organogramaNome, setOrganogramaNome] = useState('')
-  const [organogramaObs, setOrganogramaObs] = useState('')
-  const [responsavelEnvio, setResponsavelEnvio] = useState('')
-  const [documentosAdicionais, setDocumentosAdicionais] = useState<string[]>([])
+  // Etapa 11: Documentação (Opcional - Maior Precisão do Diagnóstico)
+  const [balancoNome, setBalancoNome] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).balancoNome || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [balancoObs, setBalancoObs] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).balancoObs || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [dreNome, setDreNome] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).dreNome || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [dreObs, setDreObs] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).dreObs || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [organogramaNome, setOrganogramaNome] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).organogramaNome || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [organogramaObs, setOrganogramaObs] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).organogramaObs || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [responsavelEnvio, setResponsavelEnvio] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p) return JSON.parse(p).responsavelEnvio || ''
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
+  const [documentosAdicionais, setDocumentosAdicionais] = useState<string[]>(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p && Array.isArray(JSON.parse(p).documentosAdicionais)) {
+        return JSON.parse(p).documentosAdicionais
+      }
+    } catch {
+      /* intentionally ignored */
+    }
+    return []
+  })
 
   // Etapa 12: Próximos Passos & Devolutiva
-  const [autorizacaoDevolutiva, setAutorizacaoDevolutiva] = useState<AutorizacaoDevolutiva>('Sim')
-  const [formatoInteresse, setFormatoInteresse] = useState<FormatoInteresse>('Híbrido')
+  const [autorizacaoDevolutiva, setAutorizacaoDevolutiva] = useState<AutorizacaoDevolutiva>(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p && JSON.parse(p).autorizacaoDevolutiva) return JSON.parse(p).autorizacaoDevolutiva
+    } catch {
+      /* intentionally ignored */
+    }
+    return 'Sim'
+  })
+  const [formatoInteresse, setFormatoInteresse] = useState<FormatoInteresse>(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p && JSON.parse(p).formatoInteresse) return JSON.parse(p).formatoInteresse
+    } catch {
+      /* intentionally ignored */
+    }
+    return 'Híbrido'
+  })
+
+  // Sincroniza setor pela rota se vier param na URL (/questionario/:setorParam)
+  useEffect(() => {
+    if (setorParam) {
+      const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam)
+      if (match && match.id !== setorId) {
+        setSetorId(match.id)
+        setSetorAbertoVisualizacao(match.id)
+      }
+    }
+  }, [setorParam, setorId])
+
+  // Salvar progresso no localStorage automaticamente
+  useEffect(() => {
+    if (protocoloGerado) return
+    try {
+      const dados = {
+        etapaAtual,
+        setorId,
+        razaoSocial,
+        cnpj,
+        dataPreenchimento,
+        segmento,
+        segmentoOutro,
+        modalidadeTrading,
+        respondente,
+        cargo,
+        emailCorporativo,
+        whatsapp,
+        respostas,
+        balancoNome,
+        balancoObs,
+        dreNome,
+        dreObs,
+        organogramaNome,
+        organogramaObs,
+        responsavelEnvio,
+        documentosAdicionais,
+        autorizacaoDevolutiva,
+        formatoInteresse,
+        atualizadoEm: new Date().toISOString(),
+      }
+      localStorage.setItem('vm_questionario_progresso', JSON.stringify(dados))
+    } catch (e) {
+      console.warn('[Questionario] Erro ao salvar progresso local:', e)
+    }
+  }, [
+    etapaAtual,
+    setorId,
+    razaoSocial,
+    cnpj,
+    dataPreenchimento,
+    segmento,
+    segmentoOutro,
+    modalidadeTrading,
+    respondente,
+    cargo,
+    emailCorporativo,
+    whatsapp,
+    respostas,
+    balancoNome,
+    balancoObs,
+    dreNome,
+    dreObs,
+    organogramaNome,
+    organogramaObs,
+    responsavelEnvio,
+    documentosAdicionais,
+    autorizacaoDevolutiva,
+    formatoInteresse,
+    protocoloGerado,
+  ])
 
   const setorObj = useMemo(() => setores.find((s) => s.id === setorId) || setores[0], [setorId])
   const setorCanonico = useMemo(
@@ -243,7 +516,56 @@ export default function Questionario() {
     setRespostas((prev) => ({ ...prev, [`${prefix}-${idx}`]: val }))
   }
 
-  // Validação por Etapa
+  // Total de perguntas por setor (contagem dinâmica das perguntas das seções 3 a 10)
+  const totalPerguntasSetor = useMemo(() => {
+    return (
+      setorObj.secaoPerfil.length +
+      perguntasPilar1.length +
+      perguntasPilar2.length +
+      perguntasPilar3.length +
+      secaoHackman.length +
+      perguntasBuffett.length +
+      secaoExpectativas.length +
+      setorObj.secaoInovacao.length
+    )
+  }, [setorObj, perguntasPilar1, perguntasPilar2, perguntasPilar3, perguntasBuffett])
+
+  // Total de perguntas respondidas no setor atual
+  const perguntasRespondidasSetor = useMemo(() => {
+    let respondidas = 0
+    setorObj.secaoPerfil.forEach((_, idx) => {
+      const v = respostas[`perfil-${idx}`]
+      if (v !== undefined && v.trim() !== '') respondidas++
+    })
+    perguntasPilar1.forEach((_, idx) => {
+      if (respostas[`pilar1-${idx}`]) respondidas++
+    })
+    perguntasPilar2.forEach((_, idx) => {
+      if (respostas[`pilar2-${idx}`]) respondidas++
+    })
+    perguntasPilar3.forEach((_, idx) => {
+      if (respostas[`pilar3-${idx}`]) respondidas++
+    })
+    secaoHackman.forEach((_, idx) => {
+      if (respostas[`hackman-${idx}`]) respondidas++
+    })
+    perguntasBuffett.forEach((_, idx) => {
+      const v = respostas[`buffett-${idx}`]
+      if (v !== undefined && v.trim() !== '') respondidas++
+    })
+    secaoExpectativas.forEach((_, idx) => {
+      const v = respostas[`expectativas-${idx}`]
+      if (v !== undefined && v.trim() !== '') respondidas++
+    })
+    setorObj.secaoInovacao.forEach((_, idx) => {
+      const v = respostas[`inovacao-${idx}`]
+      if (v !== undefined && v.trim() !== '') respondidas++
+    })
+    return respondidas
+  }, [setorObj, perguntasPilar1, perguntasPilar2, perguntasPilar3, perguntasBuffett, respostas])
+
+  // Validação por Etapa: ÚNICA OBRIGATORIEDADE É RESPONDER TODAS AS PERGUNTAS.
+  // Documentos são 100% opcionais e não bloqueiam o avanço.
   const canAvancar = (): boolean => {
     switch (etapaAtual) {
       case 1:
@@ -259,7 +581,6 @@ export default function Questionario() {
           (segmento !== '' || segmentoOutro.trim() !== '')
         )
       case 3:
-        // Perfil setorial: ao menos 80% respondido
         return setorObj.secaoPerfil.every((_, idx) => {
           const v = respostas[`perfil-${idx}`]
           return v !== undefined && v.trim() !== ''
@@ -288,13 +609,8 @@ export default function Questionario() {
           return v !== undefined && v.trim() !== ''
         })
       case 11:
-        // Documentação Adendo: 3 campos obrigatórios + Responsável pelo envio
-        return (
-          balancoNome.trim() !== '' &&
-          dreNome.trim() !== '' &&
-          organogramaNome.trim() !== '' &&
-          responsavelEnvio.trim() !== ''
-        )
+        // Documentos e comprovantes são opcionais (contribuem para a MAIOR PRECISÃO do diagnóstico)
+        return true
       case 12:
         return !!autorizacaoDevolutiva && !!formatoInteresse
       default:
@@ -488,6 +804,13 @@ export default function Questionario() {
       setProtocoloGerado(res.protocolo)
       setModoArmazenamento(res.armazenamento)
 
+      // Limpa rascunho de progresso após conclusão com sucesso
+      try {
+        localStorage.removeItem('vm_questionario_progresso')
+      } catch {
+        /* intentionally ignored */
+      }
+
       toast({
         title: 'Questionário Estratégico Concluído!',
         description: `Seu protocolo oficial é ${res.protocolo}.`,
@@ -646,13 +969,48 @@ export default function Questionario() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-[#111A2E] text-[#3DDC74] border border-[#24334F] text-xs font-mono">
               SLA 72h
             </Badge>
             <Badge className="bg-[#111A2E] text-[#5B9DFF] border border-[#24334F] text-xs font-mono">
               Devolutiva 45 min
             </Badge>
+            <Badge className="bg-[#16213A] text-[#FFB84D] border border-[#FFB84D]/30 text-xs font-mono">
+              {perguntasRespondidasSetor}/{totalPerguntasSetor} Respondidas
+            </Badge>
+          </div>
+        </div>
+
+        {/* Bloco de Abertura Oficial / Setor — Textos Literais do Site */}
+        <div className="p-5 sm:p-6 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#24334F] pb-3">
+            <div className="text-xs font-semibold text-[#5B9DFF] font-mono">
+              {perguntasRespondidasSetor}/{totalPerguntasSetor} perguntas respondidas — o
+              diagnóstico considera a realidade do setor de {setorObj.nome}
+            </div>
+            <Badge className="w-fit bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[11px] font-semibold">
+              Setor Selecionado: {setorObj.nome}
+            </Badge>
+          </div>
+
+          <div className="p-3 bg-[#FF4D4D]/10 border border-[#FF4D4D]/40 rounded-[3px] text-xs text-[#FF8585] font-bold tracking-wide">
+            TODAS AS PERGUNTAS DEVEM SER RESPONDIDAS PARA A ELABORAÇÃO COMPLETA DO DOSSIÊ
+            ESTRATÉGICO.
+          </div>
+
+          <div className="space-y-3 text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+            <p>
+              Este documento é a base para o nosso trabalho. Diferente de formulários comuns, este é
+              um Dossiê Estratégico. Quanto mais precisas e transparentes forem suas respostas, mais
+              cirúrgico será o plano de ação gerado pelo nosso sistema de Inteligência Estratégica.
+            </p>
+            <p>
+              Não oferecemos teorias de gaveta. O Dossiê de Planejamento Estratégico é um raio-x
+              cirúrgico da sua operação atual. Baseado nas suas respostas, você receberá um mapa
+              claro apontando os gargalos que estão travando seu crescimento e as alavancas
+              imediatas para proteger seu caixa e otimizar sua gestão.
+            </p>
           </div>
         </div>
 
@@ -719,6 +1077,7 @@ export default function Questionario() {
                             setSetorId(s.id)
                             setSetorAbertoVisualizacao(s.id)
                             setSegmento('')
+                            navigate(`/questionario/${s.id}`, { replace: true })
                           }}
                           className={`p-4 rounded-[4px] border cursor-pointer transition-all ${
                             isSelected
@@ -763,6 +1122,7 @@ export default function Questionario() {
                             setSetorId(s.id)
                             setSetorAbertoVisualizacao(s.id)
                             setSegmento('')
+                            navigate(`/questionario/${s.id}`, { replace: true })
                           }}
                           className={`p-3 rounded-[4px] border cursor-pointer transition-all ${
                             isSelected
@@ -1187,70 +1547,85 @@ export default function Questionario() {
               </div>
             )}
 
-            {/* ETAPA 11: DOCUMENTAÇÃO — ADENDO FORMAL COM ALERTAS E 3 CAMPOS OBRIGATÓRIOS */}
+            {/* ETAPA 11: DOCUMENTAÇÃO — ADENDO E ANEXOS (TOTALMENTE OPCIONAIS) */}
             {etapaAtual === 11 && (
               <div className="space-y-6">
-                {/* Alerta Literal do Documento 1 / Adendo */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E] border-2 border-[#FFB84D]/60 space-y-2">
-                  <div className="flex items-center gap-2 text-[#FFB84D] font-bold text-sm">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>ADENDO OBRIGATÓRIO — COMPROVAÇÃO DOCUMENTAL DO DOSSIÊ</span>
+                {/* Banner Oficial de Documentação Opcional - Ênfase em Maior Precisão */}
+                <div className="p-4 sm:p-5 rounded-[4px] bg-[#111A2E] border-2 border-[#5B9DFF]/50 space-y-2">
+                  <div className="flex items-center gap-2 text-[#5B9DFF] font-bold text-sm">
+                    <FileCheck2 className="w-5 h-5 shrink-0" />
+                    <span>DOCUMENTAÇÃO COMPROBATÓRIA DO DOSSIÊ (OPCIONAL)</span>
                   </div>
-                  <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                    Para garantir que o Diagnóstico Estratégico seja fundamentado em evidências e
-                    números reais (zero especulação), é <strong>obrigatória</strong> a indicação dos
-                    documentos contábeis e estruturais da empresa.
+                  <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                    A inclusão de demonstrativos e documentos contábeis é{' '}
+                    <strong>totalmente opcional</strong> e contribui diretamente para a{' '}
+                    <strong>MAIOR PRECISÃO</strong> do diagnóstico, permitindo ao sistema e aos
+                    especialistas cruzarem indicadores reais de margem, liquidez e estrutura com as
+                    respostas do questionário. O avanço não é bloqueado caso você prefira não anexar
+                    documentos neste momento.
                   </p>
                   <p className="text-[11px] text-[#8B98B4] leading-relaxed">
-                    * Todos os 3 blocos abaixo são de preenchimento e confirmação obrigatórios.
-                    Indique o nome do arquivo, ano/período de referência ou informe detalhes sobre o
-                    envio contábil.
+                    Você pode indicar o nome do arquivo, anos/períodos de referência (recomendado:{' '}
+                    <strong>3 ÚLTIMOS ANOS</strong>) ou notas explicativas sobre a disponibilização
+                    contábil.
                   </p>
                 </div>
 
                 {/* 1. Balanço Patrimonial */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
+                <div className="p-5 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                    <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                       <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      1. Balanço Patrimonial (Último Exercício Fechado) *
+                      1. Balanço Patrimonial (Recomendado: 3 ÚLTIMOS ANOS)
                     </Label>
-                    <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px]">
-                      Obrigatório
+                    <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px]">
+                      Opcional • Maior Precisão
                     </Badge>
                   </div>
+                  <p className="text-xs text-[#8B98B4] leading-relaxed">
+                    O que é este anexo e o que se espera dele: demonstração contábil oficial que
+                    evidencia o patrimônio líquido, endividamento, liquidez e ativos da empresa.
+                    Solicita-se preferencialmente os demonstrativos fechados dos{' '}
+                    <strong>3 ÚLTIMOS ANOS</strong> para análise da evolução de solvência e ciclo de
+                    caixa. O envio contribui para a máxima acurácia analítica do diagnóstico.
+                  </p>
                   <Input
-                    required
                     value={balancoNome}
                     onChange={(e) => setBalancoNome(e.target.value)}
-                    placeholder="Ex.: Balanco_Patrimonial_2025_Oficial.pdf ou 'Enviado por email contábil'"
+                    placeholder="Ex.: Balanco_Patrimonial_3_Ultimos_Anos.pdf ou 'Disponível via contador'"
                     className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
                   />
                   <Textarea
                     value={balancoObs}
                     onChange={(e) => setBalancoObs(e.target.value)}
-                    placeholder="Observações contábeis, ressalvas de auditoria ou data de disponibilização..."
+                    placeholder="Observações contábeis, períodos cobertos, ressalvas de auditoria ou data prevista..."
                     rows={2}
                     className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
                   />
                 </div>
 
                 {/* 2. DRE */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
+                <div className="p-5 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                    <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                       <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      2. Demonstração do Resultado do Exercício (DRE Gerencial ou Contábil) *
+                      2. Demonstração do Resultado do Exercício — DRE (Recomendado: 3 ÚLTIMOS ANOS)
                     </Label>
-                    <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px]">
-                      Obrigatório
+                    <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px]">
+                      Opcional • Maior Precisão
                     </Badge>
                   </div>
+                  <p className="text-xs text-[#8B98B4] leading-relaxed">
+                    O que é este anexo e o que se espera dele: relatório financeiro estruturado que
+                    detalha a receita operacional bruta, custos operacionais, margem de
+                    contribuição, EBITDA e resultado líquido. Solicita-se a apresentação referente
+                    aos <strong>3 ÚLTIMOS ANOS</strong> (contábil ou gerencial), essencial para
+                    identificar vazamentos silenciosos de margem e despesas fixas excessivas.
+                  </p>
                   <Input
-                    required
                     value={dreNome}
                     onChange={(e) => setDreNome(e.target.value)}
-                    placeholder="Ex.: DRE_Gerencial_12Meses_2025.xlsx ou 'DRE Oficial ECD'"
+                    placeholder="Ex.: DRE_Gerencial_Contabil_3_Ultimos_Anos.xlsx ou 'Disponível em reunião'"
                     className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
                   />
                   <Textarea
@@ -1263,21 +1638,27 @@ export default function Questionario() {
                 </div>
 
                 {/* 3. Organograma / Relatórios */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
+                <div className="p-5 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                    <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                       <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      3. Organograma Funcional & Relatórios Operacionais / Vendas *
+                      3. Organograma Funcional & Relatórios Operacionais / Vendas
                     </Label>
-                    <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px]">
-                      Obrigatório
+                    <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px]">
+                      Opcional • Maior Precisão
                     </Badge>
                   </div>
+                  <p className="text-xs text-[#8B98B4] leading-relaxed">
+                    O que é este anexo e o que se espera dele: mapa da hierarquia funcional da
+                    empresa, desenho dos departamentos, quadro de lideranças diretas e
+                    relatórios-chave operacionais/comerciais (curva de vendas, volumetria ou
+                    métricas setoriais). O que se espera dele é evidenciar o grau de
+                    descentralização e delegação das tomadas de decisão.
+                  </p>
                   <Input
-                    required
                     value={organogramaNome}
                     onChange={(e) => setOrganogramaNome(e.target.value)}
-                    placeholder="Ex.: Organograma_Setembro2026.pdf ou 'Estrutura de 4 gerências ativas'"
+                    placeholder="Ex.: Organograma_Funcional_2026.pdf ou 'Estrutura descrita nas respostas'"
                     className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
                   />
                   <Textarea
@@ -1289,16 +1670,20 @@ export default function Questionario() {
                   />
                 </div>
 
-                {/* Responsável Legal pelo Envio */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40 space-y-2">
-                  <Label className="text-xs font-bold text-[#F8FAFC]">
-                    Responsável pelo Envio dos Documentos *
-                  </Label>
+                {/* Responsável Legal pelo Envio (Opcional) */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-[#F8FAFC]">
+                      Responsável pelo Envio dos Documentos (Opcional)
+                    </Label>
+                    <Badge className="bg-[#16213A] text-[#8B98B4] border-[#24334F] text-[10px]">
+                      Opcional
+                    </Badge>
+                  </div>
                   <Input
-                    required
                     value={responsavelEnvio}
                     onChange={(e) => setResponsavelEnvio(e.target.value)}
-                    placeholder="Nome completo e cargo da pessoa que assina pelo envio documental"
+                    placeholder="Nome completo e cargo da pessoa que assina ou faz a interlocução dos dados"
                     className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
                   />
                   <p className="text-[11px] text-[#8B98B4]">
