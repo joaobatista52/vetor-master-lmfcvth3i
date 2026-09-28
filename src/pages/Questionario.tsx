@@ -24,6 +24,8 @@ import {
   FileText,
   Clock,
   ExternalLink,
+  Eye,
+  Shield,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -44,6 +46,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { ImportadorDossieJson } from '@/components/ImportadorDossieJson'
+import { Switch } from '@/components/ui/switch'
 import { createDiagnostico } from '@/services/diagnosticos'
 import {
   enviarQuestionarioEstrategico,
@@ -184,10 +187,13 @@ const ETAPAS_INFO: EtapaInfo[] = [
 
 export default function Questionario() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const { toast } = useToast()
 
   const { setorParam } = useParams<{ setorParam?: string }>()
+
+  // Modo Revisão (exclusivo para Admin; nunca persiste em localStorage de lead)
+  const [modoRevisao, setModoRevisao] = useState(false)
 
   // Setor Selecionado
   const [setorId, setSetorId] = useState<string>(() => {
@@ -437,9 +443,9 @@ export default function Questionario() {
     }
   }, [setorParam, setorId])
 
-  // Salvar progresso no localStorage automaticamente
+  // Salvar progresso no localStorage automaticamente (desativado no Modo Revisão para não contaminar o progresso do lead)
   useEffect(() => {
-    if (protocoloGerado) return
+    if (protocoloGerado || modoRevisao) return
     try {
       const dados = {
         etapaAtual,
@@ -496,6 +502,7 @@ export default function Questionario() {
     autorizacaoDevolutiva,
     formatoInteresse,
     protocoloGerado,
+    modoRevisao,
   ])
 
   const setorObj = useMemo(() => setores.find((s) => s.id === setorId) || setores[0], [setorId])
@@ -567,6 +574,7 @@ export default function Questionario() {
   // Validação por Etapa: ÚNICA OBRIGATORIEDADE É RESPONDER TODAS AS PERGUNTAS.
   // Documentos são 100% opcionais e não bloqueiam o avanço.
   const canAvancar = (): boolean => {
+    if (modoRevisao) return true
     switch (etapaAtual) {
       case 1:
         return !!setorId
@@ -630,6 +638,13 @@ export default function Questionario() {
       setEtapaAtual((e) => e - 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }
+
+  const irParaEtapa = (etapaNum: number) => {
+    if (!modoRevisao) return
+    const alvo = Math.min(Math.max(etapaNum, 1), 12)
+    setEtapaAtual(alvo)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Preenchimento a partir de importação .json
@@ -955,6 +970,98 @@ export default function Questionario() {
   return (
     <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+        {/* Banner e Controle de Modo Revisão (Exclusivo para Admin) */}
+        {isAdmin && (
+          <div className="rounded-[4px] border border-[#F59E0B]/40 bg-[#78350F]/20 p-3 sm:p-4 shadow-lg backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[4px] bg-[#F59E0B]/20 border border-[#F59E0B]/40 flex items-center justify-center text-[#F59E0B] shrink-0">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#F59E0B]">
+                      Painel do Administrador
+                    </span>
+                    {modoRevisao && (
+                      <Badge className="bg-[#DC2626] text-white border-none font-bold text-[10px] tracking-widest px-2 py-0.5 animate-pulse">
+                        MODO REVISÃO ATIVO
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#C7D0E0]">
+                    {modoRevisao
+                      ? 'Navegação livre entre as 12 etapas ativa. Envio/submissão desativado e localStorage isolado.'
+                      : 'Ative o Modo Revisão para conferir e ajustar textos das 12 etapas sem preencher dados.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 self-end sm:self-center bg-[#111A2E]/80 border border-[#24334F] rounded-[4px] px-3 py-1.5">
+                <Eye className="w-4 h-4 text-[#F59E0B]" />
+                <Label
+                  htmlFor="toggle-modo-revisao"
+                  className="text-xs font-medium text-[#F8FAFC] cursor-pointer select-none"
+                >
+                  Modo Revisão
+                </Label>
+                <Switch
+                  id="toggle-modo-revisao"
+                  checked={modoRevisao}
+                  onCheckedChange={(val) => {
+                    setModoRevisao(val)
+                    if (val) {
+                      toast({
+                        title: 'Modo Revisão Ativado',
+                        description:
+                          'Você pode navegar livremente pelas 12 etapas. Submissões estão bloqueadas.',
+                      })
+                    } else {
+                      toast({
+                        title: 'Modo Revisão Desativado',
+                        description: 'Retornado ao fluxo com validações completas.',
+                      })
+                    }
+                  }}
+                  className="data-[state=checked]:bg-[#F59E0B]"
+                />
+              </div>
+            </div>
+
+            {/* Atalho de Navegação Direta entre as 12 etapas no Modo Revisão */}
+            {modoRevisao && (
+              <div className="mt-3 pt-3 border-t border-[#F59E0B]/30 space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-[#FCD34D] font-medium">
+                  <span className="uppercase tracking-wider">Saltar diretamente para etapa:</span>
+                  <span className="text-[10px] text-[#C7D0E0]">
+                    Clique em qualquer etapa abaixo
+                  </span>
+                </div>
+                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                  {ETAPAS_INFO.map((item) => {
+                    const isAtual = etapaAtual === item.numero
+                    return (
+                      <button
+                        key={item.numero}
+                        type="button"
+                        onClick={() => irParaEtapa(item.numero)}
+                        title={`Etapa ${item.numero}: ${item.titulo}`}
+                        className={`h-8 rounded-[3px] text-xs font-mono font-bold transition-all border flex items-center justify-center ${
+                          isAtual
+                            ? 'bg-[#F59E0B] text-[#0B1120] border-[#F59E0B] shadow-md ring-2 ring-[#F59E0B]/50'
+                            : 'bg-[#16213A] text-[#C7D0E0] border-[#24334F] hover:bg-[#1F2E4D] hover:text-[#F8FAFC]'
+                        }`}
+                      >
+                        {String(item.numero).padStart(2, '0')}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#24334F]">
           <div>
@@ -970,6 +1077,11 @@ export default function Questionario() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {modoRevisao && (
+              <Badge className="bg-[#DC2626] text-white border-none text-xs font-bold font-mono tracking-wider px-2.5 py-1 animate-pulse">
+                MODO REVISÃO
+              </Badge>
+            )}
             <Badge className="bg-[#111A2E] text-[#3DDC74] border border-[#24334F] text-xs font-mono">
               SLA 72h
             </Badge>
@@ -981,6 +1093,22 @@ export default function Questionario() {
             </Badge>
           </div>
         </div>
+
+        {/* Banner Persistente de Alerta: Modo Revisão Ativo */}
+        {modoRevisao && (
+          <div className="p-3.5 rounded-[4px] bg-[#DC2626]/15 border-2 border-[#DC2626] flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-[#FCA5A5] font-semibold">
+              <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
+              <span>
+                MODO REVISÃO ATIVO — Navegação livre sem validação. O envio de dados está desativado
+                e o progresso do lead não será alterado.
+              </span>
+            </div>
+            <Badge className="bg-[#DC2626] text-white border-none text-[10px] font-mono shrink-0 uppercase tracking-wider">
+              Somente Visualização
+            </Badge>
+          </div>
+        )}
 
         {/* Bloco de Abertura Oficial / Setor — Textos Literais do Site */}
         <div className="p-5 sm:p-6 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-4">
@@ -1844,6 +1972,20 @@ export default function Questionario() {
               <span>Próxima Etapa</span>
               <ChevronRight className="w-4 h-4" />
             </Button>
+          ) : modoRevisao ? (
+            <div className="flex items-center gap-2">
+              <Badge className="bg-[#DC2626]/20 text-[#EF4444] border-[#DC2626]/40 font-mono text-[11px] py-1.5 px-3">
+                Envio desativado no Modo Revisão
+              </Badge>
+              <Button
+                type="button"
+                disabled
+                className="bg-[#1F2E4D] text-[#8B98B4] rounded-[4px] text-xs font-semibold px-8 py-5 gap-2 cursor-not-allowed opacity-60"
+              >
+                <Send className="w-4 h-4" />
+                <span>Submissão Desativada (Modo Revisão)</span>
+              </Button>
+            </div>
           ) : (
             <Button
               type="button"
