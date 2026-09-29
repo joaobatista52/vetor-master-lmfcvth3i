@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
@@ -10,18 +10,38 @@ import { Loader2, AlertCircle, MailWarning, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { extractFieldErrors, getErrorMessage, type FieldErrors } from '@/lib/pocketbase/errors'
 
+function resolvePostAuthRedirect(fromPath?: string): string {
+  if (!fromPath) return '/app'
+  const normalized = fromPath.trim()
+  // Nunca redirecionar para a institucional ("/") nem para login
+  if (!normalized || normalized === '/' || normalized === '/login') {
+    return '/app'
+  }
+  // Permitir apenas rotas internas relevantes começando com '/'
+  if (!normalized.startsWith('/')) {
+    return '/app'
+  }
+  return normalized
+}
+
 export default function Login() {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [emailConflict, setEmailConflict] = useState(false)
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
+  const rawFrom = (location.state as { from?: { pathname: string } })?.from?.pathname
+  const targetDestination = resolvePostAuthRedirect(rawFrom)
+
+  // 2) Se um usuário já autenticado acessar /login, redirecionar automaticamente para /app
+  if (!authLoading && isAuthenticated) {
+    return <Navigate to="/app" replace />
+  }
 
   const isEmailConflictError = (error: any): boolean => {
     if (error?.status === 409) return true
@@ -67,9 +87,9 @@ export default function Login() {
     }
     setFieldErrors({})
     setEmailConflict(false)
-    setLoading(true)
+    setSubmitting(true)
     const { error } = isLogin ? await signIn(email, password) : await signUp(email, password)
-    setLoading(false)
+    setSubmitting(false)
     if (error) {
       setFieldErrors(extractFieldErrors(error))
       if (!isLogin && isEmailConflictError(error)) {
@@ -79,7 +99,7 @@ export default function Login() {
       return
     }
     toast.success(isLogin ? 'Bem-vindo!' : 'Conta criada com sucesso!')
-    navigate(from, { replace: true })
+    navigate(targetDestination, { replace: true })
   }
 
   return (
@@ -187,9 +207,9 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-medium transition-colors"
-              disabled={loading}
+              disabled={submitting}
             >
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isLogin ? 'Acessar Plataforma' : 'Criar Conta e Iniciar'}
             </Button>
           </form>

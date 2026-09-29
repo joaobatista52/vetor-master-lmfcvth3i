@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/use-auth'
 import {
   ArrowRight,
   Sparkles,
@@ -38,7 +39,11 @@ import { CASES_REAIS_OFICIAIS, FAIXA_AUTORIDADE_OFICIAL, FAQ_OFICIAL_V13 } from 
  */
 export default function InstitucionalVendedora() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [setorAbertoId, setSetorAbertoId] = useState<string>('saude')
+
+  const loginOrAppPath = isAuthenticated ? '/app' : '/login'
+  const loginButtonLabel = isAuthenticated ? 'Acessar Plataforma' : 'Entrar'
 
   const toggleSetor = (id: string) => {
     setSetorAbertoId((atual) => (atual === id ? '' : id))
@@ -60,7 +65,7 @@ export default function InstitucionalVendedora() {
               asChild
               className="text-[#C7D0E0] hover:text-[#5B9DFF] hover:bg-[#16213A] text-xs font-medium rounded-[4px]"
             >
-              <Link to="/login">Entrar</Link>
+              <Link to={loginOrAppPath}>{loginButtonLabel}</Link>
             </Button>
             <Button
               variant="outline"
@@ -135,7 +140,9 @@ export default function InstitucionalVendedora() {
                 variant="ghost"
                 className="w-full sm:w-auto text-[#C7D0E0] hover:text-[#F8FAFC] hover:bg-[#16213A] text-sm font-medium rounded-[4px] px-5 py-6"
               >
-                <Link to="/login">Entrada do Assinante</Link>
+                <Link to={loginOrAppPath}>
+                  {isAuthenticated ? 'Acessar Plataforma' : 'Entrada do Assinante'}
+                </Link>
               </Button>
             </div>
 
@@ -711,7 +718,9 @@ export default function InstitucionalVendedora() {
               variant="ghost"
               className="w-full sm:w-auto text-[#C7D0E0] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] px-5 py-6"
             >
-              <Link to="/login">Já sou Assinante</Link>
+              <Link to={loginOrAppPath}>
+                {isAuthenticated ? 'Acessar Plataforma' : 'Já sou Assinante'}
+              </Link>
             </Button>
           </div>
         </div>
@@ -736,8 +745,8 @@ export default function InstitucionalVendedora() {
             <a href="#niveis" className="text-[#C7D0E0] hover:text-[#5B9DFF]">
               Escada de Valor
             </a>
-            <Link to="/login" className="text-[#C7D0E0] hover:text-[#5B9DFF]">
-              Área do Assinante
+            <Link to={loginOrAppPath} className="text-[#C7D0E0] hover:text-[#5B9DFF]">
+              {isAuthenticated ? 'Área Logada (/app)' : 'Área do Assinante'}
             </Link>
           </div>
           <div className="text-xs text-center md:text-right">
