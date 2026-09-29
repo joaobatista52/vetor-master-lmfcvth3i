@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Eye,
   Shield,
+  ArrowLeft,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -846,6 +847,34 @@ export default function Questionario() {
     return (
       <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
+          {/* Retorno no topo (visível em todas as etapas) */}
+          <div className="flex items-center">
+            {isAdmin ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="h-8 px-2 text-xs text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] gap-1.5"
+              >
+                <Link to="/app">
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>← Voltar ao App</span>
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="h-8 px-2 text-xs text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] gap-1.5"
+              >
+                <Link to="/">
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>← Voltar à Página Institucional</span>
+                </Link>
+              </Button>
+            )}
+          </div>
           <div className="text-center space-y-3">
             <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 px-3 py-1 font-semibold text-xs">
               QUESTIONÁRIO ESTRATÉGICO CONCLUÍDO • SLA 72H
@@ -970,6 +999,35 @@ export default function Questionario() {
   return (
     <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+        {/* Retorno discreto no topo (visível em todas as etapas) */}
+        <div className="flex items-center">
+          {isAdmin ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="h-8 px-2 text-xs text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] gap-1.5"
+            >
+              <Link to="/app">
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>← Voltar ao App</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="h-8 px-2 text-xs text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] rounded-[4px] gap-1.5"
+            >
+              <Link to="/">
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>← Voltar à Página Institucional</span>
+              </Link>
+            </Button>
+          )}
+        </div>
+
         {/* Banner e Controle de Modo Revisão (Exclusivo para Admin) */}
         {isAdmin && (
           <div className="rounded-[4px] border border-[#F59E0B]/40 bg-[#78350F]/20 p-3 sm:p-4 shadow-lg backdrop-blur-sm">
