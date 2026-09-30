@@ -46,7 +46,6 @@ import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
-import { ImportadorDossieJson } from '@/components/ImportadorDossieJson'
 import { Switch } from '@/components/ui/switch'
 import { createDiagnostico } from '@/services/diagnosticos'
 import {
@@ -174,7 +173,7 @@ const ETAPAS_INFO: EtapaInfo[] = [
     numero: 11,
     key: 'documentacao',
     titulo: 'Documentação — Anexos Comprobatórios',
-    subtitulo: 'Demonstrativos dos 3 últimos anos (opcional para maior precisão)',
+    subtitulo: 'Demonstrativos dos 3 últimos anos para maior precisão',
     icone: FileCheck2,
   },
   {
@@ -337,7 +336,7 @@ export default function Questionario() {
     return {}
   })
 
-  // Etapa 11: Documentação (Opcional - Maior Precisão do Diagnóstico)
+  // Etapa 11: Documentação (Maior Precisão do Diagnóstico)
   const [balancoNome, setBalancoNome] = useState(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
@@ -572,8 +571,8 @@ export default function Questionario() {
     return respondidas
   }, [setorObj, perguntasPilar1, perguntasPilar2, perguntasPilar3, perguntasBuffett, respostas])
 
-  // Validação por Etapa: ÚNICA OBRIGATORIEDADE É RESPONDER TODAS AS PERGUNTAS.
-  // Documentos são 100% opcionais e não bloqueiam o avanço.
+  // Validação por Etapa: TODAS AS PERGUNTAS DEVEM SER RESPONDIDAS.
+  // Documentos não bloqueiam o avanço da Etapa 11.
   const canAvancar = (): boolean => {
     if (modoRevisao) return true
     switch (etapaAtual) {
@@ -618,7 +617,7 @@ export default function Questionario() {
           return v !== undefined && v.trim() !== ''
         })
       case 11:
-        // Documentos e comprovantes são opcionais (contribuem para a MAIOR PRECISÃO do diagnóstico)
+        // Documentos e comprovantes contribuem para a MAIOR PRECISÃO do diagnóstico (não bloqueiam o avanço)
         return true
       case 12:
         return !!autorizacaoDevolutiva && !!formatoInteresse
@@ -646,58 +645,6 @@ export default function Questionario() {
     const alvo = Math.min(Math.max(etapaNum, 1), 12)
     setEtapaAtual(alvo)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  // Preenchimento a partir de importação .json
-  const handleDossieImportado = (dossie: any) => {
-    if (dossie.setor_id) {
-      const normalizado =
-        dossie.setor_id === 'servicos-profissionais'
-          ? 'servicos'
-          : dossie.setor_id === 'comercio-internacional-trading'
-            ? 'trading'
-            : dossie.setor_id === 'facilities-servicos-terceirizados'
-              ? 'facilities'
-              : dossie.setor_id === 'tecnologia-startups'
-                ? 'tecnologia'
-                : dossie.setor_id === 'transporte-logistica'
-                  ? 'transporte'
-                  : dossie.setor_id === 'academias-de-ginastica'
-                    ? 'academias'
-                    : dossie.setor_id
-      setSetorId(normalizado)
-      setSetorAbertoVisualizacao(normalizado)
-    }
-
-    const emp = dossie.empresa || {}
-    if (emp['Razão Social'] || emp.razao_social) {
-      setRazaoSocial(emp['Razão Social'] || emp.razao_social)
-    }
-    if (emp.CNPJ || emp.cnpj) {
-      setCnpj(emp.CNPJ || emp.cnpj)
-    }
-    if (emp.Segmento || emp.segmento) {
-      setSegmento(emp.Segmento || emp.segmento)
-    }
-    if (emp.Respondente || emp.respondente) {
-      setRespondente(emp.Respondente || emp.respondente)
-    }
-    if (emp.Cargo || emp.cargo) {
-      setCargo(emp.Cargo || emp.cargo)
-    }
-    if (emp['E-mail Corporativo (Dossiê Estratégico)'] || emp.email || emp.email_corporativo) {
-      setEmailCorporativo(
-        emp['E-mail Corporativo (Dossiê Estratégico)'] || emp.email || emp.email_corporativo,
-      )
-    }
-    if (emp['WhatsApp / Telefone'] || emp.whatsapp) {
-      setWhatsapp(emp['WhatsApp / Telefone'] || emp.whatsapp)
-    }
-
-    toast({
-      title: 'Dados importados com sucesso!',
-      description: 'Avance pelas etapas para revisar e completar seu Dossiê Estratégico.',
-    })
   }
 
   // Submissão Final do Questionário (Etapa 12)
@@ -1236,18 +1183,6 @@ export default function Questionario() {
             {/* ETAPA 1: SETOR DE ATUAÇÃO (12 CANÔNICOS, DESTAQUES, TEXTOS FECHADOS/ABERTOS) */}
             {etapaAtual === 1 && (
               <div className="space-y-6">
-                {/* Importador de Dossiê */}
-                <ImportadorDossieJson onDossieImportado={handleDossieImportado} />
-
-                <div className="relative flex items-center justify-center my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#24334F]" />
-                  </div>
-                  <span className="relative bg-[#16213A] px-3 text-xs uppercase font-semibold text-[#8B98B4]">
-                    Ou selecione um dos 12 setores canônicos
-                  </span>
-                </div>
-
                 {/* 3 Setores em Destaque */}
                 <div className="space-y-3">
                   <span className="text-xs uppercase tracking-wider text-[#5B9DFF] font-semibold block">
@@ -1733,22 +1668,20 @@ export default function Questionario() {
               </div>
             )}
 
-            {/* ETAPA 11: DOCUMENTAÇÃO — ADENDO E ANEXOS (TOTALMENTE OPCIONAIS) */}
+            {/* ETAPA 11: DOCUMENTAÇÃO — ADENDO E ANEXOS */}
             {etapaAtual === 11 && (
               <div className="space-y-6">
-                {/* Banner Oficial de Documentação Opcional - Ênfase em Maior Precisão */}
+                {/* Banner de Documentação - Ênfase em Maior Precisão */}
                 <div className="p-4 sm:p-5 rounded-[4px] bg-[#111A2E] border-2 border-[#5B9DFF]/50 space-y-2">
                   <div className="flex items-center gap-2 text-[#5B9DFF] font-bold text-sm">
                     <FileCheck2 className="w-5 h-5 shrink-0" />
-                    <span>DOCUMENTAÇÃO COMPROBATÓRIA DO DOSSIÊ (OPCIONAL)</span>
+                    <span>DOCUMENTAÇÃO COMPROBATÓRIA DO DOSSIÊ</span>
                   </div>
                   <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
-                    A inclusão de demonstrativos e documentos contábeis é{' '}
-                    <strong>totalmente opcional</strong> e contribui diretamente para a{' '}
+                    A inclusão de demonstrativos e documentos contábeis contribui diretamente para a{' '}
                     <strong>MAIOR PRECISÃO</strong> do diagnóstico, permitindo ao sistema e aos
                     especialistas cruzarem indicadores reais de margem, liquidez e estrutura com as
-                    respostas do questionário. O avanço não é bloqueado caso você prefira não anexar
-                    documentos neste momento.
+                    respostas do questionário.
                   </p>
                   <p className="text-[11px] text-[#8B98B4] leading-relaxed">
                     Você pode indicar o nome do arquivo, anos/períodos de referência (recomendado:{' '}
@@ -1762,17 +1695,14 @@ export default function Questionario() {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                       <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      1. Balanço Patrimonial (Recomendado: 3 ÚLTIMOS ANOS)
+                      1. Balanço Patrimonial (3 últimos anos)
                     </Label>
-                    <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px]">
-                      Opcional • Maior Precisão
-                    </Badge>
                   </div>
                   <p className="text-xs text-[#8B98B4] leading-relaxed">
                     O que é este anexo e o que se espera dele: demonstração contábil oficial que
                     evidencia o patrimônio líquido, endividamento, liquidez e ativos da empresa.
                     Solicita-se preferencialmente os demonstrativos fechados dos{' '}
-                    <strong>3 ÚLTIMOS ANOS</strong> para análise da evolução de solvência e ciclo de
+                    <strong>3 últimos anos</strong> para análise da evolução de solvência e ciclo de
                     caixa. O envio contribui para a máxima acurácia analítica do diagnóstico.
                   </p>
                   <Input
@@ -1795,17 +1725,14 @@ export default function Questionario() {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                       <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      2. Demonstração do Resultado do Exercício — DRE (Recomendado: 3 ÚLTIMOS ANOS)
+                      2. DRE (3 últimos anos)
                     </Label>
-                    <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px]">
-                      Opcional • Maior Precisão
-                    </Badge>
                   </div>
                   <p className="text-xs text-[#8B98B4] leading-relaxed">
                     O que é este anexo e o que se espera dele: relatório financeiro estruturado que
                     detalha a receita operacional bruta, custos operacionais, margem de
                     contribuição, EBITDA e resultado líquido. Solicita-se a apresentação referente
-                    aos <strong>3 ÚLTIMOS ANOS</strong> (contábil ou gerencial), essencial para
+                    aos <strong>3 últimos anos</strong> (contábil ou gerencial), essencial para
                     identificar vazamentos silenciosos de margem e despesas fixas excessivas.
                   </p>
                   <Input
@@ -1828,11 +1755,8 @@ export default function Questionario() {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
                       <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      3. Organograma Funcional & Relatórios Operacionais / Vendas
+                      3. Organograma Funcional & Relatórios Operacionais/Vendas
                     </Label>
-                    <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px]">
-                      Opcional • Maior Precisão
-                    </Badge>
                   </div>
                   <p className="text-xs text-[#8B98B4] leading-relaxed">
                     O que é este anexo e o que se espera dele: mapa da hierarquia funcional da
@@ -1856,15 +1780,12 @@ export default function Questionario() {
                   />
                 </div>
 
-                {/* Responsável Legal pelo Envio (Opcional) */}
+                {/* Responsável Legal pelo Envio */}
                 <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-bold text-[#F8FAFC]">
-                      Responsável pelo Envio dos Documentos (Opcional)
+                      Responsável pelo Envio dos Documentos
                     </Label>
-                    <Badge className="bg-[#16213A] text-[#8B98B4] border-[#24334F] text-[10px]">
-                      Opcional
-                    </Badge>
                   </div>
                   <Input
                     value={responsavelEnvio}
@@ -1878,10 +1799,10 @@ export default function Questionario() {
                   </p>
                 </div>
 
-                {/* Documentação Adicional (Checkboxes opcionais) */}
+                {/* Documentação Adicional */}
                 <div className="p-4 rounded-[4px] bg-[#111A2E]/50 border border-[#24334F] space-y-3">
                   <Label className="text-xs font-semibold text-[#C7D0E0]">
-                    Documentação Adicional Disponível para a Auditoria (Opcional):
+                    Documentação Adicional Disponível para a Auditoria:
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[

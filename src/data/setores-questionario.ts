@@ -13,7 +13,7 @@
 //             Tecnologia onde 6.6 = "reserva de capital (runway) para 12 meses")
 //   Seção 7 — Expectativas e Ambição (5 perguntas, iguais para todos)
 //   Seção 8 — Inovação e Tecnologia (setorial, 7 a 9 perguntas)
-//   Seção 9 — Próximos Passos (4 campos + Documentação Adicional opcional)
+//   Seção 9 — Próximos Passos (4 campos + Documentação Adicional)
 //
 // Os 3 Pilares cobrem os 12 setores do Contexto Estratégico Global V7.2.
 
@@ -378,7 +378,7 @@ export const secaoExpectativas: PerguntaSecao[] = [
 
 // Seção 9 — Próximos Passos (4 campos + Documentação Adicional) — fiel ao Questionário V7.2
 // 9.1 é puramente informativo (tipo display), não exige resposta.
-// Ao final, "Documentação Adicional (Opcional)" como checkboxes (multi-seleção).
+// Ao final, "Documentação Adicional" como checkboxes (multi-seleção).
 export const secaoProximosPassos: PerguntaSecao[] = [
   {
     texto: 'Você receberá um Diagnóstico Executivo com recomendações prioritárias.',
@@ -388,7 +388,7 @@ export const secaoProximosPassos: PerguntaSecao[] = [
   { texto: 'Formato de interesse:', tipo: 'select', opcoes: formatoInteresseOpcoes },
   { texto: 'Responsável pelos documentos:', tipo: 'texto' },
   {
-    texto: 'Documentação Adicional (Opcional):',
+    texto: 'Documentação Adicional:',
     tipo: 'checkbox',
     opcoes: documentacaoAdicionalOpcoes,
   },
@@ -404,7 +404,7 @@ export const secaoProximosPassosTrading: PerguntaSecao[] = [
   { texto: 'Formato de interesse:', tipo: 'select', opcoes: formatoInteresseOpcoes },
   { texto: 'Responsável pelos documentos:', tipo: 'texto' },
   {
-    texto: 'Documentação Adicional (Opcional):',
+    texto: 'Documentação Adicional:',
     tipo: 'checkbox',
     opcoes: [
       'Balanço Patrimonial',
