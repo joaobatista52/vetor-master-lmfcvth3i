@@ -3,7 +3,6 @@ import { useNavigate, Link, useParams } from 'react-router-dom'
 import {
   ChevronLeft,
   ChevronRight,
-  Check,
   Building2,
   AlertTriangle,
   Target,
@@ -23,10 +22,10 @@ import {
   ShieldCheck,
   FileText,
   Clock,
-  ExternalLink,
   Eye,
   Shield,
   ArrowLeft,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,13 +33,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -57,37 +49,32 @@ import { SETORES_CANONICOS_12 } from '@/data/setores-canonicos'
 import {
   setores,
   nomePilares,
-  escalaOpcoes,
   simNaoOpcoes,
   formatoInteresseOpcoes,
-  getPerguntasPorPilar,
-  secaoHackman,
-  secaoBuffett,
-  secaoExpectativas,
-  type PerguntaSecao,
+  BLOCO_DOCUMENTACAO_FINAL,
+  type Setor,
+  type PerguntaItemLiteral,
+  type SecaoQuestionarioLiteral,
 } from '@/data/setores-questionario'
 
 /**
  * Questionário Estratégico Canônico de 12 Etapas — Vetor Master V7.2
  *
- * Etapa 01: Setor de Atuação (12 Canônicos, destaque Saúde/Varejo/Serviços + cards fechado/aberto)
- * Etapa 02: Identificação da Empresa & Lead (Razão Social, CNPJ, Data, Segmento, Respondente, Cargo, Email, WhatsApp)
- * Etapa 03: Perfil da Empresa e Contexto (específico do setor)
- * Etapa 04: Pilar 1 — Prisão do Fundador
- * Etapa 05: Pilar 2 — Ineficiência Invisível
- * Etapa 06: Pilar 3 — Abismo Estratégia vs. Execução
- * Etapa 07: Lente de Hackman (5 Condições da Eficácia)
- * Etapa 08: Lente de Buffett (Saúde Financeira e Moat)
- * Etapa 09: Expectativas e Ambição
- * Etapa 10: Inovação e Tecnologia (setorial)
- * Etapa 11: Documentação & Adendo Formal (Balanço Patrimonial, DRE, Organograma/Relatórios + Responsável + Alertas)
- * Etapa 12: Próximos Passos & Devolutiva Executiva (Autorização Devolutiva 45 min, Formato MaaS/Híbrido/CaaS)
+ * Fonte de Verdade: PDF "Questionários Consolidados 12 Setores V7.2" (30set26, 45 págs.)
  *
- * Ao submeter:
- * - Grava na base unificada (coleção 'leads' do site institucional via leads-unificados.ts)
- * - Persiste fallback seguro em localStorage + fila local
- * - Se logado, persiste também no modelo local de diagnósticos
- * - Exibe confirmação com protocolo imutável #VM-...
+ * Etapas do Fluxo:
+ *   01: Setor de Atuação (Seleção entre os 12 canônicos com cards informativos)
+ *   02: Identificação da Empresa & Lead (Razão Social, CNPJ, Data, Segmento, Respondente, Cargo, Modalidade para Trading, Email, WhatsApp)
+ *   03: Seção 1 — Perfil da Empresa e Contexto (1.1 a 1.8 / 1.9 / 1.14 literal)
+ *   04: Seção 2 — Pilar 1: Prisão do Fundador (2.1 a 2.6 literal)
+ *   05: Seção 3 — Pilar 2: Ineficiência Invisível (3.1 a 3.7 / 3.8 literal)
+ *   06: Seção 4 — Pilar 3: Abismo Estratégia vs. Execução (4.1 a 4.6 literal)
+ *   07: Seção 5 — Capacidade e Design Organizacional (Hackman) (5.1 a 5.6 literal)
+ *   08: Seção 6 — Saúde Econômico-Financeira (Buffett) (6.1 a 6.6 / 6.10 literal)
+ *   09: Seção 7 — Expectativas e Ambição (7.1 a 7.5 literal)
+ *   10: Seção 8 — Inovação e Tecnologia (8.1 a 8.7 / 8.9 literal)
+ *   11: Bloco de Documentação Adicional e Anexos (Páginas 44 e 45 do PDF)
+ *   12: Seção 9 — Próximos Passos & Devolutiva Executiva (9.1 a 9.4 literal)
  */
 
 interface EtapaInfo {
@@ -103,7 +90,7 @@ const ETAPAS_INFO: EtapaInfo[] = [
     numero: 1,
     key: 'setor',
     titulo: 'Setor de Atuação',
-    subtitulo: 'Escolha seu setor entre os 12 canônicos com estratégia específica',
+    subtitulo: 'Escolha seu setor entre os 12 canônicos',
     icone: Layers,
   },
   {
@@ -116,70 +103,70 @@ const ETAPAS_INFO: EtapaInfo[] = [
   {
     numero: 3,
     key: 'perfil',
-    titulo: 'Perfil da Empresa e Contexto',
-    subtitulo: 'Mapeamento estrutural de faturamento, equipe e propriedade',
+    titulo: 'Seção 1 — Perfil da Empresa e Contexto',
+    subtitulo: 'Mapeamento estrutural de faturamento, equipe e contexto setorial',
     icone: FileText,
   },
   {
     numero: 4,
     key: 'pilar1',
-    titulo: 'Pilar 1 — Prisão do Fundador',
-    subtitulo: 'Centralização decisória e dependência do líder',
+    titulo: 'Seção 2 — Pilar 1: Prisão do Fundador',
+    subtitulo: 'Centralização decisória e autonomia da equipe',
     icone: AlertTriangle,
   },
   {
     numero: 5,
     key: 'pilar2',
-    titulo: 'Pilar 2 — Ineficiência Invisível',
+    titulo: 'Seção 3 — Pilar 2: Ineficiência Invisível',
     subtitulo: 'Gargalos operacionais, retrabalho e vazamento de margem',
     icone: Clock,
   },
   {
     numero: 6,
     key: 'pilar3',
-    titulo: 'Pilar 3 — Abismo Estratégia vs. Execução',
-    subtitulo: 'Alinhamento tático, governança e cumprimento de metas',
+    titulo: 'Seção 4 — Pilar 3: Abismo Estratégia vs. Execução',
+    subtitulo: 'Alinhamento tático, governança e metas',
     icone: Target,
   },
   {
     numero: 7,
     key: 'hackman',
-    titulo: 'Lente de Hackman',
+    titulo: 'Seção 5 — Capacidade e Design Organizacional (Hackman)',
     subtitulo: 'As 5 condições determinísticas para eficácia de equipes',
     icone: Users,
   },
   {
     numero: 8,
     key: 'buffett',
-    titulo: 'Lente de Buffett',
-    subtitulo: 'Solidez de caixa, margens, alavancagem e Moat econômico',
+    titulo: 'Seção 6 — Saúde Econômico-Financeira (Buffett)',
+    subtitulo: 'Solidez de caixa, margens, endividamento e governança',
     icone: DollarSign,
   },
   {
     numero: 9,
     key: 'expectativas',
-    titulo: 'Expectativas e Ambição',
+    titulo: 'Seção 7 — Expectativas e Ambição',
     subtitulo: 'Objetivos prioritários para os próximos 12 meses',
     icone: Sparkles,
   },
   {
     numero: 10,
     key: 'inovacao',
-    titulo: 'Inovação e Tecnologia',
+    titulo: 'Seção 8 — Inovação e Tecnologia',
     subtitulo: 'Maturidade digital, automações e barreiras tecnológicas',
     icone: Cpu,
   },
   {
     numero: 11,
     key: 'documentacao',
-    titulo: 'Documentação — Anexos Comprobatórios',
-    subtitulo: 'Demonstrativos dos 3 últimos anos para maior precisão',
+    titulo: 'Documentação Adicional & Anexos',
+    subtitulo: 'Uploads complementares e demonstrativos para o diagnóstico',
     icone: FileCheck2,
   },
   {
     numero: 12,
     key: 'proximos_passos',
-    titulo: 'Próximos Passos & Devolutiva',
+    titulo: 'Seção 9 — Próximos Passos',
     subtitulo: 'Autorização da sessão de 45 minutos e formato de interesse',
     icone: Compass,
   },
@@ -212,7 +199,6 @@ export default function Questionario() {
     }
     return 'saude'
   })
-  const [setorAbertoVisualizacao, setSetorAbertoVisualizacao] = useState<string>(setorId)
 
   const [etapaAtual, setEtapaAtual] = useState<number>(() => {
     try {
@@ -233,7 +219,7 @@ export default function Questionario() {
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null)
   const [modoArmazenamento, setModoArmazenamento] = useState<'remoto' | 'local_fila'>('remoto')
 
-  // Etapa 02: Identificação do Lead & Empresa
+  // Identificação da Empresa & Lead
   const [razaoSocial, setRazaoSocial] = useState(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
@@ -325,7 +311,7 @@ export default function Questionario() {
     return ''
   })
 
-  // Respostas estruturadas por chave: `${secao}-${index}`
+  // Respostas estruturadas por chave: `${secaoId}-${numero}`
   const [respostas, setRespostas] = useState<Record<string, string>>(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
@@ -336,75 +322,12 @@ export default function Questionario() {
     return {}
   })
 
-  // Etapa 11: Documentação (Maior Precisão do Diagnóstico)
-  const [balancoNome, setBalancoNome] = useState(() => {
+  // Checkboxes de Documentação Adicional do Setor (Balanço, DRE, etc.)
+  const [documentosAdicionaisCheck, setDocumentosAdicionaisCheck] = useState<string[]>(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).balancoNome || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [balancoObs, setBalancoObs] = useState(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).balancoObs || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [dreNome, setDreNome] = useState(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).dreNome || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [dreObs, setDreObs] = useState(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).dreObs || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [organogramaNome, setOrganogramaNome] = useState(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).organogramaNome || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [organogramaObs, setOrganogramaObs] = useState(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).organogramaObs || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [responsavelEnvio, setResponsavelEnvio] = useState(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).responsavelEnvio || ''
-    } catch {
-      /* intentionally ignored */
-    }
-    return ''
-  })
-  const [documentosAdicionais, setDocumentosAdicionais] = useState<string[]>(() => {
-    try {
-      const p = localStorage.getItem('vm_questionario_progresso')
-      if (p && Array.isArray(JSON.parse(p).documentosAdicionais)) {
-        return JSON.parse(p).documentosAdicionais
+      if (p && Array.isArray(JSON.parse(p).documentosAdicionaisCheck)) {
+        return JSON.parse(p).documentosAdicionaisCheck
       }
     } catch {
       /* intentionally ignored */
@@ -412,7 +335,16 @@ export default function Questionario() {
     return []
   })
 
-  // Etapa 12: Próximos Passos & Devolutiva
+  // Simulação de nomes de arquivos anexados nos 3 grupos do bloco final
+  const [anexosFinanceiros, setAnexosFinanceiros] = useState<string[]>([])
+  const [anexosGerenciais, setAnexosGerenciais] = useState<string[]>([])
+  const [anexosSociedade, setAnexosSociedade] = useState<string[]>([])
+
+  // Opções do bloco "CASO NÃO VÁ ANEXAR ARQUIVOS AGORA:"
+  const [naoPossuiDocumentosAgora, setNaoPossuiDocumentosAgora] = useState(false)
+  const [prefiroEnviarDepois, setPrefiroEnviarDepois] = useState(false)
+
+  // Seção 9: Próximos Passos
   const [autorizacaoDevolutiva, setAutorizacaoDevolutiva] = useState<AutorizacaoDevolutiva>(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
@@ -431,6 +363,15 @@ export default function Questionario() {
     }
     return 'Híbrido'
   })
+  const [responsavelDocumentos, setResponsavelDocumentos] = useState(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (p && JSON.parse(p).responsavelDocumentos) return JSON.parse(p).responsavelDocumentos
+    } catch {
+      /* intentionally ignored */
+    }
+    return ''
+  })
 
   // Sincroniza setor pela rota se vier param na URL (/questionario/:setorParam)
   useEffect(() => {
@@ -438,12 +379,11 @@ export default function Questionario() {
       const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam)
       if (match && match.id !== setorId) {
         setSetorId(match.id)
-        setSetorAbertoVisualizacao(match.id)
       }
     }
   }, [setorParam, setorId])
 
-  // Salvar progresso no localStorage automaticamente (desativado no Modo Revisão para não contaminar o progresso do lead)
+  // Salvar progresso no localStorage automaticamente
   useEffect(() => {
     if (protocoloGerado || modoRevisao) return
     try {
@@ -461,16 +401,12 @@ export default function Questionario() {
         emailCorporativo,
         whatsapp,
         respostas,
-        balancoNome,
-        balancoObs,
-        dreNome,
-        dreObs,
-        organogramaNome,
-        organogramaObs,
-        responsavelEnvio,
-        documentosAdicionais,
+        documentosAdicionaisCheck,
+        naoPossuiDocumentosAgora,
+        prefiroEnviarDepois,
         autorizacaoDevolutiva,
         formatoInteresse,
+        responsavelDocumentos,
         atualizadoEm: new Date().toISOString(),
       }
       localStorage.setItem('vm_questionario_progresso', JSON.stringify(dados))
@@ -491,88 +427,90 @@ export default function Questionario() {
     emailCorporativo,
     whatsapp,
     respostas,
-    balancoNome,
-    balancoObs,
-    dreNome,
-    dreObs,
-    organogramaNome,
-    organogramaObs,
-    responsavelEnvio,
-    documentosAdicionais,
+    documentosAdicionaisCheck,
+    naoPossuiDocumentosAgora,
+    prefiroEnviarDepois,
     autorizacaoDevolutiva,
     formatoInteresse,
+    responsavelDocumentos,
     protocoloGerado,
     modoRevisao,
   ])
 
-  const setorObj = useMemo(() => setores.find((s) => s.id === setorId) || setores[0], [setorId])
-  const setorCanonico = useMemo(
-    () => SETORES_CANONICOS_12.find((s) => s.id === setorId) || SETORES_CANONICOS_12[0],
+  const setorObj: Setor = useMemo(
+    () => setores.find((s) => s.id === setorId) || setores[0],
     [setorId],
   )
 
-  // Perguntas dos 3 Pilares
-  const perguntasPilar1 = useMemo(() => getPerguntasPorPilar(setorObj, 1), [setorObj])
-  const perguntasPilar2 = useMemo(() => getPerguntasPorPilar(setorObj, 2), [setorObj])
-  const perguntasPilar3 = useMemo(() => getPerguntasPorPilar(setorObj, 3), [setorObj])
+  // Mapeia seções por número
+  const secao1 = useMemo(() => setorObj.secoes.find((s) => s.numero === 1)!, [setorObj])
+  const secao2 = useMemo(() => setorObj.secoes.find((s) => s.numero === 2)!, [setorObj])
+  const secao3 = useMemo(() => setorObj.secoes.find((s) => s.numero === 3)!, [setorObj])
+  const secao4 = useMemo(() => setorObj.secoes.find((s) => s.numero === 4)!, [setorObj])
+  const secao5 = useMemo(() => setorObj.secoes.find((s) => s.numero === 5)!, [setorObj])
+  const secao6 = useMemo(() => setorObj.secoes.find((s) => s.numero === 6)!, [setorObj])
+  const secao7 = useMemo(() => setorObj.secoes.find((s) => s.numero === 7)!, [setorObj])
+  const secao8 = useMemo(() => setorObj.secoes.find((s) => s.numero === 8)!, [setorObj])
+  const secao9 = useMemo(() => setorObj.secoes.find((s) => s.numero === 9)!, [setorObj])
 
-  // Buffett
-  const perguntasBuffett = useMemo(() => setorObj.secaoBuffett || secaoBuffett, [setorObj])
-
-  const setResposta = (prefix: string, idx: number, val: string) => {
-    setRespostas((prev) => ({ ...prev, [`${prefix}-${idx}`]: val }))
+  const setResposta = (secaoKey: string, numero: string, val: string) => {
+    setRespostas((prev) => ({ ...prev, [`${secaoKey}-${numero}`]: val }))
   }
 
-  // Total de perguntas por setor (contagem dinâmica das perguntas das seções 3 a 10)
-  const totalPerguntasSetor = useMemo(() => {
-    return (
-      setorObj.secaoPerfil.length +
-      perguntasPilar1.length +
-      perguntasPilar2.length +
-      perguntasPilar3.length +
-      secaoHackman.length +
-      perguntasBuffett.length +
-      secaoExpectativas.length +
-      setorObj.secaoInovacao.length
-    )
-  }, [setorObj, perguntasPilar1, perguntasPilar2, perguntasPilar3, perguntasBuffett])
+  // Verifica preenchimento de uma lista de perguntas
+  const secaoCompleta = (secaoKey: string, perguntas: PerguntaItemLiteral[]): boolean => {
+    return perguntas.every((p) => {
+      if (p.tipoForma === 'informativo') return true
+      const v = respostas[`${secaoKey}-${p.numero}`]
+      if (!v || v.trim() === '') return false
 
-  // Total de perguntas respondidas no setor atual
-  const perguntasRespondidasSetor = useMemo(() => {
-    let respondidas = 0
-    setorObj.secaoPerfil.forEach((_, idx) => {
-      const v = respostas[`perfil-${idx}`]
-      if (v !== undefined && v.trim() !== '') respondidas++
+      // Subpergunta condicional (ex: Trading 1.9 e 1.13)
+      if (p.subpergunta && v === p.subpergunta.condicao) {
+        const subV = respostas[`${secaoKey}-${p.numero}-sub`]
+        if (!subV || subV.trim() === '') return false
+      }
+      return true
     })
-    perguntasPilar1.forEach((_, idx) => {
-      if (respostas[`pilar1-${idx}`]) respondidas++
-    })
-    perguntasPilar2.forEach((_, idx) => {
-      if (respostas[`pilar2-${idx}`]) respondidas++
-    })
-    perguntasPilar3.forEach((_, idx) => {
-      if (respostas[`pilar3-${idx}`]) respondidas++
-    })
-    secaoHackman.forEach((_, idx) => {
-      if (respostas[`hackman-${idx}`]) respondidas++
-    })
-    perguntasBuffett.forEach((_, idx) => {
-      const v = respostas[`buffett-${idx}`]
-      if (v !== undefined && v.trim() !== '') respondidas++
-    })
-    secaoExpectativas.forEach((_, idx) => {
-      const v = respostas[`expectativas-${idx}`]
-      if (v !== undefined && v.trim() !== '') respondidas++
-    })
-    setorObj.secaoInovacao.forEach((_, idx) => {
-      const v = respostas[`inovacao-${idx}`]
-      if (v !== undefined && v.trim() !== '') respondidas++
-    })
-    return respondidas
-  }, [setorObj, perguntasPilar1, perguntasPilar2, perguntasPilar3, perguntasBuffett, respostas])
+  }
 
-  // Validação por Etapa: TODAS AS PERGUNTAS DEVEM SER RESPONDIDAS.
-  // Documentos não bloqueiam o avanço da Etapa 11.
+  // Total de perguntas do questionário
+  const todasPerguntasParaContagem = useMemo(() => {
+    const listas = [
+      secao1?.perguntas || [],
+      secao2?.perguntas || [],
+      secao3?.perguntas || [],
+      secao4?.perguntas || [],
+      secao5?.perguntas || [],
+      secao6?.perguntas || [],
+      secao7?.perguntas || [],
+      secao8?.perguntas || [],
+    ]
+    return listas.flat().filter((p) => p.tipoForma !== 'informativo')
+  }, [secao1, secao2, secao3, secao4, secao5, secao6, secao7, secao8])
+
+  const perguntasRespondidasTotal = useMemo(() => {
+    let count = 0
+    const pares: [string, PerguntaItemLiteral[]][] = [
+      ['secao1', secao1?.perguntas || []],
+      ['secao2', secao2?.perguntas || []],
+      ['secao3', secao3?.perguntas || []],
+      ['secao4', secao4?.perguntas || []],
+      ['secao5', secao5?.perguntas || []],
+      ['secao6', secao6?.perguntas || []],
+      ['secao7', secao7?.perguntas || []],
+      ['secao8', secao8?.perguntas || []],
+    ]
+    pares.forEach(([k, pergs]) => {
+      pergs.forEach((p) => {
+        if (p.tipoForma === 'informativo') return
+        const val = respostas[`${k}-${p.numero}`]
+        if (val && val.trim() !== '') count++
+      })
+    })
+    return count
+  }, [secao1, secao2, secao3, secao4, secao5, secao6, secao7, secao8, respostas])
+
+  // Validação estrita por etapa: TODAS AS PERGUNTAS DEVEM SER RESPONDIDAS ANTES DE AVANÇAR
   const canAvancar = (): boolean => {
     if (modoRevisao) return true
     switch (etapaAtual) {
@@ -586,41 +524,30 @@ export default function Questionario() {
           cargo.trim() !== '' &&
           emailCorporativo.trim() !== '' &&
           whatsapp.trim() !== '' &&
-          (segmento !== '' || segmentoOutro.trim() !== '')
+          (segmento !== '' || segmentoOutro.trim() !== '') &&
+          (setorId !== 'trading' || modalidadeTrading.trim() !== '')
         )
       case 3:
-        return setorObj.secaoPerfil.every((_, idx) => {
-          const v = respostas[`perfil-${idx}`]
-          return v !== undefined && v.trim() !== ''
-        })
+        return secaoCompleta('secao1', secao1.perguntas)
       case 4:
-        return perguntasPilar1.every((_, idx) => !!respostas[`pilar1-${idx}`])
+        return secaoCompleta('secao2', secao2.perguntas)
       case 5:
-        return perguntasPilar2.every((_, idx) => !!respostas[`pilar2-${idx}`])
+        return secaoCompleta('secao3', secao3.perguntas)
       case 6:
-        return perguntasPilar3.every((_, idx) => !!respostas[`pilar3-${idx}`])
+        return secaoCompleta('secao4', secao4.perguntas)
       case 7:
-        return secaoHackman.every((_, idx) => !!respostas[`hackman-${idx}`])
+        return secaoCompleta('secao5', secao5.perguntas)
       case 8:
-        return perguntasBuffett.every((_, idx) => {
-          const v = respostas[`buffett-${idx}`]
-          return v !== undefined && v.trim() !== ''
-        })
+        return secaoCompleta('secao6', secao6.perguntas)
       case 9:
-        return secaoExpectativas.every((_, idx) => {
-          const v = respostas[`expectativas-${idx}`]
-          return v !== undefined && v.trim() !== ''
-        })
+        return secaoCompleta('secao7', secao7.perguntas)
       case 10:
-        return setorObj.secaoInovacao.every((_, idx) => {
-          const v = respostas[`inovacao-${idx}`]
-          return v !== undefined && v.trim() !== ''
-        })
+        return secaoCompleta('secao8', secao8.perguntas)
       case 11:
-        // Documentos e comprovantes contribuem para a MAIOR PRECISÃO do diagnóstico (não bloqueiam o avanço)
+        // Etapa 11 (Documentação): O envio continua liberado mesmo sem anexar.
         return true
       case 12:
-        return !!autorizacaoDevolutiva && !!formatoInteresse
+        return !!autorizacaoDevolutiva && !!formatoInteresse && responsavelDocumentos.trim() !== ''
       default:
         return true
     }
@@ -647,67 +574,73 @@ export default function Questionario() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Manipulação de arquivos fictícios no navegador (sem envio para rascunho local)
+  const handleFileSimulado = (
+    grupo: 'financeiros' | 'gerenciais' | 'sociedade',
+    fileList: FileList | null,
+  ) => {
+    if (!fileList || fileList.length === 0) return
+    const nomes: string[] = []
+    const formatosValidos = ['.doc', '.docx', '.pdf', '.xls', '.xlsx']
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i]
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+      if (formatosValidos.includes(ext)) {
+        nomes.push(file.name)
+      } else {
+        toast({
+          title: 'Formato não aceito',
+          description: `O arquivo ${file.name} foi recusado. Aceitos exclusivamente Word, PDF e Excel.`,
+          variant: 'destructive',
+        })
+      }
+    }
+    if (grupo === 'financeiros') setAnexosFinanceiros((prev) => [...prev, ...nomes].slice(0, 15))
+    if (grupo === 'gerenciais') setAnexosGerenciais((prev) => [...prev, ...nomes].slice(0, 15))
+    if (grupo === 'sociedade') setAnexosSociedade((prev) => [...prev, ...nomes].slice(0, 15))
+  }
+
   // Submissão Final do Questionário (Etapa 12)
   const handleFinalizar = async () => {
     setSubmitting(true)
     try {
       const segmentoFinal = segmento === 'Outro' ? segmentoOutro : segmento
 
-      const pilar1Respostas = perguntasPilar1.map((p, idx) => ({
-        pilar: 1,
-        texto: p.texto,
-        resposta: respostas[`pilar1-${idx}`] || 'Não respondida',
-      }))
+      const mapRespostasSecao = (secaoKey: string, perguntas: PerguntaItemLiteral[]) =>
+        perguntas.map((p) => {
+          const val = respostas[`${secaoKey}-${p.numero}`] || ''
+          const sub = p.subpergunta ? respostas[`${secaoKey}-${p.numero}-sub`] : undefined
+          return {
+            numero: p.numero,
+            enunciado: p.enunciado,
+            resposta: val,
+            subpergunta:
+              sub !== undefined
+                ? { enunciado: p.subpergunta?.enunciado, resposta: sub }
+                : undefined,
+          }
+        })
 
-      const pilar2Respostas = perguntasPilar2.map((p, idx) => ({
-        pilar: 2,
-        texto: p.texto,
-        resposta: respostas[`pilar2-${idx}`] || 'Não respondida',
-      }))
-
-      const pilar3Respostas = perguntasPilar3.map((p, idx) => ({
-        pilar: 3,
-        texto: p.texto,
-        resposta: respostas[`pilar3-${idx}`] || 'Não respondida',
-      }))
-
-      const perfilRespostas = setorObj.secaoPerfil.map((p, idx) => ({
-        pergunta: p.texto,
-        resposta: respostas[`perfil-${idx}`] || '',
-      }))
-
-      const hackmanRespostas = secaoHackman.map((p, idx) => ({
-        pergunta: p.texto,
-        resposta: respostas[`hackman-${idx}`] || '',
-      }))
-
-      const buffettRespostas = perguntasBuffett.map((p, idx) => ({
-        pergunta: p.texto,
-        resposta: respostas[`buffett-${idx}`] || '',
-      }))
-
-      const expectativasRespostas = secaoExpectativas.map((p, idx) => ({
-        pergunta: p.texto,
-        resposta: respostas[`expectativas-${idx}`] || '',
-      }))
-
-      const inovacaoRespostas = setorObj.secaoInovacao.map((p, idx) => ({
-        pergunta: p.texto,
-        resposta: respostas[`inovacao-${idx}`] || '',
-      }))
+      const perfilRespostas = mapRespostasSecao('secao1', secao1.perguntas)
+      const pilar1Respostas = mapRespostasSecao('secao2', secao2.perguntas)
+      const pilar2Respostas = mapRespostasSecao('secao3', secao3.perguntas)
+      const pilar3Respostas = mapRespostasSecao('secao4', secao4.perguntas)
+      const hackmanRespostas = mapRespostasSecao('secao5', secao5.perguntas)
+      const buffettRespostas = mapRespostasSecao('secao6', secao6.perguntas)
+      const expectativasRespostas = mapRespostasSecao('secao7', secao7.perguntas)
+      const inovacaoRespostas = mapRespostasSecao('secao8', secao8.perguntas)
 
       const docPayload = {
-        balanco_patrimonial_nome: balancoNome,
-        balanco_patrimonial_observacao: balancoObs,
-        dre_nome: dreNome,
-        dre_observacao: dreObs,
-        organograma_relatorios_nome: organogramaNome,
-        organograma_relatorios_observacao: organogramaObs,
-        responsavel_envio: responsavelEnvio,
-        documentos_adicionais: documentosAdicionais,
+        documentos_adicionais_declarados: documentosAdicionaisCheck,
+        anexos_financeiros: anexosFinanceiros,
+        anexos_gerenciais: anexosGerenciais,
+        anexos_sociedade: anexosSociedade,
+        nao_possui_documentos_agora: naoPossuiDocumentosAgora,
+        prefiro_enviar_depois: prefiroEnviarDepois,
+        responsavel_envio: responsavelDocumentos,
       }
 
-      // Envia à base unificada de leads (coleção 'leads' do site)
+      // Envia à base unificada de leads
       const res = await enviarQuestionarioEstrategico({
         autorizacao_devolutiva: autorizacaoDevolutiva,
         formato_interesse: formatoInteresse,
@@ -733,7 +666,7 @@ export default function Questionario() {
         buffett: buffettRespostas,
         expectativas: expectativasRespostas,
         inovacao: inovacaoRespostas,
-        documentacao: docPayload,
+        documentacao: docPayload as any,
       })
 
       // Se autenticado na aplicação SaaS, também cria o diagnóstico na collection local
@@ -767,7 +700,6 @@ export default function Questionario() {
       setProtocoloGerado(res.protocolo)
       setModoArmazenamento(res.armazenamento)
 
-      // Limpa rascunho de progresso após conclusão com sucesso
       try {
         localStorage.removeItem('vm_questionario_progresso')
       } catch {
@@ -789,12 +721,11 @@ export default function Questionario() {
     }
   }
 
-  // TELA DE PROTOCOLO GERADO (SUCESSO DA ETAPA 12)
+  // TELA DE PROTOCOLO GERADO (SUCESSO)
   if (protocoloGerado) {
     return (
       <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
-          {/* Retorno no topo (visível em todas as etapas) */}
           <div className="flex items-center">
             {isAdmin ? (
               <Button
@@ -822,6 +753,7 @@ export default function Questionario() {
               </Button>
             )}
           </div>
+
           <div className="text-center space-y-3">
             <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 px-3 py-1 font-semibold text-xs">
               QUESTIONÁRIO ESTRATÉGICO CONCLUÍDO • SLA 72H
@@ -873,10 +805,10 @@ export default function Questionario() {
                 </div>
                 <div className="bg-[#111A2E]/70 p-4 rounded-[4px] border border-[#24334F] space-y-1">
                   <span className="text-[#8B98B4] block uppercase text-[10px] font-semibold">
-                    Responsável pelo Envio
+                    Responsável pelos Documentos
                   </span>
                   <p className="text-sm font-semibold text-[#F8FAFC]">
-                    {responsavelEnvio} ({cargo})
+                    {responsavelDocumentos || respondente}
                   </p>
                 </div>
                 <div className="bg-[#111A2E]/70 p-4 rounded-[4px] border border-[#24334F] space-y-1">
@@ -946,7 +878,7 @@ export default function Questionario() {
   return (
     <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-        {/* Retorno discreto no topo (visível em todas as etapas) */}
+        {/* Retorno discreto no topo */}
         <div className="flex items-center">
           {isAdmin ? (
             <Button
@@ -975,7 +907,7 @@ export default function Questionario() {
           )}
         </div>
 
-        {/* Banner e Controle de Modo Revisão (Exclusivo para Admin) */}
+        {/* Banner de Modo Revisão para Admin */}
         {isAdmin && (
           <div className="rounded-[4px] border border-[#F59E0B]/40 bg-[#78350F]/20 p-3 sm:p-4 shadow-lg backdrop-blur-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -996,8 +928,8 @@ export default function Questionario() {
                   </div>
                   <p className="text-[11px] text-[#C7D0E0]">
                     {modoRevisao
-                      ? 'Navegação livre entre as 12 etapas ativa. Envio/submissão desativado e localStorage isolado.'
-                      : 'Ative o Modo Revisão para conferir e ajustar textos das 12 etapas sem preencher dados.'}
+                      ? 'Navegação livre entre as 12 etapas ativa. Envio desativado.'
+                      : 'Ative o Modo Revisão para conferir e auditar todas as seções sem validação.'}
                   </p>
                 </div>
               </div>
@@ -1006,7 +938,7 @@ export default function Questionario() {
                 <Eye className="w-4 h-4 text-[#F59E0B]" />
                 <Label
                   htmlFor="toggle-modo-revisao"
-                  className="text-xs font-medium text-[#F8FAFC] cursor-pointer select-none"
+                  className="text-xs font-medium text-[#F8FAFC] cursor-pointer"
                 >
                   Modo Revisão
                 </Label>
@@ -1015,25 +947,16 @@ export default function Questionario() {
                   checked={modoRevisao}
                   onCheckedChange={(val) => {
                     setModoRevisao(val)
-                    if (val) {
-                      toast({
-                        title: 'Modo Revisão Ativado',
-                        description:
-                          'Você pode navegar livremente pelas 12 etapas. Submissões estão bloqueadas.',
-                      })
-                    } else {
-                      toast({
-                        title: 'Modo Revisão Desativado',
-                        description: 'Retornado ao fluxo com validações completas.',
-                      })
-                    }
+                    toast({
+                      title: val ? 'Modo Revisão Ativado' : 'Modo Revisão Desativado',
+                      description: val ? 'Navegação livre liberada.' : 'Validações reativadas.',
+                    })
                   }}
                   className="data-[state=checked]:bg-[#F59E0B]"
                 />
               </div>
             </div>
 
-            {/* Atalho de Navegação Direta entre as 12 etapas no Modo Revisão */}
             {modoRevisao && (
               <div className="mt-3 pt-3 border-t border-[#F59E0B]/30 space-y-2">
                 <div className="flex items-center justify-between text-[11px] text-[#FCD34D] font-medium">
@@ -1082,11 +1005,6 @@ export default function Questionario() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {modoRevisao && (
-              <Badge className="bg-[#DC2626] text-white border-none text-xs font-bold font-mono tracking-wider px-2.5 py-1 animate-pulse">
-                MODO REVISÃO
-              </Badge>
-            )}
             <Badge className="bg-[#111A2E] text-[#3DDC74] border border-[#24334F] text-xs font-mono">
               SLA 72h
             </Badge>
@@ -1094,60 +1012,12 @@ export default function Questionario() {
               Devolutiva 45 min
             </Badge>
             <Badge className="bg-[#16213A] text-[#FFB84D] border border-[#FFB84D]/30 text-xs font-mono">
-              {perguntasRespondidasSetor}/{totalPerguntasSetor} Respondidas
+              {perguntasRespondidasTotal}/{todasPerguntasParaContagem.length} Respondidas
             </Badge>
           </div>
         </div>
 
-        {/* Banner Persistente de Alerta: Modo Revisão Ativo */}
-        {modoRevisao && (
-          <div className="p-3.5 rounded-[4px] bg-[#DC2626]/15 border-2 border-[#DC2626] flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-[#FCA5A5] font-semibold">
-              <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
-              <span>
-                MODO REVISÃO ATIVO — Navegação livre sem validação. O envio de dados está desativado
-                e o progresso do lead não será alterado.
-              </span>
-            </div>
-            <Badge className="bg-[#DC2626] text-white border-none text-[10px] font-mono shrink-0 uppercase tracking-wider">
-              Somente Visualização
-            </Badge>
-          </div>
-        )}
-
-        {/* Bloco de Abertura Oficial / Setor — Textos Literais do Site */}
-        <div className="p-5 sm:p-6 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#24334F] pb-3">
-            <div className="text-xs font-semibold text-[#5B9DFF] font-mono">
-              {perguntasRespondidasSetor}/{totalPerguntasSetor} perguntas respondidas — o
-              diagnóstico considera a realidade do setor de {setorObj.nome}
-            </div>
-            <Badge className="w-fit bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[11px] font-semibold">
-              Setor Selecionado: {setorObj.nome}
-            </Badge>
-          </div>
-
-          <div className="p-3 bg-[#FF4D4D]/10 border border-[#FF4D4D]/40 rounded-[3px] text-xs text-[#FF8585] font-bold tracking-wide">
-            TODAS AS PERGUNTAS DEVEM SER RESPONDIDAS PARA A ELABORAÇÃO COMPLETA DO DOSSIÊ
-            ESTRATÉGICO.
-          </div>
-
-          <div className="space-y-3 text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
-            <p>
-              Este documento é a base para o nosso trabalho. Diferente de formulários comuns, este é
-              um Dossiê Estratégico. Quanto mais precisas e transparentes forem suas respostas, mais
-              cirúrgico será o plano de ação gerado pelo nosso sistema de Inteligência Estratégica.
-            </p>
-            <p>
-              Não oferecemos teorias de gaveta. O Dossiê de Planejamento Estratégico é um raio-x
-              cirúrgico da sua operação atual. Baseado nas suas respostas, você receberá um mapa
-              claro apontando os gargalos que estão travando seu crescimento e as alavancas
-              imediatas para proteger seu caixa e otimizar sua gestão.
-            </p>
-          </div>
-        </div>
-
-        {/* Barra de Progresso Canônica */}
+        {/* Progresso Geral */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-[#8B98B4]">
             <span>Progresso Geral</span>
@@ -1180,145 +1050,62 @@ export default function Questionario() {
           </CardHeader>
 
           <CardContent className="pt-6">
-            {/* ETAPA 1: SETOR DE ATUAÇÃO (12 CANÔNICOS, DESTAQUES, TEXTOS FECHADOS/ABERTOS) */}
+            {/* ETAPA 1: SETOR DE ATUAÇÃO (Card FECHADO igual ao do site, sem textos próprios de metas/soluções) */}
             {etapaAtual === 1 && (
               <div className="space-y-6">
-                {/* 3 Setores em Destaque */}
-                <div className="space-y-3">
-                  <span className="text-xs uppercase tracking-wider text-[#5B9DFF] font-semibold block">
-                    Principais Setores de Atuação (Destaques)
-                  </span>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {SETORES_CANONICOS_12.filter((s) => s.destaque).map((s) => {
-                      const isSelected = setorId === s.id
-                      return (
-                        <div
-                          key={s.id}
-                          onClick={() => {
-                            setSetorId(s.id)
-                            setSetorAbertoVisualizacao(s.id)
-                            setSegmento('')
-                            navigate(`/questionario/${s.id}`, { replace: true })
-                          }}
-                          className={`p-4 rounded-[4px] border cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-[#1B2742] border-[#5B9DFF] ring-1 ring-[#5B9DFF]'
-                              : 'bg-[#111A2E]/60 border-[#24334F] hover:border-[#5B9DFF]/50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono text-xs font-bold text-[#5B9DFF]">
-                              {s.numero}
-                            </span>
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                  Selecione o setor de atuação da sua organização para carregar as perguntas
+                  específicas, indicadores e matrizes de benchmarking correspondentes.
+                </div>
+
+                {/* 12 Setores com visual sóbrio, idêntico ao do site */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {SETORES_CANONICOS_12.map((s) => {
+                    const isSelected = setorId === s.id
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setSetorId(s.id)
+                          setSegmento('')
+                          navigate(`/questionario/${s.id}`, { replace: true })
+                        }}
+                        className={`p-4 rounded-[4px] border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-[#1B2742] border-[#5B9DFF] ring-2 ring-[#5B9DFF]/40 shadow-lg'
+                            : 'bg-[#111A2E]/60 border-[#24334F] hover:border-[#5B9DFF]/50 hover:bg-[#111A2E]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-mono text-xs font-bold text-[#5B9DFF]">
+                            {s.numero}
+                          </span>
+                          {s.destaque && (
                             <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px]">
                               Destaque
                             </Badge>
-                          </div>
-                          <h4 className="font-bold text-sm text-[#F8FAFC]">{s.nome}</h4>
-                          <p className="text-[11px] text-[#C7D0E0] mt-1 line-clamp-2">
-                            {s.segmentos.join(', ')}
-                          </p>
-                          <div className="mt-3 pt-2 border-t border-[#24334F] flex items-center justify-between text-[10px] text-[#8B98B4]">
-                            <span>SLA 72h</span>
-                            <span className="text-[#3DDC74]">Devolutiva 45 min</span>
-                          </div>
+                          )}
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Demais Setores */}
-                <div className="space-y-3">
-                  <span className="text-xs uppercase tracking-wider text-[#8B98B4] font-semibold block">
-                    Demais Setores Atendidos (04 a 12)
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                    {SETORES_CANONICOS_12.filter((s) => !s.destaque).map((s) => {
-                      const isSelected = setorId === s.id
-                      return (
-                        <div
-                          key={s.id}
-                          onClick={() => {
-                            setSetorId(s.id)
-                            setSetorAbertoVisualizacao(s.id)
-                            setSegmento('')
-                            navigate(`/questionario/${s.id}`, { replace: true })
-                          }}
-                          className={`p-3 rounded-[4px] border cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-[#1B2742] border-[#5B9DFF] ring-1 ring-[#5B9DFF]'
-                              : 'bg-[#111A2E]/40 border-[#24334F] hover:border-[#5B9DFF]/40'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold text-[#8B98B4]">
-                              {s.numero}
-                            </span>
-                            <span className="font-semibold text-xs text-[#F8FAFC]">{s.nome}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Card Detalhes do Setor Selecionado (Fechado / Aberto) */}
-                {(() => {
-                  const s =
-                    SETORES_CANONICOS_12.find((x) => x.id === setorAbertoVisualizacao) ||
-                    SETORES_CANONICOS_12[0]
-                  return (
-                    <div className="p-5 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40 space-y-4">
-                      <div className="flex items-center justify-between border-b border-[#24334F] pb-3">
-                        <div>
-                          <span className="text-[10px] uppercase tracking-wider text-[#5B9DFF] font-semibold">
-                            SETOR {s.numero} • DIAGNÓSTICO EM 72H
-                          </span>
-                          <h3 className="text-lg font-bold text-[#F8FAFC]">{s.nome}</h3>
-                        </div>
-                        <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-xs font-mono">
-                          {s.metricaChave}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2">
-                        <span className="text-xs font-semibold text-[#FFB84D] uppercase tracking-wider block">
-                          Gargalo Crítico Típico (Texto Fechado)
-                        </span>
-                        <p className="text-xs text-[#C7D0E0] leading-relaxed bg-[#16213A] p-3 rounded-[3px] border border-[#24334F]">
-                          {s.textoFechado}
+                        <h4 className="font-bold text-sm text-[#F8FAFC]">{s.nome}</h4>
+                        <p className="text-[11px] text-[#8B98B4] mt-1.5 line-clamp-2 leading-relaxed">
+                          {s.segmentos.join(' • ')}
                         </p>
                       </div>
+                    )
+                  })}
+                </div>
 
-                      <div className="space-y-2">
-                        <span className="text-xs font-semibold text-[#5B9DFF] uppercase tracking-wider block">
-                          Alavanca Determinística VETOR MASTER (Texto Aberto)
-                        </span>
-                        <p className="text-xs text-[#C7D0E0] leading-relaxed bg-[#16213A] p-3 rounded-[3px] border border-[#24334F]">
-                          {s.textoAberto}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1.5 pt-1">
-                        <span className="text-[11px] text-[#8B98B4] font-semibold uppercase">
-                          Micro-epifanias Gatilho deste setor:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {s.microEpifanias.map((m) => (
-                            <Badge
-                              key={m}
-                              variant="outline"
-                              className="text-[11px] border-[#24334F] text-[#C7D0E0] bg-[#16213A]"
-                            >
-                              {m}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40 flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] uppercase tracking-wider text-[#8B98B4] block">
+                      Setor Selecionado:
+                    </span>
+                    <span className="text-sm font-bold text-[#5B9DFF]">{setorObj.nome}</span>
+                  </div>
+                  <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-xs">
+                    Questionário Carregado
+                  </Badge>
+                </div>
               </div>
             )}
 
@@ -1327,12 +1114,14 @@ export default function Questionario() {
               <div className="space-y-4">
                 <div className="p-3 bg-[#111A2E] rounded-[4px] border border-[#24334F] text-xs text-[#C7D0E0]">
                   Setor selecionado: <strong className="text-[#5B9DFF]">{setorObj.nome}</strong>.
-                  Preencha os dados oficiais da empresa para emissão do protocolo e do dossiê.
+                  Preencha os dados oficiais da empresa.
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs text-[#C7D0E0]">Razão Social *</Label>
+                    <Label className="text-xs text-[#C7D0E0]">
+                      Razão Social: _________________________
+                    </Label>
                     <Input
                       value={razaoSocial}
                       onChange={(e) => setRazaoSocial(e.target.value)}
@@ -1342,7 +1131,9 @@ export default function Questionario() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">CNPJ *</Label>
+                    <Label className="text-xs text-[#C7D0E0]">
+                      CNPJ: _________________________
+                    </Label>
                     <Input
                       value={cnpj}
                       onChange={(e) => setCnpj(e.target.value)}
@@ -1352,7 +1143,7 @@ export default function Questionario() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">Data de Preenchimento *</Label>
+                    <Label className="text-xs text-[#C7D0E0]">Data: //______</Label>
                     <Input
                       value={dataPreenchimento}
                       onChange={(e) => setDataPreenchimento(e.target.value)}
@@ -1360,69 +1151,106 @@ export default function Questionario() {
                     />
                   </div>
 
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs text-[#C7D0E0]">Segmento Específico *</Label>
-                    <Select value={segmento} onValueChange={setSegmento}>
-                      <SelectTrigger className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]">
-                        <SelectValue placeholder="Selecione o segmento do seu setor..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
-                        {setorObj.segmentos.map((seg) => (
-                          <SelectItem key={seg} value={seg} className="text-xs">
+                  {/* Segmento com as opções exatas do PDF + Outro */}
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label className="text-xs text-[#C7D0E0] block">
+                      Segmento: {setorObj.identificacao.segmentos.map((s) => `( ) ${s}`).join(' ')}{' '}
+                      ( ) Outro: _________
+                    </Label>
+                    <RadioGroup
+                      value={segmento}
+                      onValueChange={setSegmento}
+                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"
+                    >
+                      {setorObj.identificacao.segmentos.map((seg) => (
+                        <div
+                          key={seg}
+                          onClick={() => setSegmento(seg)}
+                          className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
+                        >
+                          <RadioGroupItem
+                            value={seg}
+                            id={`seg-${seg}`}
+                            className="border-[#24334F] text-[#5B9DFF]"
+                          />
+                          <Label
+                            htmlFor={`seg-${seg}`}
+                            className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                          >
                             {seg}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="Outro" className="text-xs">
-                          Outro (especifique)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                          </Label>
+                        </div>
+                      ))}
+                      <div
+                        onClick={() => setSegmento('Outro')}
+                        className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value="Outro"
+                          id="seg-outro"
+                          className="border-[#24334F] text-[#5B9DFF]"
+                        />
+                        <Label
+                          htmlFor="seg-outro"
+                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                        >
+                          Outro
+                        </Label>
+                      </div>
+                    </RadioGroup>
                   </div>
 
                   {segmento === 'Outro' && (
                     <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs text-[#C7D0E0]">Especifique o Segmento *</Label>
+                      <Label className="text-xs text-[#C7D0E0]">Outro: _________</Label>
                       <Input
                         value={segmentoOutro}
                         onChange={(e) => setSegmentoOutro(e.target.value)}
-                        placeholder="Ex.: Distribuição Especializada"
+                        placeholder="Especifique seu segmento..."
                         className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                       />
                     </div>
                   )}
 
-                  {setorId === 'trading' && (
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs text-[#C7D0E0]">
-                        Modalidade de Atuação Principal (Trading)
+                  {/* Modalidade de atuação exclusiva para Trading */}
+                  {setorId === 'trading' && setorObj.identificacao.modalidadeTrading && (
+                    <div className="space-y-2 sm:col-span-2 p-3 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40">
+                      <Label className="text-xs text-[#F8FAFC] font-semibold block">
+                        Modalidade de atuação: ( ) Importação por Conta e Ordem ( ) Importação por
+                        Encomenda ( ) Ambas
                       </Label>
-                      <Select value={modalidadeTrading} onValueChange={setModalidadeTrading}>
-                        <SelectTrigger className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]">
-                          <SelectValue placeholder="Selecione a modalidade de atuação..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
-                          <SelectItem value="Importação por Conta e Ordem" className="text-xs">
-                            Importação por Conta e Ordem
-                          </SelectItem>
-                          <SelectItem value="Importação por Encomenda" className="text-xs">
-                            Importação por Encomenda
-                          </SelectItem>
-                          <SelectItem value="Trading Própria" className="text-xs">
-                            Trading Própria
-                          </SelectItem>
-                          <SelectItem value="Exportação de Commodities" className="text-xs">
-                            Exportação de Commodities
-                          </SelectItem>
-                          <SelectItem value="Distribuição de Importados" className="text-xs">
-                            Distribuição de Importados
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <RadioGroup
+                        value={modalidadeTrading}
+                        onValueChange={setModalidadeTrading}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2"
+                      >
+                        {setorObj.identificacao.modalidadeTrading.map((mod) => (
+                          <div
+                            key={mod}
+                            onClick={() => setModalidadeTrading(mod)}
+                            className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer"
+                          >
+                            <RadioGroupItem
+                              value={mod}
+                              id={`mod-${mod}`}
+                              className="border-[#24334F] text-[#5B9DFF]"
+                            />
+                            <Label
+                              htmlFor={`mod-${mod}`}
+                              className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                            >
+                              {mod}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
                     </div>
                   )}
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">Nome do Respondente *</Label>
+                    <Label className="text-xs text-[#C7D0E0]">
+                      Respondente: _________________________
+                    </Label>
                     <Input
                       value={respondente}
                       onChange={(e) => setRespondente(e.target.value)}
@@ -1432,19 +1260,19 @@ export default function Questionario() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">Cargo na Empresa *</Label>
+                    <Label className="text-xs text-[#C7D0E0]">
+                      Cargo: _________________________
+                    </Label>
                     <Input
                       value={cargo}
                       onChange={(e) => setCargo(e.target.value)}
-                      placeholder="Ex.: CEO, Sócio-Fundador, Diretor"
+                      placeholder="Ex.: CEO, Fundador, Diretor"
                       className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">
-                      E-mail Corporativo (Dossiê Estratégico) *
-                    </Label>
+                    <Label className="text-xs text-[#C7D0E0]">E-mail Corporativo:</Label>
                     <Input
                       type="email"
                       value={emailCorporativo}
@@ -1455,7 +1283,7 @@ export default function Questionario() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">WhatsApp / Telefone com DDD *</Label>
+                    <Label className="text-xs text-[#C7D0E0]">WhatsApp / Telefone:</Label>
                     <Input
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(e.target.value)}
@@ -1467,462 +1295,367 @@ export default function Questionario() {
               </div>
             )}
 
-            {/* ETAPA 3: PERFIL DA EMPRESA E CONTEXTO (SETORIAL) */}
+            {/* ETAPA 3: SEÇÃO 1 — PERFIL DA EMPRESA E CONTEXTO */}
             {etapaAtual === 3 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-[#111A2E] text-[#5B9DFF] border-[#24334F]"
-                  >
-                    {setorObj.nome}
-                  </Badge>
-                  <span className="text-xs text-[#8B98B4]">
-                    {setorObj.secaoPerfil.length} perguntas de perfil e governança
-                  </span>
-                </div>
-                {setorObj.secaoPerfil.map((p, idx) => (
-                  <CampoGenerico
-                    key={`perfil-${idx}`}
-                    pergunta={p}
-                    index={idx}
-                    chave={`perfil-${idx}`}
-                    value={respostas[`perfil-${idx}`] || ''}
-                    onChange={(v) => setResposta('perfil', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao1"
+                secao={secao1}
+                respostas={respostas}
+                setResposta={setResposta}
+                notaImportante={setorObj.notaImportante}
+              />
             )}
 
-            {/* ETAPA 4: PILAR 1 — PRISÃO DO FUNDADOR */}
+            {/* ETAPA 4: SEÇÃO 2 — PILAR 1: PRISÃO DO FUNDADOR */}
             {etapaAtual === 4 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-[#FF9900]/15 text-[#FFB84D] border-[#FF9900]/30"
-                  >
-                    Pilar 1 — Prisão do Fundador
-                  </Badge>
-                  <span className="text-xs text-[#8B98B4]">
-                    Centralização e dependência no setor {setorObj.nome}
-                  </span>
-                </div>
-                {perguntasPilar1.map((p, idx) => (
-                  <CampoGenerico
-                    key={`pilar1-${idx}`}
-                    pergunta={{ texto: p.texto, tipo: 'escala' }}
-                    index={idx}
-                    chave={`pilar1-${idx}`}
-                    value={respostas[`pilar1-${idx}`] || ''}
-                    onChange={(v) => setResposta('pilar1', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao2"
+                secao={secao2}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 5: PILAR 2 — INEFICIÊNCIA INVISÍVEL */}
+            {/* ETAPA 5: SEÇÃO 3 — PILAR 2: INEFICIÊNCIA INVISÍVEL */}
             {etapaAtual === 5 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-[#FF4D4D]/15 text-[#FF4D4D] border-[#FF4D4D]/30"
-                  >
-                    Pilar 2 — Ineficiência Invisível
-                  </Badge>
-                  <span className="text-xs text-[#8B98B4]">
-                    Vazamento de margem e retrabalho no setor {setorObj.nome}
-                  </span>
-                </div>
-                {perguntasPilar2.map((p, idx) => (
-                  <CampoGenerico
-                    key={`pilar2-${idx}`}
-                    pergunta={{ texto: p.texto, tipo: 'escala' }}
-                    index={idx}
-                    chave={`pilar2-${idx}`}
-                    value={respostas[`pilar2-${idx}`] || ''}
-                    onChange={(v) => setResposta('pilar2', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao3"
+                secao={secao3}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 6: PILAR 3 — ABISMO ESTRATÉGIA VS. EXECUÇÃO */}
+            {/* ETAPA 6: SEÇÃO 4 — PILAR 3: ABISMO ESTRATÉGIA vs. EXECUÇÃO */}
             {etapaAtual === 6 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-[#5B9DFF]/15 text-[#5B9DFF] border-[#5B9DFF]/30"
-                  >
-                    Pilar 3 — Abismo Estratégia vs. Execução
-                  </Badge>
-                  <span className="text-xs text-[#8B98B4]">
-                    Governança, alinhamento e metas no setor {setorObj.nome}
-                  </span>
-                </div>
-                {perguntasPilar3.map((p, idx) => (
-                  <CampoGenerico
-                    key={`pilar3-${idx}`}
-                    pergunta={{ texto: p.texto, tipo: 'escala' }}
-                    index={idx}
-                    chave={`pilar3-${idx}`}
-                    value={respostas[`pilar3-${idx}`] || ''}
-                    onChange={(v) => setResposta('pilar3', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao4"
+                secao={secao4}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 7: LENTE DE HACKMAN */}
+            {/* ETAPA 7: SEÇÃO 5 — CAPACIDADE E DESIGN ORGANIZACIONAL (HACKMAN) */}
             {etapaAtual === 7 && (
-              <div className="space-y-4">
-                <div className="p-3 bg-[#111A2E] rounded-[4px] border border-[#24334F] text-xs text-[#C7D0E0] flex items-start gap-2">
-                  <Users className="w-4 h-4 text-[#5B9DFF] shrink-0 mt-0.5" />
-                  <span>
-                    A Lente de Hackman avalia as 5 condições essenciais para equipes autônomas de
-                    alta performance, desonerando o fundador da microgestão.
-                  </span>
-                </div>
-                {secaoHackman.map((p, idx) => (
-                  <CampoGenerico
-                    key={`hackman-${idx}`}
-                    pergunta={p}
-                    index={idx}
-                    chave={`hackman-${idx}`}
-                    value={respostas[`hackman-${idx}`] || ''}
-                    onChange={(v) => setResposta('hackman', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao5"
+                secao={secao5}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 8: LENTE DE BUFFETT */}
+            {/* ETAPA 8: SEÇÃO 6 — SAÚDE ECONÔMICO-FINANCEIRA (BUFFETT) */}
             {etapaAtual === 8 && (
-              <div className="space-y-4">
-                <div className="p-3 bg-[#111A2E] rounded-[4px] border border-[#24334F] text-xs text-[#C7D0E0] flex items-start gap-2">
-                  <DollarSign className="w-4 h-4 text-[#3DDC74] shrink-0 mt-0.5" />
-                  <span>
-                    A Lente de Buffett verifica a margem de segurança financeira, previsibilidade de
-                    caixa, alavancagem líquida e governança contábil.
-                  </span>
-                </div>
-                {perguntasBuffett.map((p, idx) => (
-                  <CampoGenerico
-                    key={`buffett-${idx}`}
-                    pergunta={p}
-                    index={idx}
-                    chave={`buffett-${idx}`}
-                    value={respostas[`buffett-${idx}`] || ''}
-                    onChange={(v) => setResposta('buffett', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao6"
+                secao={secao6}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 9: EXPECTATIVAS E AMBIÇÃO */}
+            {/* ETAPA 9: SEÇÃO 7 — EXPECTATIVAS E AMBIÇÃO */}
             {etapaAtual === 9 && (
-              <div className="space-y-4">
-                <div className="p-3 bg-[#111A2E] rounded-[4px] border border-[#24334F] text-xs text-[#C7D0E0]">
-                  Entendimento cirúrgico das prioridades executivas e horizonte de transformação
-                  almejado para o negócio.
-                </div>
-                {secaoExpectativas.map((p, idx) => (
-                  <CampoGenerico
-                    key={`expectativas-${idx}`}
-                    pergunta={p}
-                    index={idx}
-                    chave={`expectativas-${idx}`}
-                    value={respostas[`expectativas-${idx}`] || ''}
-                    onChange={(v) => setResposta('expectativas', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao7"
+                secao={secao7}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 10: INOVAÇÃO E TECNOLOGIA (SETORIAL) */}
+            {/* ETAPA 10: SEÇÃO 8 — INOVAÇÃO E TECNOLOGIA */}
             {etapaAtual === 10 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-[#5B9DFF]/15 text-[#5B9DFF] border-[#5B9DFF]/30"
-                  >
-                    Fase 8 • Inovação em {setorObj.nome}
-                  </Badge>
-                  <span className="text-xs text-[#8B98B4]">
-                    Sistemas, inteligência operacional e maturidade digital
-                  </span>
-                </div>
-                {setorObj.secaoInovacao.map((p, idx) => (
-                  <CampoGenerico
-                    key={`inovacao-${idx}`}
-                    pergunta={p}
-                    index={idx}
-                    chave={`inovacao-${idx}`}
-                    value={respostas[`inovacao-${idx}`] || ''}
-                    onChange={(v) => setResposta('inovacao', idx, v)}
-                  />
-                ))}
-              </div>
+              <RenderSecaoLiteral
+                secaoKey="secao8"
+                secao={secao8}
+                respostas={respostas}
+                setResposta={setResposta}
+              />
             )}
 
-            {/* ETAPA 11: DOCUMENTAÇÃO — ADENDO E ANEXOS */}
+            {/* ETAPA 11: BLOCO FINAL DE DOCUMENTAÇÃO (PÁGS. 44–45 DO PDF) */}
             {etapaAtual === 11 && (
               <div className="space-y-6">
-                {/* Banner de Documentação - Ênfase em Maior Precisão */}
-                <div className="p-4 sm:p-5 rounded-[4px] bg-[#111A2E] border-2 border-[#5B9DFF]/50 space-y-2">
-                  <div className="flex items-center gap-2 text-[#5B9DFF] font-bold text-sm">
-                    <FileCheck2 className="w-5 h-5 shrink-0" />
-                    <span>DOCUMENTAÇÃO COMPROBATÓRIA DO DOSSIÊ</span>
+                {/* Checkboxes de DOCUMENTAÇÃO ADICIONAL específicos do setor (sem a palavra OPCIONAL) */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#F8FAFC]">
+                      DOCUMENTAÇÃO ADICIONAL:
+                    </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
-                    A inclusão de demonstrativos e documentos contábeis contribui diretamente para a{' '}
-                    <strong>MAIOR PRECISÃO</strong> do diagnóstico, permitindo ao sistema e aos
-                    especialistas cruzarem indicadores reais de margem, liquidez e estrutura com as
-                    respostas do questionário.
-                  </p>
-                  <p className="text-[11px] text-[#8B98B4] leading-relaxed">
-                    Você pode indicar o nome do arquivo, anos/períodos de referência (recomendado:{' '}
-                    <strong>3 ÚLTIMOS ANOS</strong>) ou notas explicativas sobre a disponibilização
-                    contábil.
-                  </p>
-                </div>
-
-                {/* 1. Balanço Patrimonial */}
-                <div className="p-5 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
-                      <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      1. Balanço Patrimonial (3 últimos anos)
-                    </Label>
-                  </div>
-                  <p className="text-xs text-[#8B98B4] leading-relaxed">
-                    O que é este anexo e o que se espera dele: demonstração contábil oficial que
-                    evidencia o patrimônio líquido, endividamento, liquidez e ativos da empresa.
-                    Solicita-se preferencialmente os demonstrativos fechados dos{' '}
-                    <strong>3 últimos anos</strong> para análise da evolução de solvência e ciclo de
-                    caixa. O envio contribui para a máxima acurácia analítica do diagnóstico.
-                  </p>
-                  <Input
-                    value={balancoNome}
-                    onChange={(e) => setBalancoNome(e.target.value)}
-                    placeholder="Ex.: Balanco_Patrimonial_3_Ultimos_Anos.pdf ou 'Disponível via contador'"
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                  <Textarea
-                    value={balancoObs}
-                    onChange={(e) => setBalancoObs(e.target.value)}
-                    placeholder="Observações contábeis, períodos cobertos, ressalvas de auditoria ou data prevista..."
-                    rows={2}
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                </div>
-
-                {/* 2. DRE */}
-                <div className="p-5 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
-                      <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      2. DRE (3 últimos anos)
-                    </Label>
-                  </div>
-                  <p className="text-xs text-[#8B98B4] leading-relaxed">
-                    O que é este anexo e o que se espera dele: relatório financeiro estruturado que
-                    detalha a receita operacional bruta, custos operacionais, margem de
-                    contribuição, EBITDA e resultado líquido. Solicita-se a apresentação referente
-                    aos <strong>3 últimos anos</strong> (contábil ou gerencial), essencial para
-                    identificar vazamentos silenciosos de margem e despesas fixas excessivas.
-                  </p>
-                  <Input
-                    value={dreNome}
-                    onChange={(e) => setDreNome(e.target.value)}
-                    placeholder="Ex.: DRE_Gerencial_Contabil_3_Ultimos_Anos.xlsx ou 'Disponível em reunião'"
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                  <Textarea
-                    value={dreObs}
-                    onChange={(e) => setDreObs(e.target.value)}
-                    placeholder="Observações sobre segregação de margem, deduções tributárias ou sazonalidade..."
-                    rows={2}
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                </div>
-
-                {/* 3. Organograma / Relatórios */}
-                <div className="p-5 rounded-[4px] bg-[#111A2E]/70 border border-[#24334F] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs sm:text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
-                      <FileCheck2 className="w-4 h-4 text-[#5B9DFF]" />
-                      3. Organograma Funcional & Relatórios Operacionais/Vendas
-                    </Label>
-                  </div>
-                  <p className="text-xs text-[#8B98B4] leading-relaxed">
-                    O que é este anexo e o que se espera dele: mapa da hierarquia funcional da
-                    empresa, desenho dos departamentos, quadro de lideranças diretas e
-                    relatórios-chave operacionais/comerciais (curva de vendas, volumetria ou
-                    métricas setoriais). O que se espera dele é evidenciar o grau de
-                    descentralização e delegação das tomadas de decisão.
-                  </p>
-                  <Input
-                    value={organogramaNome}
-                    onChange={(e) => setOrganogramaNome(e.target.value)}
-                    placeholder="Ex.: Organograma_Funcional_2026.pdf ou 'Estrutura descrita nas respostas'"
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                  <Textarea
-                    value={organogramaObs}
-                    onChange={(e) => setOrganogramaObs(e.target.value)}
-                    placeholder="Detalhes da equipe de liderança direta, principais cargos ou centros de custo..."
-                    rows={2}
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                </div>
-
-                {/* Responsável Legal pelo Envio */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-[#F8FAFC]">
-                      Responsável pelo Envio dos Documentos
-                    </Label>
-                  </div>
-                  <Input
-                    value={responsavelEnvio}
-                    onChange={(e) => setResponsavelEnvio(e.target.value)}
-                    placeholder="Nome completo e cargo da pessoa que assina ou faz a interlocução dos dados"
-                    className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC]"
-                  />
-                  <p className="text-[11px] text-[#8B98B4]">
-                    Garante a custódia e o sigilo bilateral das informações conforme o Termo de
-                    Confidencialidade Executivo.
-                  </p>
-                </div>
-
-                {/* Documentação Adicional */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E]/50 border border-[#24334F] space-y-3">
-                  <Label className="text-xs font-semibold text-[#C7D0E0]">
-                    Documentação Adicional Disponível para a Auditoria:
-                  </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {[
-                      'Contratos de Câmbio e Trade Finance',
-                      'Planilha de Landed Cost por SKU/Contêiner',
-                      'Tabela de Procedimentos e Glosas de Convênio',
-                      'Relatório de Curva ABC de Clientes / Produtos',
-                      'Extratos de Linhas de Crédito Bancário',
-                      'Planejamento Orçamentário / CAPEX',
-                    ].map((doc) => {
-                      const checked = documentosAdicionais.includes(doc)
+                    {setorObj.documentacaoAdicional.map((doc) => {
+                      const checked = documentosAdicionaisCheck.includes(doc)
                       return (
                         <div
                           key={doc}
                           onClick={() => {
-                            setDocumentosAdicionais((prev) =>
+                            setDocumentosAdicionaisCheck((prev) =>
                               checked ? prev.filter((d) => d !== doc) : [...prev, doc],
                             )
                           }}
-                          className="flex items-center space-x-2 p-2 rounded-[3px] hover:bg-[#16213A] cursor-pointer"
+                          className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer"
                         >
                           <Checkbox
                             checked={checked}
                             className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
                           />
-                          <span className="text-xs text-[#C7D0E0]">{doc}</span>
+                          <span className="text-xs text-[#F8FAFC]">{doc}</span>
                         </div>
                       )
                     })}
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* ETAPA 12: PRÓXIMOS PASSOS & DEVOLUTIVA EXECUTIVA */}
-            {etapaAtual === 12 && (
-              <div className="space-y-6">
-                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#3DDC74]/40 space-y-2">
-                  <div className="flex items-center gap-2 text-[#3DDC74] font-bold text-sm">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>ÚLTIMA ETAPA — FORMALIZAÇÃO DA DEVOLUTIVA DETERMINÍSTICA</span>
+                {/* Parágrafos Literais de Abertura do PDF p.44 */}
+                <div className="space-y-3 text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                  <p>{BLOCO_DOCUMENTACAO_FINAL.paragrafoAbertura1}</p>
+                  <p>{BLOCO_DOCUMENTACAO_FINAL.paragrafoAbertura2}</p>
+                </div>
+
+                {/* Bloco Formatos e Limites de Arquivos Aceitos */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40 space-y-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-[#5B9DFF]">
+                    {BLOCO_DOCUMENTACAO_FINAL.formatosLimites.titulo}
+                  </h4>
+                  <ul className="text-xs text-[#C7D0E0] space-y-1 list-disc list-inside">
+                    {BLOCO_DOCUMENTACAO_FINAL.formatosLimites.itens.map((it, idx) => (
+                      <li key={idx}>{it}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Aviso de Rascunho */}
+                <div className="p-3.5 rounded-[4px] bg-[#78350F]/20 border border-[#F59E0B]/40 text-xs text-[#FCD34D] leading-relaxed">
+                  {BLOCO_DOCUMENTACAO_FINAL.avisoRascunho}
+                </div>
+
+                {/* Os 3 Grupos de Upload com Textos Literais */}
+                {BLOCO_DOCUMENTACAO_FINAL.grupos.map((grupo) => {
+                  const listaArquivos =
+                    grupo.id === 'financeiros'
+                      ? anexosFinanceiros
+                      : grupo.id === 'gerenciais'
+                        ? anexosGerenciais
+                        : anexosSociedade
+
+                  return (
+                    <div
+                      key={grupo.id}
+                      className="p-4 sm:p-5 rounded-[4px] bg-[#111A2E]/80 border border-[#24334F] space-y-3"
+                    >
+                      <div>
+                        <h4 className="text-sm font-bold text-[#F8FAFC]">{grupo.titulo}</h4>
+                        <p className="text-xs text-[#8B98B4] mt-1 leading-relaxed">
+                          {grupo.descricao}
+                        </p>
+                      </div>
+
+                      {/* Botão de Selecionar/Anexar Arquivos */}
+                      <div>
+                        <label className="inline-flex items-center gap-2 px-4 py-2 rounded-[3px] bg-[#0066CC] hover:bg-[#22B14C] text-white text-xs font-semibold cursor-pointer transition-colors shadow">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Clique para selecionar ou anexar arquivos</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept=".doc,.docx,.pdf,.xls,.xlsx"
+                            className="hidden"
+                            onChange={(e) =>
+                              handleFileSimulado(
+                                grupo.id as 'financeiros' | 'gerenciais' | 'sociedade',
+                                e.target.files,
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      {/* Lista de Arquivos ou Mensagem Padrão Literal */}
+                      {listaArquivos.length === 0 ? (
+                        <p className="text-xs text-[#8B98B4] italic">
+                          Nenhum arquivo anexado ainda neste grupo.
+                        </p>
+                      ) : (
+                        <div className="space-y-1 pt-1">
+                          <span className="text-[11px] uppercase tracking-wider text-[#5B9DFF] font-semibold block">
+                            Arquivos selecionados ({listaArquivos.length}/15):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {listaArquivos.map((nome, i) => (
+                              <Badge
+                                key={i}
+                                variant="secondary"
+                                className="bg-[#16213A] border-[#24334F] text-[#F8FAFC] text-[11px] gap-1 px-2 py-1"
+                              >
+                                <FileSpreadsheet className="w-3 h-3 text-[#3DDC74]" />
+                                <span>{nome}</span>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {/* Bloco CASO NÃO VÁ ANEXAR ARQUIVOS AGORA: */}
+                <div className="p-4 sm:p-5 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-3">
+                  <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#F8FAFC]">
+                    {BLOCO_DOCUMENTACAO_FINAL.casoNaoVaAnexar.titulo}
+                  </h4>
+
+                  <div className="space-y-2">
+                    <div
+                      onClick={() => setNaoPossuiDocumentosAgora(!naoPossuiDocumentosAgora)}
+                      className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#16213A] hover:bg-[#1F2E4D] cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={naoPossuiDocumentosAgora}
+                        className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
+                      />
+                      <span className="text-xs text-[#F8FAFC]">
+                        {BLOCO_DOCUMENTACAO_FINAL.casoNaoVaAnexar.opcao1}
+                      </span>
+                    </div>
+
+                    <div
+                      onClick={() => setPrefiroEnviarDepois(!prefiroEnviarDepois)}
+                      className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#16213A] hover:bg-[#1F2E4D] cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={prefiroEnviarDepois}
+                        className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
+                      />
+                      <span className="text-xs text-[#F8FAFC]">
+                        {BLOCO_DOCUMENTACAO_FINAL.casoNaoVaAnexar.opcao2}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                    Você receberá um <strong>Diagnóstico Executivo em 72h</strong> com recomendações
-                    prioritárias, mapeamento dos 3 Pilares e matriz determinística sem alucinação.
+
+                  <p className="text-xs text-[#C7D0E0] leading-relaxed pt-1">
+                    {BLOCO_DOCUMENTACAO_FINAL.casoNaoVaAnexar.nota}
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-[#F8FAFC]">
-                      Autoriza sessão de devolutiva executiva de 45 min? *
-                    </Label>
-                    <Select
-                      value={autorizacaoDevolutiva}
-                      onValueChange={(v) => setAutorizacaoDevolutiva(v as AutorizacaoDevolutiva)}
-                    >
-                      <SelectTrigger className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
-                        {simNaoOpcoes.map((opt) => (
-                          <SelectItem key={opt} value={opt} className="text-xs">
-                            {opt} —{' '}
-                            {opt === 'Sim'
-                              ? 'Agendar reunião com executivo C-Level'
-                              : 'Apenas receber o relatório por e-mail'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Parágrafo de Sigilo e LGPD */}
+                <p className="text-[11px] text-[#8B98B4] leading-relaxed">
+                  {BLOCO_DOCUMENTACAO_FINAL.sigiloLgpd}
+                </p>
+              </div>
+            )}
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-[#F8FAFC]">
-                      Formato de interesse na Escada de Valor Vetor Master: *
-                    </Label>
-                    <Select
-                      value={formatoInteresse}
-                      onValueChange={(v) => setFormatoInteresse(v as FormatoInteresse)}
-                    >
-                      <SelectTrigger className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
-                        {formatoInteresseOpcoes.map((opt) => (
-                          <SelectItem key={opt} value={opt} className="text-xs">
-                            {opt === 'MaaS' && 'MaaS (Mentorship as a Software) — R$ 1.190/mês'}
-                            {opt === 'Híbrido' &&
-                              'Híbrido (Software + Supervisão Executiva) — R$ 3.290/mês'}
-                            {opt === 'CaaS' &&
-                              'CaaS / Bespoke (C-Level as a Service Dedicado) — R$ 15.750/mês'}
-                            {opt === 'Ainda não sei' && 'Ainda não sei (Decidir após a devolutiva)'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* ETAPA 12: SEÇÃO 9 — PRÓXIMOS PASSOS (9.1 A 9.4 LITERAIS) */}
+            {etapaAtual === 12 && (
+              <div className="space-y-6">
+                {/* 9.1 Frase fixa informativa */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#3DDC74]/40 flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#3DDC74] shrink-0 mt-0.5" />
+                  <p className="text-sm font-semibold text-[#F8FAFC]">
+                    9.1 Você receberá um Diagnóstico Executivo com recomendações prioritárias.
+                  </p>
+                </div>
 
-                  {/* Resumo da Submissão */}
-                  <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2 text-xs text-[#C7D0E0]">
-                    <span className="font-semibold text-[#F8FAFC] block text-xs uppercase tracking-wider">
-                      Resumo da Submissão do Dossiê:
-                    </span>
-                    <p>
-                      <strong>Empresa:</strong> {razaoSocial || '—'} (CNPJ: {cnpj || '—'})
-                    </p>
-                    <p>
-                      <strong>Setor & Segmento:</strong> {setorObj.nome} —{' '}
-                      {segmento || segmentoOutro || '—'}
-                    </p>
-                    <p>
-                      <strong>Executivo Responsável:</strong> {respondente} ({cargo}) •{' '}
-                      {emailCorporativo}
-                    </p>
-                    <p>
-                      <strong>Documentos Comprobatórios:</strong> Balanço ({balancoNome}), DRE (
-                      {dreNome}), Organograma ({organogramaNome})
-                    </p>
-                  </div>
+                {/* 9.2 Autoriza sessão de devolutiva de 45 min? */}
+                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
+                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                    9.2 Autoriza sessão de devolutiva de 45 min?
+                  </Label>
+                  <RadioGroup
+                    value={autorizacaoDevolutiva}
+                    onValueChange={(v) => setAutorizacaoDevolutiva(v as AutorizacaoDevolutiva)}
+                    className="flex flex-wrap gap-4"
+                  >
+                    {simNaoOpcoes.map((opt) => (
+                      <div
+                        key={opt}
+                        onClick={() => setAutorizacaoDevolutiva(opt as AutorizacaoDevolutiva)}
+                        className="flex items-center space-x-2 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value={opt}
+                          id={`aut-${opt}`}
+                          className="border-[#24334F] text-[#5B9DFF]"
+                        />
+                        <Label
+                          htmlFor={`aut-${opt}`}
+                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                        >
+                          {opt}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* 9.3 Formato de interesse: */}
+                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
+                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                    9.3 Formato de interesse:
+                  </Label>
+                  <RadioGroup
+                    value={formatoInteresse}
+                    onValueChange={(v) => setFormatoInteresse(v as FormatoInteresse)}
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2"
+                  >
+                    {formatoInteresseOpcoes.map((opt) => (
+                      <div
+                        key={opt}
+                        onClick={() => setFormatoInteresse(opt as FormatoInteresse)}
+                        className="flex items-center space-x-2 p-2.5 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value={opt}
+                          id={`fmt-${opt}`}
+                          className="border-[#24334F] text-[#5B9DFF]"
+                        />
+                        <Label
+                          htmlFor={`fmt-${opt}`}
+                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                        >
+                          {opt}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* 9.4 Responsável pelos documentos: */}
+                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                    9.4 Responsável pelos documentos: _________________________
+                  </Label>
+                  <Input
+                    value={responsavelDocumentos}
+                    onChange={(e) => setResponsavelDocumentos(e.target.value)}
+                    placeholder="Nome completo e cargo da pessoa que assina ou faz a interlocução dos dados"
+                    className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] rounded-[4px]"
+                  />
+                </div>
+
+                {/* Resumo */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2 text-xs text-[#C7D0E0]">
+                  <span className="font-semibold text-[#F8FAFC] block text-xs uppercase tracking-wider">
+                    Resumo do Diagnóstico:
+                  </span>
+                  <p>
+                    <strong>Organização:</strong> {razaoSocial || '—'} (CNPJ: {cnpj || '—'})
+                  </p>
+                  <p>
+                    <strong>Setor & Segmento:</strong> {setorObj.nome} —{' '}
+                    {segmento || segmentoOutro || '—'}
+                  </p>
+                  <p>
+                    <strong>Respondente:</strong> {respondente || '—'} ({cargo || '—'}) •{' '}
+                    {emailCorporativo || '—'}
+                  </p>
+                  <p>
+                    <strong>Responsável pelos Documentos:</strong> {responsavelDocumentos || '—'}
+                  </p>
                 </div>
               </div>
             )}
@@ -1992,103 +1725,240 @@ export default function Questionario() {
 }
 
 /**
- * Campo reutilizável de Pergunta para as etapas do questionário
+ * Componente que renderiza uma Seção Literal inteira (Seções 1 a 8)
+ * correspondendo fielmente aos formatos do PDF:
+ * - dissertativo em linha com underline "_________________________" -> input de texto
+ * - múltipla escolha com alternativas "( ) ..." -> radio buttons reais com rótulos literais
+ * - maturidade 1 / 2 / 3 -> radio de seleção única
+ * - estruturas especiais (Trading 1.9 com campo condicional, Trading 1.13 com subpergunta condicional)
  */
-function CampoGenerico({
-  pergunta,
-  index,
-  chave,
-  value,
-  onChange,
+function RenderSecaoLiteral({
+  secaoKey,
+  secao,
+  respostas,
+  setResposta,
+  notaImportante,
 }: {
-  pergunta: PerguntaSecao
-  index: number
-  chave: string
-  value: string
-  onChange: (v: string) => void
+  secaoKey: string
+  secao: SecaoQuestionarioLiteral
+  respostas: Record<string, string>
+  setResposta: (secaoKey: string, numero: string, val: string) => void
+  notaImportante?: string
 }) {
-  const tipo = pergunta.tipo || 'escala'
-
   return (
-    <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
-      <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
-        {index + 1}. {pergunta.texto}
-      </Label>
+    <div className="space-y-4">
+      {/* Título Oficial Literal da Seção */}
+      <div className="border-b border-[#24334F] pb-3 mb-2">
+        <h3 className="text-sm sm:text-base font-bold text-[#F8FAFC] tracking-wide">
+          {secao.titulo}
+        </h3>
+        {notaImportante && secao.numero === 1 && (
+          <p className="text-xs text-[#FFB84D] mt-1 font-semibold">{notaImportante}</p>
+        )}
+      </div>
 
-      {tipo === 'escala' && (
-        <RadioGroup value={value} onValueChange={onChange} className="space-y-1.5">
-          {escalaOpcoes.map((opt, i) => (
-            <div
-              key={i}
-              onClick={() => onChange(opt)}
-              className="flex items-center space-x-3 rounded-[3px] hover:bg-[#16213A] transition-colors p-2 cursor-pointer"
-            >
-              <RadioGroupItem
-                value={opt}
-                id={`${chave}-${i}`}
-                className="border-[#24334F] text-[#5B9DFF]"
+      {secao.perguntas.map((p) => {
+        const val = respostas[`${secaoKey}-${p.numero}`] || ''
+        const subVal = respostas[`${secaoKey}-${p.numero}-sub`] || ''
+
+        return (
+          <div
+            key={p.numero}
+            className="border border-[#24334F] bg-[#111A2E]/60 rounded-[4px] p-4 space-y-3"
+          >
+            {/* Enunciado Literal do PDF */}
+            <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+              • {p.numero} {p.enunciado}
+            </Label>
+
+            {/* Forma 1: Dissertativo em linha com underline "_________________________" */}
+            {p.tipoForma === 'dissertativo' && (
+              <Input
+                value={val}
+                onChange={(e) => setResposta(secaoKey, p.numero, e.target.value)}
+                placeholder="_________________________"
+                className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4]/60 rounded-[4px]"
               />
-              <Label
-                htmlFor={`${chave}-${i}`}
-                className="cursor-pointer font-normal text-xs text-[#C7D0E0]"
+            )}
+
+            {/* Forma 2: Radio com alternativas "( ) ..." */}
+            {p.tipoForma === 'radio' && p.opcoes && (
+              <RadioGroup
+                value={val}
+                onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
+                className="flex flex-wrap gap-2.5 pt-1"
               >
-                {opt}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      )}
+                {p.opcoes.map((opt) => (
+                  <div
+                    key={opt}
+                    onClick={() => setResposta(secaoKey, p.numero, opt)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer transition-colors"
+                  >
+                    <RadioGroupItem
+                      value={opt}
+                      id={`${secaoKey}-${p.numero}-${opt}`}
+                      className="border-[#24334F] text-[#5B9DFF]"
+                    />
+                    <Label
+                      htmlFor={`${secaoKey}-${p.numero}-${opt}`}
+                      className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                    >
+                      {opt}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
 
-      {tipo === 'select' && pergunta.opcoes && (
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]">
-            <SelectValue placeholder={pergunta.placeholder || 'Selecione uma opção...'} />
-          </SelectTrigger>
-          <SelectContent className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
-            {pergunta.opcoes.map((opt) => (
-              <SelectItem key={opt} value={opt} className="text-xs hover:bg-[#1B2742]">
-                {opt}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
+            {/* Forma 3: Maturidade 1 / 2 / 3 */}
+            {p.tipoForma === 'maturidade' && p.opcoes && (
+              <RadioGroup
+                value={val}
+                onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
+                className="flex flex-wrap gap-2.5 pt-1"
+              >
+                {p.opcoes.map((opt) => (
+                  <div
+                    key={opt}
+                    onClick={() => setResposta(secaoKey, p.numero, opt)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer transition-colors"
+                  >
+                    <RadioGroupItem
+                      value={opt}
+                      id={`${secaoKey}-${p.numero}-${opt}`}
+                      className="border-[#24334F] text-[#5B9DFF]"
+                    />
+                    <Label
+                      htmlFor={`${secaoKey}-${p.numero}-${opt}`}
+                      className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                    >
+                      {opt}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
 
-      {tipo === 'texto' && (
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={pergunta.placeholder || 'Sua resposta objetiva...'}
-          className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px]"
-        />
-      )}
+            {/* Forma 4: Informativo (ex: 9.1) */}
+            {p.tipoForma === 'informativo' && (
+              <div className="rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/30 p-3 text-xs text-[#C7D0E0] flex items-start gap-2">
+                <Info className="w-4 h-4 text-[#5B9DFF] mt-0.5 shrink-0" />
+                <span>{p.enunciado}</span>
+              </div>
+            )}
 
-      {tipo === 'numero' && (
-        <Input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={pergunta.placeholder || 'Quantidade numérica...'}
-          className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px]"
-        />
-      )}
+            {/* Estrutura especial Trading 1.9: Sim/Não + campo condicional */}
+            {p.tipoForma === 'trading_condicional_1_9' && p.opcoes && (
+              <div className="space-y-3">
+                <RadioGroup
+                  value={val}
+                  onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
+                  className="flex flex-wrap gap-2.5 pt-1"
+                >
+                  {p.opcoes.map((opt) => (
+                    <div
+                      key={opt}
+                      onClick={() => setResposta(secaoKey, p.numero, opt)}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer"
+                    >
+                      <RadioGroupItem
+                        value={opt}
+                        id={`${secaoKey}-${p.numero}-${opt}`}
+                        className="border-[#24334F] text-[#5B9DFF]"
+                      />
+                      <Label
+                        htmlFor={`${secaoKey}-${p.numero}-${opt}`}
+                        className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                      >
+                        {opt}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
 
-      {tipo === 'textarea' && (
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={pergunta.placeholder || 'Descreva detalhadamente o cenário...'}
-          rows={3}
-          className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px]"
-        />
-      )}
+                {val === 'Sim' && p.subpergunta && (
+                  <div className="p-3 rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/40 space-y-2 mt-2">
+                    <Label className="text-xs text-[#C7D0E0] leading-relaxed block">
+                      {p.subpergunta.enunciado}
+                    </Label>
+                    <Textarea
+                      value={subVal}
+                      onChange={(e) => setResposta(secaoKey, `${p.numero}-sub`, e.target.value)}
+                      placeholder="_________________________"
+                      rows={3}
+                      className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
-      {tipo === 'display' && (
-        <div className="rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/30 p-3 text-xs text-[#C7D0E0] flex items-start gap-2">
-          <Info className="w-4 h-4 text-[#5B9DFF] mt-0.5 shrink-0" />
-          <span>{pergunta.texto}</span>
-        </div>
-      )}
+            {/* Estrutura especial Trading 1.13: Sim/Não + subpergunta condicional */}
+            {p.tipoForma === 'trading_condicional_1_13' && p.opcoes && (
+              <div className="space-y-3">
+                <RadioGroup
+                  value={val}
+                  onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
+                  className="flex flex-wrap gap-2.5 pt-1"
+                >
+                  {p.opcoes.map((opt) => (
+                    <div
+                      key={opt}
+                      onClick={() => setResposta(secaoKey, p.numero, opt)}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer"
+                    >
+                      <RadioGroupItem
+                        value={opt}
+                        id={`${secaoKey}-${p.numero}-${opt}`}
+                        className="border-[#24334F] text-[#5B9DFF]"
+                      />
+                      <Label
+                        htmlFor={`${secaoKey}-${p.numero}-${opt}`}
+                        className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                      >
+                        {opt}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+
+                {val === 'Não' && p.subpergunta && p.subpergunta.opcoes && (
+                  <div className="p-3 rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/40 space-y-2 mt-2">
+                    <Label className="text-xs text-[#C7D0E0] leading-relaxed block">
+                      {p.subpergunta.enunciado}
+                    </Label>
+                    <RadioGroup
+                      value={subVal}
+                      onValueChange={(v) => setResposta(secaoKey, `${p.numero}-sub`, v)}
+                      className="flex flex-wrap gap-2.5 pt-1"
+                    >
+                      {p.subpergunta.opcoes.map((subOpt) => (
+                        <div
+                          key={subOpt}
+                          onClick={() => setResposta(secaoKey, `${p.numero}-sub`, subOpt)}
+                          className="flex items-center space-x-2 px-3 py-1.5 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#1B2742] cursor-pointer"
+                        >
+                          <RadioGroupItem
+                            value={subOpt}
+                            id={`${secaoKey}-${p.numero}-sub-${subOpt}`}
+                            className="border-[#24334F] text-[#5B9DFF]"
+                          />
+                          <Label
+                            htmlFor={`${secaoKey}-${p.numero}-sub-${subOpt}`}
+                            className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                          >
+                            {subOpt}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
