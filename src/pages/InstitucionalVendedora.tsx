@@ -346,17 +346,13 @@ export default function InstitucionalVendedora() {
       <section id="setores" className="py-20 md:py-24 bg-[#111A2E]/60 border-b border-[#24334F]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <Badge className="bg-[#16213A] text-[#FFB84D] border-[#24334F] text-xs uppercase tracking-wider font-semibold">
-              Ordem Canônica Oficial
-            </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#F8FAFC] font-heading">
-              12 Setores Parametrizados na Sequência Canônica
+              12 Setores Parametrizados com o Mercado
             </h2>
             <p className="text-sm sm:text-base text-[#C7D0E0]">
-              Destaque prioritário para <strong className="text-[#5B9DFF]">01 Saúde</strong>,{' '}
-              <strong className="text-[#5B9DFF]">02 Varejo</strong> e{' '}
-              <strong className="text-[#5B9DFF]">03 Serviços Profissionais</strong>. Clique em cada
-              card para alternar entre o modo fechado (dor) e aberto (intervenção determinística).
+              O mesmo rigor determinístico, aplicado aos indicadores, gargalos e alavancas que
+              definem os 12 principais setores da economia brasileira. Clique em cada card para
+              alternar entre o modo fechado (dor) e aberto (intervenção determinística).
             </p>
           </div>
 
@@ -380,11 +376,6 @@ export default function InstitucionalVendedora() {
                         </span>
                         <h3 className="font-bold text-base text-[#F8FAFC]">{setor.nome}</h3>
                       </div>
-                      {setor.destaque && (
-                        <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px] font-semibold">
-                          Destaque
-                        </Badge>
-                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-1">

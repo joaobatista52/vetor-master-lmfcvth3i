@@ -304,7 +304,7 @@ const questionario1Saude: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Hospitalar', 'Clínica', 'Odontológica', 'Laboratório', 'Home Care'],
     incluiOutro: true,
@@ -560,7 +560,7 @@ const questionario2Servicos: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Consultoria', 'Advocacia', 'Contabilidade', 'Arquitetura', 'Agência', 'TI'],
     incluiOutro: true,
@@ -807,7 +807,7 @@ const questionario3Industria: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Manufatura', 'Metalurgia', 'Alimentos', 'Químico', 'Têxtil', 'Plástico'],
     incluiOutro: true,
@@ -1052,7 +1052,7 @@ const questionario4Varejo: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Lojas Físicas', 'E-commerce', 'Distribuição', 'Alimentação', 'Moda'],
     incluiOutro: true,
@@ -1295,7 +1295,7 @@ const questionario5Agronegocio: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Grãos', 'Pecuária', 'Cana', 'Café', 'Fruticultura'],
     incluiOutro: true,
@@ -1537,7 +1537,7 @@ const questionario6Tecnologia: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['SaaS', 'Fintech', 'Healthtech', 'Edtech', 'Marketplace'],
     incluiOutro: true,
@@ -1814,7 +1814,7 @@ const questionario7Construcao: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Edificações', 'Incorporação', 'Infraestrutura', 'Reformas'],
     incluiOutro: true,
@@ -2056,7 +2056,7 @@ const questionario8Transporte: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Cargas', 'Passageiros', 'Distribuição', 'Armazenagem'],
     incluiOutro: true,
@@ -2298,7 +2298,7 @@ const questionario9Educacao: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Básica', 'Superior', 'Técnico', 'Idiomas', 'Edtech'],
     incluiOutro: true,
@@ -2534,7 +2534,7 @@ const questionario10Academias: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Musculação', 'Estúdio', 'CrossFit', 'Pilates', 'Natação'],
     incluiOutro: true,
@@ -2767,7 +2767,7 @@ const questionario11Trading: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: ['Importação', 'Exportação', 'Trading', 'Despacho Aduaneiro', 'Câmbio'],
     incluiOutro: true,
@@ -2837,7 +2837,7 @@ const questionario11Trading: QuestionarioSetorLiteral = {
         {
           numero: '1.10',
           enunciado:
-            'Nas operações de Importação por Conta e Ordem, a NF de Simples Remessa não é registrada como Receita Bruta (contábil ou gerencial)?',
+            'Nas operações de Importação por Conta e Ordem, a NF de Simples Remessa é registrada como Receita Bruta (contábil ou gerencial)?',
           tipoForma: 'radio',
           opcoes: [...simNaoOpcoes],
         },
@@ -3163,7 +3163,7 @@ const questionario12Facilities: QuestionarioSetorLiteral = {
   identificacao: {
     razaoSocialLabel: 'Razão Social:',
     cnpjLabel: 'CNPJ:',
-    dataLabel: 'Data: //______',
+    dataLabel: 'Data:',
     segmentoLabel: 'Segmento:',
     segmentos: [
       'Facilities Management',
@@ -3527,6 +3527,15 @@ export interface GrupoAnexoConfig {
   descricao: string
   itensSugeridos?: string
 }
+
+export const BLOCO_ABERTURA_DOSSIE_ESTRATEGICO = {
+  avisoCaixaAlta:
+    'TODAS AS PERGUNTAS DEVEM SER RESPONDIDAS PARA A ELABORAÇÃO COMPLETA DO DOSSIÊ ESTRATÉGICO.',
+  paragrafo1:
+    'Este documento é a base para o nosso trabalho. Diferente de formulários comuns, este é um Dossiê Estratégico. Quanto mais precisas e transparentes forem suas respostas, mais cirúrgico será o plano de ação gerado pelo nosso sistema de Inteligência Estratégica',
+  paragrafo2:
+    'Não oferecemos teorias de gaveta. O Dossiê de Planejamento Estratégico é um raio-x cirúrgico da sua operação atual. Baseado nas suas respostas, você receberá um mapa claro apontando os gargalos que estão travando seu crescimento e as alavancas imediatas para proteger seu caixa e otimizar sua gestão.',
+} as const
 
 export const BLOCO_DOCUMENTACAO_FINAL = {
   paragrafoAbertura1:

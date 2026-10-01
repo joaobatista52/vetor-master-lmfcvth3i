@@ -35,7 +35,6 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
     id: 'saude',
     nome: 'Saúde',
     slug: 'saude',
-    destaque: true,
     segmentos: ['Hospitalar', 'Clínica', 'Odontológica', 'Laboratório', 'Home Care'],
     microEpifanias: [
       'Glosa hospitalar invisível',
@@ -54,7 +53,6 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
     id: 'varejo',
     nome: 'Varejo',
     slug: 'varejo',
-    destaque: true,
     segmentos: ['Lojas Físicas', 'E-commerce', 'Distribuição', 'Alimentação', 'Moda'],
     microEpifanias: [
       'Ruptura de estoque nos top produtos',
@@ -73,7 +71,6 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
     id: 'servicos',
     nome: 'Serviços Profissionais',
     slug: 'servicos-profissionais',
-    destaque: true,
     segmentos: ['Consultoria', 'Advocacia', 'Contabilidade', 'Arquitetura', 'Agência', 'TI'],
     microEpifanias: [
       'Horas trabalhadas e não cobradas (leakage)',
