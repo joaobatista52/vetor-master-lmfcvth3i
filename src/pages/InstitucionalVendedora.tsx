@@ -516,11 +516,16 @@ export default function InstitucionalVendedora() {
             <span className="text-xs uppercase font-bold text-[#5B9DFF] tracking-wider block">
               Faixa de Autoridade Executiva — Mais de 40 Anos de Liderança Codificados
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-left pt-2">
               {FAIXA_AUTORIDADE_OFICIAL.map((faixa, i) => (
-                <div key={i} className="p-3 rounded-[4px] bg-[#16213A] border border-[#24334F]/70">
+                <div
+                  key={i}
+                  className="p-4 rounded-[4px] bg-[#16213A] border border-[#24334F]/70 flex flex-col justify-start"
+                >
                   <div className="text-sm font-bold text-[#F8FAFC]">{faixa.nome}</div>
-                  <div className="text-xs text-[#8B98B4] mt-1 leading-snug">{faixa.credencial}</div>
+                  <div className="text-xs text-[#8B98B4] mt-1.5 leading-relaxed">
+                    {faixa.credencial}
+                  </div>
                 </div>
               ))}
             </div>

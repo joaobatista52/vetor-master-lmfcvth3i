@@ -13,42 +13,38 @@ export interface CaseReal {
 export const CASES_REAIS_OFICIAIS: CaseReal[] = [
   {
     empresa: 'Sab Company',
-    setor: 'Comércio Internacional / Trading',
-    dor: 'Dependência estrutural do fundador e escala limitada de operações',
-    intervencao:
-      'C-Level as a Service + estruturação fiscal/M&A, Governança Corporativa e limites de alçada',
+    setor: 'Comércio Internacional – Trading',
+    dor: 'Dependência estrutural e escala limitada',
+    intervencao: 'C-Level as a Service + estruturação fiscal/M&A, Governança Corporativa',
     resultado:
-      '15x crescimento em 5 anos; ~US$ 800M/ano; GPTW Top 150 Brasil; entre as 10 maiores tradings do país; Escola de Negócios própria',
-    destaque: '15x crescimento em 5 anos · ~US$ 800M/ano',
+      '15x crescimento em 5 anos; ~US$ 800M/ano; GPTW Top 150 Brasil; entre as 10 maiores tradings; Escola de Negócios.',
+    destaque: '15x em 5 anos',
   },
   {
-    empresa: 'DGT',
-    setor: 'Logística',
-    dor: 'Sem visibilidade de estoque/armazém e sobrecustos operacionais',
-    intervencao: 'Projeto WMS + governança operacional e SLA de atendimento',
-    resultado:
-      'WMS implantado; rastreabilidade de ponta a ponta; +40% de eficiência operacional no armazém',
-    destaque: '+40% de eficiência de armazém com WMS',
+    empresa: 'Grupo União Autopeças (Atacarejo União)',
+    setor: 'Varejo e Logística (distribuição de autopeças)',
+    dor: 'Dificuldades com processos e critérios de registros no ERP, e-commerce, falta de processos/sistemas no armazém',
+    intervencao:
+      'Reestruturação do ERP, Projeto WMS + Governança Operacional, Mapeamento de Processos (BPMN)',
+    resultado: 'WMS implantado, ERP reestruturado, ganho de 30% na eficiência de distribuição',
+    destaque: '+30% eficiência de distribuição',
   },
   {
     empresa: 'OtorrinoDF',
-    setor: 'TI / Saúde',
-    dor: 'Escala e governança clínica frágeis para plano de expansão',
-    intervencao:
-      'M&A / Hospital Dia + estruturação estratégica e operacional com protocolos autônomos',
+    setor: 'Saúde',
+    dor: 'Escala e governança para expansão',
+    intervencao: 'M&A/Hospital Dia + estruturação estratégica e operacional',
     resultado:
-      '-70% nas glosas de convênios; +40% na taxa de ocupação; expansão via Hospital Dia; ampliação e consolidação via M&A',
-    destaque: '-70% em glosas · +40% taxa de ocupação',
+      '−70% nas glosas; +40% taxa de ocupação; expansão via Hospital Dia; ampliação e M&A.',
+    destaque: '−70% glosas',
   },
   {
     empresa: 'APC',
     setor: 'Facilities',
-    dor: 'Margem apertada em contratos e gestão descentralizada precária',
-    intervencao:
-      'Turnaround operacional + readequação de precificação, compliance de escalas e Governança',
-    resultado:
-      '+100% de faturamento em 2 anos; abertura de filiais regionais e conquista de novos mercados corporativos',
-    destaque: '+100% de faturamento em 2 anos',
+    dor: 'Margem apertada e gestão de contratos',
+    intervencao: 'Turnaround operacional + precificação e Governança',
+    resultado: '+100% de faturamento em 2 anos; abertura de filiais e novos mercados.',
+    destaque: '+100% faturamento',
   },
 ]
 
@@ -59,20 +55,33 @@ export interface FaixaAutoridadeItem {
 
 export const FAIXA_AUTORIDADE_OFICIAL: FaixaAutoridadeItem[] = [
   {
-    nome: 'Sainte Marie',
-    credencial: '+35% de receitas via Planejamento Estratégico/BSC e Governança',
+    nome: 'Coimex/Cisa Trading',
+    credencial:
+      'M&A, Turnaround, Planejamento Estratégico; Governança e Sucessão Familiar; 12x receita em 8 anos',
   },
   {
-    nome: 'Gocil',
-    credencial: 'Inovação e Tecnologia; OKRs + Oceano Azul',
+    nome: 'Sainte Marie Trading',
+    credencial: '+35% Receitas via Planejamento Estratégico/BSC e Governança',
   },
   {
-    nome: 'Mannesmann / Acesita / Coimex',
-    credencial: 'Governança e Sucessão Familiar; 12x receita em 8 anos',
+    nome: 'Gocil Facilities e Segurança',
+    credencial:
+      'Inovação e Tecnologia; OKRs + Oceano Azul; Planejamento Estratégico e Inovação de Valor (Venda de SLA e não de homem/hora)',
   },
   {
-    nome: 'Huawei',
-    credencial: 'Planejamento tributário/fiscal em importações e logística internacional',
+    nome: 'Huawei do Brasil',
+    credencial:
+      'Estruturação de operações de importação no Brasil, Planejamento tributário/fiscal em importações, Logística internacional, Interface com escritórios de advocacia',
+  },
+  {
+    nome: 'Mannesmann/Acesita',
+    credencial:
+      'Planejamento Estratégico, Turnaround, Contabilidade Gerencial e Reestruturação Financeira de Filiais',
+  },
+  {
+    nome: 'Lorenzetti S/A',
+    credencial:
+      'Implantação de ERP e Gestão Industrial, Planejamento Estratégico, Growth Marketing, Implantação de Processos (BPMN), Sucessão Familiar',
   },
 ]
 
