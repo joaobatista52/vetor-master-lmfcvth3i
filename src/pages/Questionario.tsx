@@ -186,7 +186,7 @@ export default function Questionario() {
   // Setor Selecionado
   const [setorId, setSetorId] = useState<string>(() => {
     if (setorParam) {
-      const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam)
+      const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam || s.slug === setorParam)
       if (match) return match.id
     }
     try {
@@ -421,7 +421,7 @@ export default function Questionario() {
   // Sincroniza setor pela rota se vier param na URL (/questionario/:setorParam)
   useEffect(() => {
     if (setorParam) {
-      const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam)
+      const match = SETORES_CANONICOS_12.find((s) => s.id === setorParam || s.slug === setorParam)
       if (match && match.id !== setorId) {
         setSetorId(match.id)
       }
@@ -1149,7 +1149,7 @@ export default function Questionario() {
                         onClick={() => {
                           setSetorId(s.id)
                           setSegmento([])
-                          navigate(`/questionario/${s.id}`, { replace: true })
+                          navigate(s.questionarioPath, { replace: true })
                         }}
                         className={`p-4 rounded-[4px] border cursor-pointer transition-all ${
                           isSelected

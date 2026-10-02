@@ -1,16 +1,16 @@
 // Base Canônica dos 12 Setores — Vetor Master V1.3 & V7.2
-// Fonte: Documento de Alinhamento Visual V1.3 (24/09/2026) e Questionários Consolidados 12 Setores V7.2
+// Fonte: Site Oficial de Produção (https://site-institucional-vetor-master-165d3.goskip.app) e Questionários Consolidados 12 Setores V7.2
 //
 // Sequência Canônica Oficial:
 // 01 Saúde
 // 02 Varejo
-// 03 Serviços Profissionais (destaque Saúde / Varejo / Serviços)
-// 04 Comércio Internacional – Trading
-// 05 Facilities e Serviços Terceirizados
+// 03 Serviços Profissionais
+// 04 Comércio Internacional - Trading Company
+// 05 Facilities
 // 06 Indústria
-// 07 Tech / Startups
+// 07 Tech/Startups
 // 08 Construção Civil
-// 09 Logística / Transporte
+// 09 Logística/Transporte
 // 10 Educação
 // 11 Agronegócio
 // 12 Academias de Ginástica
@@ -21,7 +21,17 @@ export interface SetorCanonicoInfo {
   nome: string
   slug: string
   destaque?: boolean
+  subsegmentosLinha: string
   segmentos: string[]
+  linhaSla: string
+  descricaoIntro: string
+  gargaloCritico: string
+  alavancaDeterministica: string
+  blocoDestravarTitulo: string
+  blocoDestravarTexto: string
+  botaoDestravarTexto: string
+  questionarioPath: string
+  // Retrocompatibilidade
   microEpifanias: string[]
   textoFechado: string
   textoAberto: string
@@ -34,25 +44,51 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
     id: 'saude',
     nome: 'Saúde',
     slug: 'saude',
+    subsegmentosLinha: 'Hospitalar, Clínica, Odontológica, Laboratório e Home Care.',
     segmentos: ['Hospitalar', 'Clínica', 'Odontológica', 'Laboratório', 'Home Care'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Hospitalar, Clínica, Odontológica, Laboratório e Home Care. Operação assistencial com gestão concentrada no fundador e margens pressionadas por convênios.',
+    gargaloCritico:
+      'Glosa hospitalar invisível · baixa taxa de ocupação de leitos e/ou consultórios · retrabalho de faturamento · descasamento entre prontuário e conta.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico que quantifica a glosa e o retrabalho, prioriza as micro-epifanias e aponta o caminho para recuperar margem — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Saúde?',
+    blocoDestravarTexto:
+      'A VETOR MASTER destrava a sua operação de saúde partindo do que o fundador não consegue enxergar sozinho: a glosa invisível e o retrabalho de faturamento. O Diagnóstico Estratégico quantifica o descasamento entre prontuário e conta e a baixa ocupação de leitos e consultórios, prioriza as micro-epifanias de maior impacto e devolve ao dono um caminho claro para recuperar margem — sem depender de mais horas de trabalho.',
+    botaoDestravarTexto: 'Diagnóstico para Saúde',
+    questionarioPath: '/questionario/saude',
     microEpifanias: [
       'Glosa hospitalar invisível',
-      'Ociosidade de leitos e salas cirúrgicas',
-      'Retrabalho crônico em faturamento/guias de convênio',
-      'Descasamento entre prontuário médico e conta',
+      'Baixa taxa de ocupação de leitos e/ou consultórios',
+      'Retrabalho de faturamento',
+      'Descasamento entre prontuário e conta',
     ],
     textoFechado:
-      'Glosas silenciosas de operadoras, ociosidade de centros cirúrgicos e dependência do fundador na governança técnica e clínica.',
+      'Hospitalar, Clínica, Odontológica, Laboratório e Home Care. Operação assistencial com gestão concentrada no fundador e margens pressionadas por convênios.',
     textoAberto:
-      'Auditoria de faturamento e regras de convênio em 72h. Parametrização de protocolos assistenciais autônomos, estancamento de glosas (redução média histórica de até 70%) e desoneração do diretor clínico da rotina operacional de compras e escalas.',
-    metricaChave: 'Até -70% em glosas e +40% na ocupação de centros cirúrgicos',
+      'Diagnóstico Estratégico que quantifica a glosa e o retrabalho, prioriza as micro-epifanias e aponta o caminho para recuperar margem — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '02',
     id: 'varejo',
     nome: 'Varejo',
     slug: 'varejo',
+    subsegmentosLinha: 'Lojas Físicas, E-commerce, Distribuição, Alimentação e Moda.',
     segmentos: ['Lojas Físicas', 'E-commerce', 'Distribuição', 'Alimentação', 'Moda'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Lojas Físicas, E-commerce, Distribuição, Alimentação e Moda. Operação de alto giro com capital preso em estoque, ruptura de itens críticos e margens corroídas.',
+    gargaloCritico:
+      'Ruptura de estoque na curva A · capital de giro asfixiado em obsoletos · perdas, furtos e quebras não auditadas · margem negativa por categoria.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com matriz preditiva de cobertura de estoque, parâmetros determinísticos de desconto no PDV e estancamento de sangrias operacionais — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Varejo?',
+    blocoDestravarTexto:
+      'A VETOR MASTER destrava a sua operação de varejo atacando os vazamentos silenciosos de margem: a ruptura dos itens de maior giro e o caixa imobilizado em estoque sem saída. O Diagnóstico Estratégico mapeia o descompasso entre compras e vendas, devolvendo clareza e previsibilidade de caixa ao fundador.',
+    botaoDestravarTexto: 'Diagnóstico para Varejo',
+    questionarioPath: '/questionario/varejo',
     microEpifanias: [
       'Ruptura de estoque nos top produtos',
       'Vendas perdidas no balcão por falta de produto',
@@ -60,17 +96,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Margem negativa por categoria de produto',
     ],
     textoFechado:
-      'Ruptura de gôndola nos itens de alto giro, capital de giro asfixiado em estoque obsoleto e fundadores reféns de precificação manual e descontos de balcão.',
+      'Lojas Físicas, E-commerce, Distribuição, Alimentação e Moda. Operação de alto giro com capital preso em estoque, ruptura de itens críticos e margens corroídas.',
     textoAberto:
-      'Matriz de giro e cobertura de estoque com alertas preditivos. Autonomia comercial para equipes de loja através de limites parametrizados de margem de contribuição, eliminando aprovações manuais do fundador e estancando sangrias de frete expresso.',
-    metricaChave: 'Estancamento de ruptura e +3,8 p.p. na margem de contribuição',
+      'Diagnóstico Estratégico com matriz preditiva de cobertura de estoque, parâmetros determinísticos de desconto no PDV e estancamento de sangrias operacionais — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '03',
     id: 'servicos',
     nome: 'Serviços Profissionais',
     slug: 'servicos-profissionais',
+    subsegmentosLinha: 'Consultoria, Advocacia, Contabilidade, Arquitetura, Agência e TI.',
     segmentos: ['Consultoria', 'Advocacia', 'Contabilidade', 'Arquitetura', 'Agência', 'TI'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Consultoria, Advocacia, Contabilidade, Arquitetura, Agência e TI. Modelo baseado em faturabilidade técnica onde o sócio atua como principal executor e gargalo.',
+    gargaloCritico:
+      'Horas trabalhadas e não faturadas (leakage) · taxa de utilização real abaixo do ponto de equilíbrio · contratos sem reajuste · dependência do sócio para fechar e entregar.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico de faturabilidade real por contrato, esteira padronizada de entregas com SLAs rígidos e precificação determinística baseada em valor — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Serviços Profissionais?',
+    blocoDestravarTexto:
+      'A VETOR MASTER liberta o sócio da prisão técnica operacional, eliminando o vazamento de honorários não faturados e repactuando contratos defasados. O Diagnóstico Estratégico estrutura a esteira comercial e a autonomia de entrega da equipe.',
+    botaoDestravarTexto: 'Diagnóstico para Serviços Profissionais',
+    questionarioPath: '/questionario/servicos-profissionais',
     microEpifanias: [
       'Horas trabalhadas e não cobradas (leakage)',
       'Taxa de utilização real abaixo de 60%',
@@ -78,23 +127,40 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Custo de oportunidade do sócio como executor',
     ],
     textoFechado:
-      'Vazamento silencioso de honorários, taxa real de faturabilidade diluída e fundadores soterrados na revisão técnica de propostas e entregas.',
+      'Consultoria, Advocacia, Contabilidade, Arquitetura, Agência e TI. Modelo baseado em faturabilidade técnica onde o sócio atua como principal executor e gargalo.',
     textoAberto:
-      'Padronização de esteiras de entrega com SLAs objetivos e matriz de precificação por complexidade. Descentralização de fechamento comercial para sócios juniores e automatização de cobrança de horas extras e aditivos contratuais.',
-    metricaChave: 'Autonomia comercial sem o sócio e +35% em aproveitamento de faturabilidade',
+      'Diagnóstico Estratégico de faturabilidade real por contrato, esteira padronizada de entregas com SLAs rígidos e precificação determinística baseada em valor — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '04',
     id: 'trading',
-    nome: 'Comércio Internacional – Trading',
-    slug: 'comercio-internacional-trading',
+    nome: 'Comércio Internacional - Trading Company',
+    slug: 'comercio-internacional',
+    subsegmentosLinha:
+      'Importação, Exportação, Trading, Logística, Planejamento Tributário/Fiscal, Câmbio e Trade Finance.',
     segmentos: [
-      'Importação por Conta e Ordem',
-      'Importação por Encomenda',
-      'Trading Própria',
-      'Exportação de Commodities',
-      'Distribuição de Importados',
+      'Importação',
+      'Exportação',
+      'Trading',
+      'Logística',
+      'Planejamento Tributário/Fiscal',
+      'Câmbio',
+      'Trade Finance',
     ],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Importação, Exportação, Trading, Logística, Planejamento Tributário/Fiscal, Câmbio e Trade Finance. Operação global sujeita a volatilidade cambial, compliance alfandegário e risco de transição tributária.',
+    gargaloCritico:
+      'Descasamento de hedge cambial · custos ocultos no Landed Cost por SKU/contêiner · demurrage portuário explosivo · exposição da margem ao fim dos incentivos estaduais (CBS/IBS).',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com DRE estruturada em 15 linhas para Trading, automação preditiva de Landed Cost e governança de travas cambiais — com devolutiva de 45 min.',
+    blocoDestravarTitulo:
+      'Pronto para destravar o setor de Comércio Internacional - Trading Company?',
+    blocoDestravarTexto:
+      'A VETOR MASTER protege as margens e a liquidez da sua trading contra custos ocultos portuários e volatilidade cambial. O Diagnóstico Estratégico quantifica a rentabilidade líquida por modalidade (Encomenda vs. Conta e Ordem) e prepara a governança para a transição CBS/IBS.',
+    botaoDestravarTexto: 'Diagnóstico para Comércio Internacional - Trading Company',
+    questionarioPath: '/questionario/comercio-internacional',
     microEpifanias: [
       'Descasamento de hedge cambial não protegido',
       'Custos ocultos no Landed Cost por SKU/contêiner',
@@ -102,23 +168,38 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Exposição ao fim de incentivos estaduais (Reforma Tributária CBS/IBS)',
     ],
     textoFechado:
-      'Exposição cambial sem hedge, demurrage imprevisto, confusão fiscal entre Conta & Ordem e Encomenda e alta dependência dos incentivos de ICMS.',
+      'Importação, Exportação, Trading, Logística, Planejamento Tributário/Fiscal, Câmbio e Trade Finance. Operação global sujeita a volatilidade cambial, compliance alfandegário e risco de transição tributária.',
     textoAberto:
-      'Estruturação de DRE de 15 linhas para Trading com segregação de receita de fee e mercadorias. Automação de Landed Cost preditivo, governança de limites para travas cambiais e stress test econômico para a transição CBS/IBS da Reforma Tributária.',
-    metricaChave: 'Caso real: 15x crescimento em 5 anos e ~US$ 800M/ano movimentados',
+      'Diagnóstico Estratégico com DRE estruturada em 15 linhas para Trading, automação preditiva de Landed Cost e governança de travas cambiais — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '05',
     id: 'facilities',
-    nome: 'Facilities e Serviços Terceirizados',
-    slug: 'facilities-servicos-terceirizados',
+    nome: 'Facilities',
+    slug: 'facilities',
+    subsegmentosLinha:
+      'Facilities Management, Limpeza e Conservação, Segurança Patrimonial, Manutenção Predial, Portaria/Recepção e Serviços Terceirizados.',
     segmentos: [
+      'Facilities Management',
       'Limpeza e Conservação',
       'Segurança Patrimonial',
-      'Manutenção Predial e Industrial',
-      'Portaria e Recepção',
-      'Gestão Integrada de Facilities (IFM)',
+      'Manutenção Predial',
+      'Portaria/Recepção',
+      'Serviços Terceirizados',
     ],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Facilities Management, Limpeza e Conservação, Segurança Patrimonial, Manutenção Predial, Portaria/Recepção e Serviços Terceirizados. Gestão intensiva de mão de obra com alta pressão de escala e passivos trabalhistas.',
+    gargaloCritico:
+      'Margem negativa oculta por horas extras e absenteísmo · passivo trabalhista invisível de escalas · multas e glosas por quebra de SLA contratual · turnover crônico da base.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com controle de rentabilidade líquida por contrato, auditoria trabalhista preventiva e esteira automatizada de cobertura de postos — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Facilities?',
+    blocoDestravarTexto:
+      'A VETOR MASTER estanca os sangramentos operacionais de contratos deficitários e custos descontrolados de horas extras em facilities. O Diagnóstico Estratégico mapeia o custo real homem/hora, repactua aditivos e blinda a operação contra contingências trabalhistas.',
+    botaoDestravarTexto: 'Diagnóstico para Facilities',
+    questionarioPath: '/questionario/facilities',
     microEpifanias: [
       'Margem negativa oculta por horas extras e absenteísmo',
       'Passivo trabalhista invisível de escalas e intervalos',
@@ -126,17 +207,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Custo invisível do turnover na base operacional',
     ],
     textoFechado:
-      'Margens esmagadas por horas extras, rotatividade de colaboradores na base, multas contratuais por postos desguarnecidos e supervisão desarticulada.',
+      'Facilities Management, Limpeza e Conservação, Segurança Patrimonial, Manutenção Predial, Portaria/Recepção e Serviços Terceirizados. Gestão intensiva de mão de obra com alta pressão de escala e passivos trabalhistas.',
     textoAberto:
-      'Turnaround de precificação e controle de escalas em tempo real. Repactuação de aditivos de repasse salarial e implantação de governança operacional de campo, eliminando o socorro de emergência do fundador a clientes insatisfeitos.',
-    metricaChave: 'Caso real: +100% de faturamento em 2 anos com expansão de filiais',
+      'Diagnóstico Estratégico com controle de rentabilidade líquida por contrato, auditoria trabalhista preventiva e esteira automatizada de cobertura de postos — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '06',
     id: 'industria',
     nome: 'Indústria',
     slug: 'industria',
+    subsegmentosLinha: 'Manufatura, Metalurgia, Alimentos, Químico, Têxtil e Plástico.',
     segmentos: ['Manufatura', 'Metalurgia', 'Alimentos', 'Químico', 'Têxtil', 'Plástico'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Manufatura, Metalurgia, Alimentos, Químico, Têxtil e Plástico. Produção fabril com desafios contínuos de eficiência operacional, ociosidade de máquinas e controle de custos.',
+    gargaloCritico:
+      'Refugo oculto na linha de produção · paradas não programadas de maquinário crítico · giro lento de matérias-primas · pedidos vendidos sem conhecimento da margem de contribuição efetiva.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico de PCP integrado ao Comercial via S&OP, alçadas descentralizadas para compras de matérias-primas e foco em OEE e estancamento de refugo — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Indústria?',
+    blocoDestravarTexto:
+      'A VETOR MASTER conecta o chão de fábrica à diretoria financeira, eliminando paradas não programadas e alinhando produção e vendas. O Diagnóstico Estratégico aponta o custo real de cada ordem fabril e destrava capacidade ociosa sem necessidade de novos investimentos de capital.',
+    botaoDestravarTexto: 'Diagnóstico para Indústria',
+    questionarioPath: '/questionario/industria',
     microEpifanias: [
       'Índice real de refugo na linha de produção',
       'Paradas não programadas e custo/hora de ociosidade',
@@ -144,17 +238,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Equipe comercial vendendo itens com margem negativa',
     ],
     textoFechado:
-      'Apagamento diário de incêndios no chão de fábrica, ociosidade de maquinário pesado e desconhecimento da margem de contribuição efetiva de cada ordem.',
+      'Manufatura, Metalurgia, Alimentos, Químico, Têxtil e Plástico. Produção fabril com desafios contínuos de eficiência operacional, ociosidade de máquinas e controle de custos.',
     textoAberto:
-      'Racionalização de PCP, alinhamento determinístico entre Comercial e Produção via S&OP e descentralização da compra de matérias-primas por limites pré-aprovados. Foco em OEE e estancamento de refugo.',
-    metricaChave: 'Redução drástica de paradas de linha e alinhamento S&OP',
+      'Diagnóstico Estratégico de PCP integrado ao Comercial via S&OP, alçadas descentralizadas para compras de matérias-primas e foco em OEE e estancamento de refugo — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '07',
     id: 'tecnologia',
-    nome: 'Tech / Startups',
-    slug: 'tecnologia-startups',
+    nome: 'Tech/Startups',
+    slug: 'tech-startups',
+    subsegmentosLinha: 'SaaS, Fintech, Healthtech, Edtech e Marketplace.',
     segmentos: ['SaaS', 'Fintech', 'Healthtech', 'Edtech', 'Marketplace'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'SaaS, Fintech, Healthtech, Edtech e Marketplace. Negócios de tecnologia e escala rápida com desafios em unit economics, retenção de clientes e governança de produto.',
+    gargaloCritico:
+      'Churn invisível corroendo o MRR · payback estendido com CAC mascarado por canal · débito técnico consumindo engenharia · concentração de receita nos maiores clientes.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com unit economics determinísticos (LTV/CAC e NRR), governança ágil de deploys e blindagem de runway para rodadas de capital — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Tech/Startups?',
+    blocoDestravarTexto:
+      'A VETOR MASTER traz o rigor analítico de conselho consultivo para empresas de tecnologia em crescimento. O Diagnóstico Estratégico desmascara os custos reais de aquisição e retenção, acelerando o retorno sobre o investimento de capital e blindando a operação.',
+    botaoDestravarTexto: 'Diagnóstico para Tech/Startups',
+    questionarioPath: '/questionario/tecnologia',
     microEpifanias: [
       'Churn invisível corroendo o crescimento do MRR',
       'Payback estendido e CAC mascarado por canal',
@@ -162,17 +269,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Concentração perigosa de receita nos 10 maiores clientes',
     ],
     textoFechado:
-      'Fundador-dependência no roadmap de produto e vendas enterprise, runway ameaçado por ineficiência de aquisição e retenção abaixo da meta.',
+      'SaaS, Fintech, Healthtech, Edtech e Marketplace. Negócios de tecnologia e escala rápida com desafios em unit economics, retenção de clientes e governança de produto.',
     textoAberto:
-      'Desdobramento de OKRs de produto e CS (Net Revenue Retention), governança de deploys e comitê executivo de precificação. Blindagem de runway e preparação para rodadas de capital com valuation determinístico e WACC ancorado.',
-    metricaChave: 'LTV/CAC > 4:1 com Payback acelerado para menos de 12 meses',
+      'Diagnóstico Estratégico com unit economics determinísticos (LTV/CAC e NRR), governança ágil de deploys e blindagem de runway para rodadas de capital — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '08',
     id: 'construcao',
     nome: 'Construção Civil',
     slug: 'construcao-civil',
+    subsegmentosLinha: 'Edificações, Incorporação, Infraestrutura e Reformas.',
     segmentos: ['Edificações', 'Incorporação', 'Infraestrutura', 'Reformas'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Edificações, Incorporação, Infraestrutura e Reformas. Gestão de projetos de longo prazo com alta sensibilidade a cronogramas físicos e orçamentos de suprimentos.',
+    gargaloCritico:
+      'Desperdício crônico de insumos nos canteiros · dias perdidos por retrabalho e revisões de projeto · aditivos executados sem faturamento · estouro sistemático do orçado vs. realizado.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com padronização de Curva S física e financeira em tempo real, governança de aditivos contratuais e compras antecipadas com alçadas — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Construção Civil?',
+    blocoDestravarTexto:
+      'A VETOR MASTER blinda a rentabilidade dos canteiros de obra contra estouros orçamentários e retrabalhos recorrentes. O Diagnóstico Estratégico audita a cobrança integral de aditivos e descentraliza o suprimento com limites rígidos de alçada.',
+    botaoDestravarTexto: 'Diagnóstico para Construção Civil',
+    questionarioPath: '/questionario/construcao',
     microEpifanias: [
       'Desperdício crônico de materiais nos canteiros',
       'Dias perdidos por retrabalho e revisões de projeto',
@@ -180,17 +300,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Divergência sistemática entre custo orçado e realizado',
     ],
     textoFechado:
-      'Engenheiros sem autonomia financeira, compras de suprimentos atrasando cronogramas críticos e orçamentos estourados na fase final da obra.',
+      'Edificações, Incorporação, Infraestrutura e Reformas. Gestão de projetos de longo prazo com alta sensibilidade a cronogramas físicos e orçamentos de suprimentos.',
     textoAberto:
-      'Padronização de medições e Curva S em tempo real. Governança de aditivos contratuais cobrados rigorosamente e compras antecipadas com limites de alçada, blindando o fluxo de caixa do incorporador e construtor.',
-    metricaChave: 'Auditoria de aditivos e alinhamento rigoroso entre orçado vs. realizado',
+      'Diagnóstico Estratégico com padronização de Curva S física e financeira em tempo real, governança de aditivos contratuais e compras antecipadas com alçadas — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '09',
     id: 'transporte',
-    nome: 'Logística / Transporte',
+    nome: 'Logística/Transporte',
     slug: 'transporte-logistica',
+    subsegmentosLinha: 'Cargas, Passageiros, Distribuição e Armazenagem.',
     segmentos: ['Cargas', 'Passageiros', 'Distribuição', 'Armazenagem'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Cargas, Passageiros, Distribuição e Armazenagem. Operações logísticas com forte impacto de custos de combustível, manutenção e eficiência de malha viária.',
+    gargaloCritico:
+      'Quilômetros rodados vazios (frete de retorno zero) · ociosidade de veículos da frota · manutenção corretiva consumindo preventivas · falta de visibilidade em tempo real do armazém.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico de roteirização e landed cost de transporte, precificação dinâmica por rota e governança operacional de armazém (WMS) — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Logística/Transporte?',
+    blocoDestravarTexto:
+      'A VETOR MASTER elimina as viagens improdutivas e os custos imprevistos de manutenção corretiva na sua frota. O Diagnóstico Estratégico reestrutura a precificação de rotas e implanta governança operacional no armazém e na estrada.',
+    botaoDestravarTexto: 'Diagnóstico para Logística/Transporte',
+    questionarioPath: '/questionario/transporte',
     microEpifanias: [
       'Quilômetros rodados vazios (frete de retorno zero)',
       'Ociosidade da frota de veículos disponíveis',
@@ -198,17 +331,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Manutenções corretivas devorando o orçamento das preventivas',
     ],
     textoFechado:
-      'Quilômetros rodados vazios, custos descontrolados de diesel e pneus, falhas de visibilidade de estoque e fundador negociando frete caso a caso.',
+      'Cargas, Passageiros, Distribuição e Armazenagem. Operações logísticas com forte impacto de custos de combustível, manutenção e eficiência de malha viária.',
     textoAberto:
-      'Roteirização inteligente, precificação dinâmica por faixa de rota com landed cost de transporte e implantação de governança operacional de armazém (WMS), eliminando atrasos e sobretaxas contratuais.',
-    metricaChave: 'Caso real: WMS implantado e +40% na eficiência de armazenagem',
+      'Diagnóstico Estratégico de roteirização e landed cost de transporte, precificação dinâmica por rota e governança operacional de armazém (WMS) — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '10',
     id: 'educacao',
     nome: 'Educação',
     slug: 'educacao',
+    subsegmentosLinha: 'Básica, Superior, Técnico, Idiomas e Edtech.',
     segmentos: ['Básica', 'Superior', 'Técnico', 'Idiomas', 'Edtech'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Básica, Superior, Técnico, Idiomas e Edtech. Instituições de ensino com desafios de retenção de alunos, inadimplência e sazonalidade de matrículas.',
+    gargaloCritico:
+      'Evasão silenciosa de alunos durante o semestre · vagas ociosas em turmas com custo fixo pleno · inadimplência sem régua automatizada · concessão descontrolada de bolsas e descontos.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com régua preditiva de retenção de alunos, alocação de docentes por margem de contribuição e automatização da esteira de matrículas — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Educação?',
+    blocoDestravarTexto:
+      'A VETOR MASTER combate a evasão precoce e a inadimplência que drenam o caixa das instituições de ensino. O Diagnóstico Estratégico equilibra a relação entre custo de corpo docente e receita por turma, protegendo a perenidade da instituição.',
+    botaoDestravarTexto: 'Diagnóstico para Educação',
+    questionarioPath: '/questionario/educacao',
     microEpifanias: [
       'Evasão de alunos silenciosa durante o semestre',
       'Vagas ociosas em turmas mantidas com custo fixo pleno',
@@ -216,17 +362,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Rotatividade docente afetando a reputação pedagógica',
     ],
     textoFechado:
-      'Evasão silenciosa, salas com turmas abaixo do ponto de equilíbrio, inadimplência e fundador envolvido em concessão de bolsas e descontos.',
+      'Básica, Superior, Técnico, Idiomas e Edtech. Instituições de ensino com desafios de retenção de alunos, inadimplência e sazonalidade de matrículas.',
     textoAberto:
-      'Régua preditiva de retenção de alunos por turma, reestruturação da grade de alocação de docentes por margem de contribuição e automatização da esteira de matrículas e cobrança recorrente sem atritos.',
-    metricaChave: 'Redução de evasão e aumento do ticket médio sem perda de matrículas',
+      'Diagnóstico Estratégico com régua preditiva de retenção de alunos, alocação de docentes por margem de contribuição e automatização da esteira de matrículas — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '11',
     id: 'agronegocio',
     nome: 'Agronegócio',
     slug: 'agronegocio',
+    subsegmentosLinha: 'Grãos, Pecuária, Cana, Café e Fruticultura.',
     segmentos: ['Grãos', 'Pecuária', 'Cana', 'Café', 'Fruticultura'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Grãos, Pecuária, Cana, Café e Fruticultura. Operações agropecuárias sujeitas a ciclos climáticos, precificação de commodities e gestão patrimonial familiar.',
+    gargaloCritico:
+      'Perdas na colheita por ineficiência de maquinário · aplicação de insumos sem critério de taxa variável · janelas críticas perdidas na colheita · comercialização sem proteção de travas de margem.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com indicadores de custo por hectare por talhão, comitê de comercialização de safra e governança para sucessão e perenidade — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Agronegócio?',
+    blocoDestravarTexto:
+      'A VETOR MASTER traz governança corporativa e rigor financeiro para a gestão da fazenda. O Diagnóstico Estratégico mapeia os custos por hectare, otimiza o uso de máquinas e estrutura a autonomia operacional da liderança de campo.',
+    botaoDestravarTexto: 'Diagnóstico para Agronegócio',
+    questionarioPath: '/questionario/agronegocio',
     microEpifanias: [
       'Perda de colheita por ineficiência de maquinário',
       'Insumos aplicados sem critério de taxa variável',
@@ -234,17 +393,30 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Decisões de comercialização de safra centralizadas no patriarca',
     ],
     textoFechado:
-      'Janelas de plantio e colheita travadas aguardando a palavra do produtor, maquinário ocioso e comercialização de commodities sem travas de margem.',
+      'Grãos, Pecuária, Cana, Café e Fruticultura. Operações agropecuárias sujeitas a ciclos climáticos, precificação de commodities e gestão patrimonial familiar.',
     textoAberto:
-      'Comitê de planejamento de safra com indicadores padronizados de custo por hectare. Delegação com alçada para gerentes de fazenda e governança familiar para sucessão e perenidade patrimonial.',
-    metricaChave: 'Alocação eficiente de insumos e proteção de margem por talhão',
+      'Diagnóstico Estratégico com indicadores de custo por hectare por talhão, comitê de comercialização de safra e governança para sucessão e perenidade — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
   {
     numero: '12',
     id: 'academias',
     nome: 'Academias de Ginástica',
     slug: 'academias-de-ginastica',
+    subsegmentosLinha: 'Musculação, Estúdio, CrossFit, Pilates e Natação.',
     segmentos: ['Musculação', 'Estúdio', 'CrossFit', 'Pilates', 'Natação'],
+    linhaSla: 'Diagnóstico em 72h · Devolutiva de 45 min',
+    descricaoIntro:
+      'Musculação, Estúdio, CrossFit, Pilates e Natação. Negócios de fitness e bem-estar com dependência de recorrência, ocupação de horários e retenção de alunos.',
+    gargaloCritico:
+      'Cancelamento precoce de alunos no 3º mês (churn) · capacidade ociosa em horários de vale mantendo custos fixos · planos promocionais sem margem · fundador imerso em atritos operacionais.',
+    alavancaDeterministica:
+      'Diagnóstico Estratégico com onboarding automatizado de retenção precoce, monetização dinâmica de horários ociosos e profissionalização da esteira de vendas — com devolutiva de 45 min.',
+    blocoDestravarTitulo: 'Pronto para destravar o setor de Academias de Ginástica?',
+    blocoDestravarTexto:
+      'A VETOR MASTER rompe o ciclo vicioso de cancelamentos rápidos e horários ociosos nas academias. O Diagnóstico Estratégico eleva o LTV do aluno, otimiza a ocupação dos espaços e devolve o tempo do gestor para o crescimento do negócio.',
+    botaoDestravarTexto: 'Diagnóstico para Academias de Ginástica',
+    questionarioPath: '/questionario/academias',
     microEpifanias: [
       'Evasão crônica nos primeiros 90 dias do aluno',
       'Horários de vale ociosos sustentando custos fixos',
@@ -252,9 +424,9 @@ export const SETORES_CANONICOS_12: SetorCanonicoInfo[] = [
       'Fundador atuando como coordenador de recepção e manutenção',
     ],
     textoFechado:
-      'Alta taxa de cancelamento (churn) no 3º mês, baixa ocupação fora dos picos e fundador imerso em atritos de recepção e manutenção de esteiras.',
+      'Musculação, Estúdio, CrossFit, Pilates e Natação. Negócios de fitness e bem-estar com dependência de recorrência, ocupação de horários e retenção de alunos.',
     textoAberto:
-      'Estratégias de retenção precoce com onboarding automatizado, monetização inteligente de horários ociosos com passes flexíveis e profissionalização da gestão de equipe comercial e técnica.',
-    metricaChave: 'Aumento do LTV do aluno e otimização da capacidade instalada',
+      'Diagnóstico Estratégico com onboarding automatizado de retenção precoce, monetização dinâmica de horários ociosos e profissionalização da esteira de vendas — com devolutiva de 45 min.',
+    metricaChave: 'Diagnóstico em 72h · Devolutiva de 45 min',
   },
 ]

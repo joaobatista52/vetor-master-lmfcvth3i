@@ -1,22 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import {
-  ArrowRight,
-  Sparkles,
-  CheckCircle2,
-  ShieldCheck,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp,
-  Layers,
-  Lock,
-  Compass,
-  Building2,
-  HelpCircle,
-  FileCheck2,
-  Zap,
-} from 'lucide-react'
+import { ArrowRight, Sparkles, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -246,27 +231,8 @@ export default function InstitucionalVendedora() {
             </Card>
           </div>
 
-          {/* Faixa de benefícios consolidados */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-6 text-center">
-            {[
-              { valor: 'Zero', label: 'Alucinação de IA' },
-              { valor: '40 Anos', label: 'Liderança Codificada' },
-              { valor: '72h', label: 'SLA de Devolutiva' },
-              { valor: '12', label: 'Setores Canônicos' },
-              { valor: '95%+', label: 'Acurácia Analítica' },
-              { valor: '138', label: 'Obras na Biblioteca' },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="p-4 rounded-[4px] bg-[#16213A] border border-[#24334F] flex flex-col justify-center"
-              >
-                <div className="text-xl sm:text-2xl font-bold text-[#5B9DFF] font-heading">
-                  {stat.valor}
-                </div>
-                <div className="text-[11px] text-[#8B98B4] mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Faixa de benefícios consolidados com animação numérica ao entrar na viewport */}
+          <FaixaContadorDores />
         </div>
       </section>
 
@@ -362,11 +328,7 @@ export default function InstitucionalVendedora() {
               return (
                 <div
                   key={setor.numero}
-                  className={`rounded-[4px] border transition-all duration-200 flex flex-col justify-between ${
-                    setor.destaque
-                      ? 'bg-[#16213A] border-[#5B9DFF]/60 shadow-md ring-1 ring-[#5B9DFF]/20'
-                      : 'bg-[#16213A] border-[#24334F] hover:border-[#5B9DFF]/40'
-                  }`}
+                  className="rounded-[4px] border bg-[#16213A] border-[#24334F] hover:border-[#5B9DFF]/40 transition-all duration-200 flex flex-col justify-between"
                 >
                   <div className="p-5 space-y-3">
                     <div className="flex items-center justify-between">
@@ -391,37 +353,69 @@ export default function InstitucionalVendedora() {
 
                     <div className="pt-2">
                       {!isAberto ? (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                            {setor.textoFechado}
+                            {setor.subsegmentosLinha}
                           </p>
-                          <div className="text-[11px] font-medium text-[#3DDC74] flex items-center gap-1.5 pt-1">
-                            <Sparkles className="w-3 h-3" />
-                            <span>{setor.metricaChave}</span>
+                          <div className="text-[11px] font-medium text-[#3DDC74] pt-1 border-t border-[#24334F]/60">
+                            {setor.linhaSla}
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-3 animate-fade-in bg-[#111A2E]/80 p-3 rounded-[4px] border border-[#24334F]">
-                          <div>
-                            <span className="text-[10px] uppercase font-bold text-[#5B9DFF] tracking-wider block mb-1">
-                              Intervenção Determinística:
+                        <div className="space-y-4 animate-fade-in bg-[#111A2E]/90 p-3.5 rounded-[4px] border border-[#24334F]">
+                          {/* Identificação e Linha de SLA */}
+                          <div className="border-b border-[#24334F] pb-2">
+                            <span className="font-mono text-[10px] font-bold text-[#5B9DFF] tracking-wider uppercase block">
+                              SETOR {setor.numero} · {setor.nome.toUpperCase()}
                             </span>
+                            <span className="text-[11px] font-medium text-[#3DDC74] block mt-0.5">
+                              {setor.linhaSla}
+                            </span>
+                          </div>
+
+                          {/* Descrição introdutória do setor */}
+                          <div>
+                            <h4 className="text-sm font-bold text-[#F8FAFC] mb-1">{setor.nome}</h4>
                             <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                              {setor.textoAberto}
+                              {setor.descricaoIntro}
                             </p>
                           </div>
-                          <div>
-                            <span className="text-[10px] uppercase font-bold text-[#FFB84D] tracking-wider block mb-1">
-                              Micro-epifanias gatilho:
+
+                          {/* Gargalo Crítico Típico */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-[#FFB84D] tracking-wider block">
+                              Gargalo Crítico Típico
                             </span>
-                            <ul className="text-[11px] text-[#8B98B4] space-y-1">
-                              {setor.microEpifanias.map((me, idx) => (
-                                <li key={idx} className="flex items-start gap-1.5">
-                                  <span className="text-[#FF9900]">•</span>
-                                  <span>{me}</span>
-                                </li>
-                              ))}
-                            </ul>
+                            <p className="text-xs text-[#C7D0E0] leading-relaxed bg-[#16213A] p-2.5 rounded-[3px] border border-[#24334F]">
+                              {setor.gargaloCritico}
+                            </p>
+                          </div>
+
+                          {/* Alavanca Determinística VETOR MASTER */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] uppercase font-bold text-[#5B9DFF] tracking-wider block">
+                              Alavanca Determinística VETOR MASTER
+                            </span>
+                            <p className="text-xs text-[#C7D0E0] leading-relaxed bg-[#16213A] p-2.5 rounded-[3px] border border-[#24334F]">
+                              {setor.alavancaDeterministica}
+                            </p>
+                          </div>
+
+                          {/* Bloco Pronto para destravar o setor de [Setor]? */}
+                          <div className="space-y-2.5 pt-2 border-t border-[#24334F]">
+                            <h5 className="text-xs font-bold text-[#F8FAFC]">
+                              {setor.blocoDestravarTitulo}
+                            </h5>
+                            <p className="text-xs text-[#C7D0E0] leading-relaxed">
+                              {setor.blocoDestravarTexto}
+                            </p>
+                            <Button
+                              size="sm"
+                              asChild
+                              className="w-full bg-[#0066CC] hover:bg-[#22B14C] text-white text-xs font-semibold rounded-[4px] py-2 mt-1 shadow-sm transition-all"
+                            >
+                              <Link to={setor.questionarioPath}>{setor.botaoDestravarTexto}</Link>
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -434,7 +428,7 @@ export default function InstitucionalVendedora() {
                       onClick={() => toggleSetor(setor.id)}
                       className="text-[#5B9DFF] hover:text-[#F8FAFC] font-medium flex items-center gap-1 focus:outline-none"
                     >
-                      <span>{isAberto ? 'Ver menos' : 'Ver intervenção completa'}</span>
+                      <span>{isAberto ? 'Ver menos' : 'Ver setor completo'}</span>
                       {isAberto ? (
                         <ChevronUp className="w-3.5 h-3.5" />
                       ) : (
@@ -447,7 +441,7 @@ export default function InstitucionalVendedora() {
                       asChild
                       className="h-7 text-xs text-[#C7D0E0] hover:text-white hover:bg-[#1B2742] p-1.5 rounded-[3px]"
                     >
-                      <Link to={`/questionario?setor=${setor.id}`}>Diagnosticar →</Link>
+                      <Link to={setor.questionarioPath}>Diagnosticar →</Link>
                     </Button>
                   </div>
                 </div>
@@ -753,6 +747,108 @@ export default function InstitucionalVendedora() {
           </div>
         </div>
       </footer>
+    </div>
+  )
+}
+
+interface StatItemConfig {
+  alvo: number | null // null para textos não puramente numéricos como 'Zero'
+  prefixo?: string
+  sufixo: string
+  label: string
+  textoEstatico?: string
+}
+
+const STATS_DORES_CONFIG: StatItemConfig[] = [
+  { alvo: 0, sufixo: '', label: 'Alucinação de IA', textoEstatico: 'Zero' },
+  { alvo: 40, sufixo: ' Anos', label: 'Liderança Codificada' },
+  { alvo: 72, sufixo: 'h', label: 'SLA de Devolutiva' },
+  { alvo: 12, sufixo: '', label: 'Setores Canônicos' },
+  { alvo: 95, sufixo: '%+', label: 'Acurácia Analítica' },
+  { alvo: 138, sufixo: '', label: 'Obras na Biblioteca' },
+]
+
+function FaixaContadorDores() {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [iniciou, setIniciou] = useState(false)
+  const [progresso, setProgresso] = useState(0) // 0 a 1
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry && entry.isIntersecting) {
+          setIniciou(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.25 },
+    )
+
+    observer.observe(el)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!iniciou) return
+
+    let animationFrameId: number
+    const duracao = 1500 // 1.5s
+    const startTime = performance.now()
+
+    const step = (now: number) => {
+      const elapsed = now - startTime
+      const linearT = Math.min(1, elapsed / duracao)
+      // Easing suave (easeOutQuart: 1 - (1 - t)^4)
+      const ease = 1 - Math.pow(1 - linearT, 4)
+      setProgresso(ease)
+
+      if (linearT < 1) {
+        animationFrameId = requestAnimationFrame(step)
+      } else {
+        setProgresso(1)
+      }
+    }
+
+    animationFrameId = requestAnimationFrame(step)
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [iniciou])
+
+  return (
+    <div ref={containerRef} className="grid grid-cols-2 md:grid-cols-6 gap-3 pt-6 text-center">
+      {STATS_DORES_CONFIG.map((stat, i) => {
+        let displayValor: string
+
+        if (stat.textoEstatico && stat.alvo === 0) {
+          displayValor = stat.textoEstatico
+        } else if (stat.alvo !== null) {
+          const valorAtual = Math.round(stat.alvo * progresso)
+          displayValor = `${stat.prefixo || ''}${valorAtual}${stat.sufixo}`
+        } else {
+          displayValor = `${stat.prefixo || ''}${stat.sufixo}`
+        }
+
+        return (
+          <div
+            key={i}
+            className="p-4 rounded-[4px] bg-[#16213A] border border-[#24334F] flex flex-col justify-center"
+          >
+            <div className="text-xl sm:text-2xl font-bold text-[#5B9DFF] font-heading tabular-nums">
+              {displayValor}
+            </div>
+            <div className="text-[11px] text-[#8B98B4] mt-1">{stat.label}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
