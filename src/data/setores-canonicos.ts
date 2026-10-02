@@ -23,7 +23,6 @@ export interface SetorCanonicoInfo {
   destaque?: boolean
   segmentos: string[]
   microEpifanias: string[]
-  // Card text do site (fechado = síntese rápida da dor; aberto = detalhe da intervenção determinística)
   textoFechado: string
   textoAberto: string
   metricaChave: string

@@ -3423,6 +3423,24 @@ const listaQuestionariosBruta: QuestionarioSetorLiteral[] = [
 
 // Popula campos retrocompatíveis para garantir que telas existentes continuem funcionando 100%
 listaQuestionariosBruta.forEach((q) => {
+  // Higieniza enunciados com opções incorporadas e underlines residuais via regex preservando 100% da redação
+  q.secoes.forEach((secao) => {
+    secao.perguntas.forEach((p) => {
+      if (p.enunciado) {
+        p.enunciado = p.enunciado
+          .replace(/\s*\([^)]{3,}\)\??$/, '?')
+          .replace(/_{2,}/g, '')
+          .trim()
+      }
+      if (p.subpergunta && p.subpergunta.enunciado) {
+        p.subpergunta.enunciado = p.subpergunta.enunciado
+          .replace(/\s*\([^)]{3,}\)\??$/, '?')
+          .replace(/_{2,}/g, '')
+          .trim()
+      }
+    })
+  })
+
   const s1 = q.secoes.find((s) => s.numero === 1)
   const s2 = q.secoes.find((s) => s.numero === 2)
   const s3 = q.secoes.find((s) => s.numero === 3)

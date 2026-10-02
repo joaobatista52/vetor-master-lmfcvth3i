@@ -159,17 +159,17 @@ const ETAPAS_INFO: EtapaInfo[] = [
   },
   {
     numero: 11,
-    key: 'documentacao',
-    titulo: 'Documentação Adicional & Anexos',
-    subtitulo: 'Uploads complementares e demonstrativos para o diagnóstico',
-    icone: FileCheck2,
-  },
-  {
-    numero: 12,
     key: 'proximos_passos',
     titulo: 'Seção 9 — Próximos Passos',
     subtitulo: 'Autorização da sessão de 45 minutos e formato de interesse',
     icone: Compass,
+  },
+  {
+    numero: 12,
+    key: 'documentacao',
+    titulo: 'Documentação Adicional & Anexos',
+    subtitulo: 'Uploads complementares e demonstrativos para o diagnóstico',
+    icone: FileCheck2,
   },
 ]
 
@@ -207,6 +207,11 @@ export default function Questionario() {
       if (salvo) {
         const parsed = JSON.parse(salvo)
         if (parsed.etapaAtual && typeof parsed.etapaAtual === 'number') {
+          // Migração de rascunhos salvos na ordem antiga (11=documentação, 12=proximos_passos)
+          if (parsed.versaoEtapas !== 2) {
+            if (parsed.etapaAtual === 11) return 12
+            if (parsed.etapaAtual === 12) return 11
+          }
           return Math.min(Math.max(parsed.etapaAtual, 1), 12)
         }
       }
@@ -389,6 +394,7 @@ export default function Questionario() {
     if (protocoloGerado || modoRevisao) return
     try {
       const dados = {
+        versaoEtapas: 2,
         etapaAtual,
         setorId,
         razaoSocial,
@@ -545,10 +551,14 @@ export default function Questionario() {
       case 10:
         return secaoCompleta('secao8', secao8.perguntas)
       case 11:
-        // Etapa 11 (Documentação): O envio continua liberado mesmo sem anexar.
-        return true
+        return (
+          Boolean(autorizacaoDevolutiva) &&
+          Boolean(formatoInteresse) &&
+          responsavelDocumentos.trim() !== ''
+        )
       case 12:
-        return !!autorizacaoDevolutiva && !!formatoInteresse && responsavelDocumentos.trim() !== ''
+        // Etapa 12 (Documentação): O envio continua liberado mesmo sem anexar.
+        return true
       default:
         return true
     }
@@ -1098,16 +1108,18 @@ export default function Questionario() {
                           <span className="font-mono text-xs font-bold text-[#5B9DFF]">
                             {s.numero}
                           </span>
-                          {s.destaque && (
-                            <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px]">
-                              Destaque
-                            </Badge>
-                          )}
                         </div>
                         <h4 className="font-bold text-sm text-[#F8FAFC]">{s.nome}</h4>
-                        <p className="text-[11px] text-[#8B98B4] mt-1.5 line-clamp-2 leading-relaxed">
-                          {s.segmentos.join(' • ')}
-                        </p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {s.segmentos.map((seg) => (
+                            <span
+                              key={seg}
+                              className="inline-block px-1.5 py-0.5 rounded-[2px] bg-[#16213A] border border-[#24334F] text-[10px] text-[#8B98B4]"
+                            >
+                              {seg}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )
                   })}
@@ -1137,9 +1149,7 @@ export default function Questionario() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs text-[#C7D0E0]">
-                      Razão Social: _________________________
-                    </Label>
+                    <Label className="text-xs text-[#C7D0E0]">Razão Social:</Label>
                     <Input
                       value={razaoSocial}
                       onChange={(e) => setRazaoSocial(e.target.value)}
@@ -1149,9 +1159,7 @@ export default function Questionario() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">
-                      CNPJ: _________________________
-                    </Label>
+                    <Label className="text-xs text-[#C7D0E0]">CNPJ:</Label>
                     <Input
                       value={cnpj}
                       onChange={(e) => setCnpj(e.target.value)}
@@ -1161,20 +1169,18 @@ export default function Questionario() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">Data: //______</Label>
+                    <Label className="text-xs text-[#C7D0E0]">Data:</Label>
                     <Input
                       value={dataPreenchimento}
                       onChange={(e) => setDataPreenchimento(e.target.value)}
+                      placeholder="DD/MM/AAAA"
                       className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                     />
                   </div>
 
                   {/* Segmento com as opções exatas do PDF + Outro */}
                   <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-xs text-[#C7D0E0] block">
-                      Segmento: {setorObj.identificacao.segmentos.map((s) => `( ) ${s}`).join(' ')}{' '}
-                      ( ) Outro: _________
-                    </Label>
+                    <Label className="text-xs text-[#C7D0E0] block">Segmento:</Label>
                     <RadioGroup
                       value={segmento}
                       onValueChange={setSegmento}
@@ -1220,11 +1226,11 @@ export default function Questionario() {
 
                   {segmento === 'Outro' && (
                     <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs text-[#C7D0E0]">Outro: _________</Label>
+                      <Label className="text-xs text-[#C7D0E0]">Outro (especifique):</Label>
                       <Input
                         value={segmentoOutro}
                         onChange={(e) => setSegmentoOutro(e.target.value)}
-                        placeholder="Especifique seu segmento..."
+                        placeholder="Digite sua resposta..."
                         className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                       />
                     </div>
@@ -1234,8 +1240,7 @@ export default function Questionario() {
                   {setorId === 'trading' && setorObj.identificacao.modalidadeTrading && (
                     <div className="space-y-2 sm:col-span-2 p-3 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40">
                       <Label className="text-xs text-[#F8FAFC] font-semibold block">
-                        Modalidade de atuação: ( ) Importação por Conta e Ordem ( ) Importação por
-                        Encomenda ( ) Ambas
+                        Modalidade de atuação:
                       </Label>
                       <RadioGroup
                         value={modalidadeTrading}
@@ -1266,25 +1271,21 @@ export default function Questionario() {
                   )}
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">
-                      Respondente: _________________________
-                    </Label>
+                    <Label className="text-xs text-[#C7D0E0]">Respondente:</Label>
                     <Input
                       value={respondente}
                       onChange={(e) => setRespondente(e.target.value)}
-                      placeholder="Nome completo do executivo"
+                      placeholder="Digite sua resposta..."
                       className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-[#C7D0E0]">
-                      Cargo: _________________________
-                    </Label>
+                    <Label className="text-xs text-[#C7D0E0]">Cargo:</Label>
                     <Input
                       value={cargo}
                       onChange={(e) => setCargo(e.target.value)}
-                      placeholder="Ex.: CEO, Fundador, Diretor"
+                      placeholder="Ex.: CEO, Fundador"
                       className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                     />
                   </div>
@@ -1394,8 +1395,119 @@ export default function Questionario() {
               />
             )}
 
-            {/* ETAPA 11: BLOCO FINAL DE DOCUMENTAÇÃO (PÁGS. 44–45 DO PDF) */}
+            {/* ETAPA 11: SEÇÃO 9 — PRÓXIMOS PASSOS (9.1 A 9.4 LITERAIS) */}
             {etapaAtual === 11 && (
+              <div className="space-y-6">
+                {/* 9.1 Frase fixa informativa */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#3DDC74]/40 flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#3DDC74] shrink-0 mt-0.5" />
+                  <p className="text-sm font-semibold text-[#F8FAFC]">
+                    9.1 Você receberá um Diagnóstico Executivo com recomendações prioritárias.
+                  </p>
+                </div>
+
+                {/* 9.2 Autoriza sessão de devolutiva de 45 min? */}
+                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
+                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                    9.2 Autoriza sessão de devolutiva de 45 min?
+                  </Label>
+                  <RadioGroup
+                    value={autorizacaoDevolutiva}
+                    onValueChange={(v) => setAutorizacaoDevolutiva(v as AutorizacaoDevolutiva)}
+                    className="flex flex-wrap gap-4"
+                  >
+                    {simNaoOpcoes.map((opt) => (
+                      <div
+                        key={opt}
+                        onClick={() => setAutorizacaoDevolutiva(opt as AutorizacaoDevolutiva)}
+                        className="flex items-center space-x-2 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value={opt}
+                          id={`aut-${opt}`}
+                          className="border-[#24334F] text-[#5B9DFF]"
+                        />
+                        <Label
+                          htmlFor={`aut-${opt}`}
+                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                        >
+                          {opt}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* 9.3 Formato de interesse: */}
+                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
+                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                    9.3 Formato de interesse:
+                  </Label>
+                  <RadioGroup
+                    value={formatoInteresse}
+                    onValueChange={(v) => setFormatoInteresse(v as FormatoInteresse)}
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2"
+                  >
+                    {formatoInteresseOpcoes.map((opt) => (
+                      <div
+                        key={opt}
+                        onClick={() => setFormatoInteresse(opt as FormatoInteresse)}
+                        className="flex items-center space-x-2 p-2.5 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value={opt}
+                          id={`fmt-${opt}`}
+                          className="border-[#24334F] text-[#5B9DFF]"
+                        />
+                        <Label
+                          htmlFor={`fmt-${opt}`}
+                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                        >
+                          {opt}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* 9.4 Responsável pelos documentos: */}
+                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-2">
+                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                    9.4 Responsável pelos documentos:
+                  </Label>
+                  <Input
+                    value={responsavelDocumentos}
+                    onChange={(e) => setResponsavelDocumentos(e.target.value)}
+                    placeholder="Nome completo e cargo da pessoa que assina ou faz a interlocução dos dados"
+                    className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] rounded-[4px]"
+                  />
+                </div>
+
+                {/* Resumo */}
+                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2 text-xs text-[#C7D0E0]">
+                  <span className="font-semibold text-[#F8FAFC] block text-xs uppercase tracking-wider">
+                    Resumo do Diagnóstico:
+                  </span>
+                  <p>
+                    <strong>Organização:</strong> {razaoSocial || '—'} (CNPJ: {cnpj || '—'})
+                  </p>
+                  <p>
+                    <strong>Setor & Segmento:</strong> {setorObj.nome} —{' '}
+                    {segmento || segmentoOutro || '—'}
+                  </p>
+                  <p>
+                    <strong>Respondente:</strong> {respondente || '—'} ({cargo || '—'}) •{' '}
+                    {emailCorporativo || '—'}
+                  </p>
+                  <p>
+                    <strong>Responsável pelos Documentos:</strong> {responsavelDocumentos || '—'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ETAPA 12: BLOCO FINAL DE DOCUMENTAÇÃO (PÁGS. 44–45 DO PDF) */}
+            {etapaAtual === 12 && (
               <div className="space-y-6">
                 {/* Checkboxes de DOCUMENTAÇÃO ADICIONAL específicos do setor (sem a palavra OPCIONAL) */}
                 <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-3">
@@ -1566,117 +1678,6 @@ export default function Questionario() {
                 </p>
               </div>
             )}
-
-            {/* ETAPA 12: SEÇÃO 9 — PRÓXIMOS PASSOS (9.1 A 9.4 LITERAIS) */}
-            {etapaAtual === 12 && (
-              <div className="space-y-6">
-                {/* 9.1 Frase fixa informativa */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#3DDC74]/40 flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#3DDC74] shrink-0 mt-0.5" />
-                  <p className="text-sm font-semibold text-[#F8FAFC]">
-                    9.1 Você receberá um Diagnóstico Executivo com recomendações prioritárias.
-                  </p>
-                </div>
-
-                {/* 9.2 Autoriza sessão de devolutiva de 45 min? */}
-                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
-                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
-                    9.2 Autoriza sessão de devolutiva de 45 min?
-                  </Label>
-                  <RadioGroup
-                    value={autorizacaoDevolutiva}
-                    onValueChange={(v) => setAutorizacaoDevolutiva(v as AutorizacaoDevolutiva)}
-                    className="flex flex-wrap gap-4"
-                  >
-                    {simNaoOpcoes.map((opt) => (
-                      <div
-                        key={opt}
-                        onClick={() => setAutorizacaoDevolutiva(opt as AutorizacaoDevolutiva)}
-                        className="flex items-center space-x-2 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
-                      >
-                        <RadioGroupItem
-                          value={opt}
-                          id={`aut-${opt}`}
-                          className="border-[#24334F] text-[#5B9DFF]"
-                        />
-                        <Label
-                          htmlFor={`aut-${opt}`}
-                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
-                        >
-                          {opt}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                {/* 9.3 Formato de interesse: */}
-                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-3">
-                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
-                    9.3 Formato de interesse:
-                  </Label>
-                  <RadioGroup
-                    value={formatoInteresse}
-                    onValueChange={(v) => setFormatoInteresse(v as FormatoInteresse)}
-                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2"
-                  >
-                    {formatoInteresseOpcoes.map((opt) => (
-                      <div
-                        key={opt}
-                        onClick={() => setFormatoInteresse(opt as FormatoInteresse)}
-                        className="flex items-center space-x-2 p-2.5 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
-                      >
-                        <RadioGroupItem
-                          value={opt}
-                          id={`fmt-${opt}`}
-                          className="border-[#24334F] text-[#5B9DFF]"
-                        />
-                        <Label
-                          htmlFor={`fmt-${opt}`}
-                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
-                        >
-                          {opt}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                {/* 9.4 Responsável pelos documentos: */}
-                <div className="border border-[#24334F] bg-[#111A2E]/50 rounded-[4px] p-4 space-y-2">
-                  <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
-                    9.4 Responsável pelos documentos: _________________________
-                  </Label>
-                  <Input
-                    value={responsavelDocumentos}
-                    onChange={(e) => setResponsavelDocumentos(e.target.value)}
-                    placeholder="Nome completo e cargo da pessoa que assina ou faz a interlocução dos dados"
-                    className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] rounded-[4px]"
-                  />
-                </div>
-
-                {/* Resumo */}
-                <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] space-y-2 text-xs text-[#C7D0E0]">
-                  <span className="font-semibold text-[#F8FAFC] block text-xs uppercase tracking-wider">
-                    Resumo do Diagnóstico:
-                  </span>
-                  <p>
-                    <strong>Organização:</strong> {razaoSocial || '—'} (CNPJ: {cnpj || '—'})
-                  </p>
-                  <p>
-                    <strong>Setor & Segmento:</strong> {setorObj.nome} —{' '}
-                    {segmento || segmentoOutro || '—'}
-                  </p>
-                  <p>
-                    <strong>Respondente:</strong> {respondente || '—'} ({cargo || '—'}) •{' '}
-                    {emailCorporativo || '—'}
-                  </p>
-                  <p>
-                    <strong>Responsável pelos Documentos:</strong> {responsavelDocumentos || '—'}
-                  </p>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -1699,7 +1700,9 @@ export default function Questionario() {
               disabled={!canAvancar()}
               className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-semibold px-6 py-5 gap-2 transition-all"
             >
-              <span>Próxima Etapa</span>
+              <span>
+                {etapaAtual === 11 ? 'Avançar para Documentação & Anexos →' : 'Próxima Etapa'}
+              </span>
               <ChevronRight className="w-4 h-4" />
             </Button>
           ) : modoRevisao ? (
@@ -1789,12 +1792,12 @@ function RenderSecaoLiteral({
               • {p.numero} {p.enunciado}
             </Label>
 
-            {/* Forma 1: Dissertativo em linha com underline "_________________________" */}
+            {/* Forma 1: Dissertativo em linha */}
             {p.tipoForma === 'dissertativo' && (
               <Input
                 value={val}
                 onChange={(e) => setResposta(secaoKey, p.numero, e.target.value)}
-                placeholder="_________________________"
+                placeholder="Digite sua resposta..."
                 className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4]/60 rounded-[4px]"
               />
             )}
