@@ -253,14 +253,18 @@ export default function Questionario() {
     }
     return new Date().toLocaleDateString('pt-BR')
   })
-  const [segmento, setSegmento] = useState(() => {
+  const [segmento, setSegmento] = useState<string[]>(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
-      if (p) return JSON.parse(p).segmento || ''
+      if (p) {
+        const parsed = JSON.parse(p).segmento
+        if (Array.isArray(parsed)) return parsed
+        if (typeof parsed === 'string' && parsed.trim() !== '') return [parsed.trim()]
+      }
     } catch {
       /* intentionally ignored */
     }
-    return ''
+    return []
   })
   const [segmentoOutro, setSegmentoOutro] = useState(() => {
     try {
@@ -318,7 +322,8 @@ export default function Questionario() {
   })
 
   // Respostas estruturadas por chave: `${secaoId}-${numero}`
-  const [respostas, setRespostas] = useState<Record<string, string>>(() => {
+  // Suporta string ou string[] para perguntas de seleção múltipla (checkbox)
+  const [respostas, setRespostas] = useState<Record<string, string | string[]>>(() => {
     try {
       const p = localStorage.getItem('vm_questionario_progresso')
       if (p && JSON.parse(p).respostas) return JSON.parse(p).respostas
@@ -327,6 +332,40 @@ export default function Questionario() {
     }
     return {}
   })
+
+  // Normaliza rascunhos antigos onde respostas de perguntas múltiplas foram salvas como string
+  useEffect(() => {
+    try {
+      const p = localStorage.getItem('vm_questionario_progresso')
+      if (!p) return
+      const parsed = JSON.parse(p)
+      if (parsed && parsed.respostas && typeof parsed.respostas === 'object') {
+        const rawRespostas = parsed.respostas as Record<string, any>
+        let houveMudanca = false
+        const atualizadas: Record<string, string | string[]> = { ...rawRespostas }
+        Object.keys(rawRespostas).forEach((key) => {
+          const val = rawRespostas[key]
+          // Se for string com formato de array JSON serializado
+          if (typeof val === 'string' && val.startsWith('[') && val.endsWith(']')) {
+            try {
+              const arrayVal = JSON.parse(val)
+              if (Array.isArray(arrayVal)) {
+                atualizadas[key] = arrayVal
+                houveMudanca = true
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        })
+        if (houveMudanca) {
+          setRespostas((prev) => ({ ...prev, ...atualizadas }))
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   // Checkboxes de Documentação Adicional do Setor (Balanço, DRE, etc.)
   const [documentosAdicionaisCheck, setDocumentosAdicionaisCheck] = useState<string[]>(() => {
@@ -460,8 +499,15 @@ export default function Questionario() {
   const secao8 = useMemo(() => setorObj.secoes.find((s) => s.numero === 8)!, [setorObj])
   const secao9 = useMemo(() => setorObj.secoes.find((s) => s.numero === 9)!, [setorObj])
 
-  const setResposta = (secaoKey: string, numero: string, val: string) => {
+  const setResposta = (secaoKey: string, numero: string, val: string | string[]) => {
     setRespostas((prev) => ({ ...prev, [`${secaoKey}-${numero}`]: val }))
+  }
+
+  // Verifica se um valor de resposta está preenchido (string não vazia ou array com itens)
+  const isValorPreenchido = (v: string | string[] | undefined): boolean => {
+    if (v === undefined || v === null) return false
+    if (Array.isArray(v)) return v.length > 0
+    return typeof v === 'string' && v.trim() !== ''
   }
 
   // Verifica preenchimento de uma lista de perguntas
@@ -469,12 +515,13 @@ export default function Questionario() {
     return perguntas.every((p) => {
       if (p.tipoForma === 'informativo') return true
       const v = respostas[`${secaoKey}-${p.numero}`]
-      if (!v || v.trim() === '') return false
+      if (!isValorPreenchido(v)) return false
 
       // Subpergunta condicional (ex: Trading 1.9 e 1.13)
-      if (p.subpergunta && v === p.subpergunta.condicao) {
+      const vStr = Array.isArray(v) ? v.join(', ') : v || ''
+      if (p.subpergunta && vStr === p.subpergunta.condicao) {
         const subV = respostas[`${secaoKey}-${p.numero}-sub`]
-        if (!subV || subV.trim() === '') return false
+        if (!isValorPreenchido(subV)) return false
       }
       return true
     })
@@ -511,7 +558,7 @@ export default function Questionario() {
       pergs.forEach((p) => {
         if (p.tipoForma === 'informativo') return
         const val = respostas[`${k}-${p.numero}`]
-        if (val && val.trim() !== '') count++
+        if (isValorPreenchido(val)) count++
       })
     })
     return count
@@ -531,7 +578,7 @@ export default function Questionario() {
           cargo.trim() !== '' &&
           emailCorporativo.trim() !== '' &&
           whatsapp.trim() !== '' &&
-          (segmento !== '' || segmentoOutro.trim() !== '') &&
+          (segmento.length > 0 || segmentoOutro.trim() !== '') &&
           (setorId !== 'trading' || modalidadeTrading.trim() !== '')
         )
       case 3:
@@ -615,12 +662,18 @@ export default function Questionario() {
   const handleFinalizar = async () => {
     setSubmitting(true)
     try {
-      const segmentoFinal = segmento === 'Outro' ? segmentoOutro : segmento
+      const segmentosLimpos = segmento.filter((s) => s !== 'Outro')
+      if (segmento.includes('Outro') && segmentoOutro.trim()) {
+        segmentosLimpos.push(`Outro: ${segmentoOutro.trim()}`)
+      }
+      const segmentoFinal = segmentosLimpos.join(', ') || segmentoOutro
 
       const mapRespostasSecao = (secaoKey: string, perguntas: PerguntaItemLiteral[]) =>
         perguntas.map((p) => {
-          const val = respostas[`${secaoKey}-${p.numero}`] || ''
-          const sub = p.subpergunta ? respostas[`${secaoKey}-${p.numero}-sub`] : undefined
+          const rawVal = respostas[`${secaoKey}-${p.numero}`]
+          const val = Array.isArray(rawVal) ? rawVal : rawVal || ''
+          const rawSub = p.subpergunta ? respostas[`${secaoKey}-${p.numero}-sub`] : undefined
+          const sub = Array.isArray(rawSub) ? rawSub : rawSub
           return {
             numero: p.numero,
             enunciado: p.enunciado,
@@ -811,7 +864,7 @@ export default function Questionario() {
                     Setor & Segmento
                   </span>
                   <p className="text-sm font-semibold text-[#F8FAFC]">
-                    {setorObj.nome} — {segmento || segmentoOutro}
+                    {setorObj.nome} — {segmento.join(', ') || segmentoOutro}
                   </p>
                 </div>
                 <div className="bg-[#111A2E]/70 p-4 rounded-[4px] border border-[#24334F] space-y-1">
@@ -1095,7 +1148,7 @@ export default function Questionario() {
                         key={s.id}
                         onClick={() => {
                           setSetorId(s.id)
-                          setSegmento('')
+                          setSegmento([])
                           navigate(`/questionario/${s.id}`, { replace: true })
                         }}
                         className={`p-4 rounded-[4px] border cursor-pointer transition-all ${
@@ -1178,53 +1231,76 @@ export default function Questionario() {
                     />
                   </div>
 
-                  {/* Segmento com as opções exatas do PDF + Outro */}
+                  {/* Segmento com as opções exatas do PDF + Outro (Seleção Múltipla via Checkbox) */}
                   <div className="space-y-2 sm:col-span-2">
-                    <Label className="text-xs text-[#C7D0E0] block">Segmento:</Label>
-                    <RadioGroup
-                      value={segmento}
-                      onValueChange={setSegmento}
-                      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"
-                    >
-                      {setorObj.identificacao.segmentos.map((seg) => (
-                        <div
-                          key={seg}
-                          onClick={() => setSegmento(seg)}
-                          className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
-                        >
-                          <RadioGroupItem
-                            value={seg}
-                            id={`seg-${seg}`}
-                            className="border-[#24334F] text-[#5B9DFF]"
-                          />
-                          <Label
-                            htmlFor={`seg-${seg}`}
-                            className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-[#C7D0E0] block">
+                        Segmento (seleção múltipla):
+                      </Label>
+                      {segmento.length > 0 && (
+                        <span className="text-[11px] text-[#5B9DFF]">
+                          {segmento.length} {segmento.length === 1 ? 'selecionado' : 'selecionados'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                      {setorObj.identificacao.segmentos.map((seg) => {
+                        const checked = segmento.includes(seg)
+                        return (
+                          <div
+                            key={seg}
+                            onClick={() => {
+                              setSegmento((prev) =>
+                                checked ? prev.filter((s) => s !== seg) : [...prev, seg],
+                              )
+                            }}
+                            className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer transition-colors"
                           >
-                            {seg}
-                          </Label>
-                        </div>
-                      ))}
-                      <div
-                        onClick={() => setSegmento('Outro')}
-                        className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer"
-                      >
-                        <RadioGroupItem
-                          value="Outro"
-                          id="seg-outro"
-                          className="border-[#24334F] text-[#5B9DFF]"
-                        />
-                        <Label
-                          htmlFor="seg-outro"
-                          className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
-                        >
-                          Outro
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                            <Checkbox
+                              checked={checked}
+                              id={`seg-${seg}`}
+                              className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
+                            />
+                            <Label
+                              htmlFor={`seg-${seg}`}
+                              className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                            >
+                              {seg}
+                            </Label>
+                          </div>
+                        )
+                      })}
+                      {(() => {
+                        const checkedOutro = segmento.includes('Outro')
+                        return (
+                          <div
+                            onClick={() => {
+                              setSegmento((prev) =>
+                                checkedOutro
+                                  ? prev.filter((s) => s !== 'Outro')
+                                  : [...prev, 'Outro'],
+                              )
+                            }}
+                            className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#111A2E] border border-[#24334F] hover:bg-[#16213A] cursor-pointer transition-colors"
+                          >
+                            <Checkbox
+                              checked={checkedOutro}
+                              id="seg-outro"
+                              className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
+                            />
+                            <Label
+                              htmlFor="seg-outro"
+                              className="text-xs text-[#F8FAFC] cursor-pointer font-normal"
+                            >
+                              Outro
+                            </Label>
+                          </div>
+                        )
+                      })()}
+                    </div>
                   </div>
 
-                  {segmento === 'Outro' && (
+                  {segmento.includes('Outro') && (
                     <div className="space-y-1.5 sm:col-span-2">
                       <Label className="text-xs text-[#C7D0E0]">Outro (especifique):</Label>
                       <Input
@@ -1493,7 +1569,7 @@ export default function Questionario() {
                   </p>
                   <p>
                     <strong>Setor & Segmento:</strong> {setorObj.nome} —{' '}
-                    {segmento || segmentoOutro || '—'}
+                    {segmento.join(', ') || segmentoOutro || '—'}
                   </p>
                   <p>
                     <strong>Respondente:</strong> {respondente || '—'} ({cargo || '—'}) •{' '}
@@ -1753,6 +1829,91 @@ export default function Questionario() {
  * - maturidade 1 / 2 / 3 -> radio de seleção única
  * - estruturas especiais (Trading 1.9 com campo condicional, Trading 1.13 com subpergunta condicional)
  */
+/**
+ * Extrai opções de lista entre parênteses para perguntas de listagem (fontes de receita,
+ * certificações, barreiras, processos automatizados) se não vierem pré-definidas em `opcoes`.
+ */
+function extrairOpcoesDeListagem(enunciado: string): string[] | null {
+  const match = enunciado.match(/\(([^)]+)\)/)
+  if (!match) return null
+  const interior = match[1]
+  // Limpa sufixos como ", etc.", ", etc"
+  const limpo = interior
+    .replace(/,\s*etc\.?/gi, '')
+    .replace(/\betc\.?/gi, '')
+    .trim()
+  const partes = limpo
+    .split(/[,;/]| e /gi)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && s !== 'etc' && s !== 'etc.')
+  return partes.length >= 2 ? partes : null
+}
+
+/**
+ * Determina se a pergunta é uma pergunta de listagem / múltipla seleção:
+ * - segmento (já tratado na Etapa 2)
+ * - fontes de receita
+ * - certificações
+ * - barreiras
+ * - processos automatizados
+ *
+ * MANTÉM RADIO (escolha única) estrito em:
+ * - Sim/Não, Sim/Não/Parcialmente
+ * - maturidade 1/2/3
+ * - Alto/Médio/Baixo
+ * - Estrutura de propriedade / Regime tributário
+ * - 9.2 e 9.3 da Seção 9
+ */
+function isPerguntaDeListagemMultipla(p: PerguntaItemLiteral): boolean {
+  if (p.tipoForma === 'checkbox') return true
+  if (p.tipoForma === 'maturidade' || p.tipoForma === 'informativo') return false
+  if (p.tipoForma === 'trading_condicional_1_9' || p.tipoForma === 'trading_condicional_1_13')
+    return false
+
+  const texto = (p.enunciado || '').toLowerCase()
+
+  // Perguntas exclusivas NÃO devem ser múltiplas
+  if (texto.includes('autoriza sessão') || texto.includes('formato de interesse')) return false
+  if (texto.includes('estrutura de propriedade') || texto.includes('regime tributário'))
+    return false
+
+  // Detecta perguntas de listagem de acordo com os temas do item (a)
+  const isFontesReceita = texto.includes('fontes de receita') || texto.includes('fonte de receita')
+  const isCertificacoes = texto.includes('certificaç') || texto.includes('certificações')
+  const isBarreiras = texto.includes('barreiras') || texto.includes('barreira')
+  const isProcessosAuto =
+    texto.includes('processos são automatizados') ||
+    texto.includes('processos já são automatizados') ||
+    texto.includes('processos automatizados')
+
+  return isFontesReceita || isCertificacoes || isBarreiras || isProcessosAuto
+}
+
+/**
+ * Converte valor em array de strings seguro (compatibilidade de rascunhos antigos).
+ * Aceita string única ("Convênios"), string separada por vírgula ("A, B"),
+ * array real (["A", "B"]) ou string serializada JSON.
+ */
+function normalizarArrayDeRespostas(raw: string | string[] | undefined): string[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.filter((s) => typeof s === 'string' && s.trim() !== '')
+  if (typeof raw === 'string') {
+    const s = raw.trim()
+    if (!s) return []
+    if (s.startsWith('[') && s.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(s)
+        if (Array.isArray(parsed)) return parsed.map((v) => String(v).trim()).filter(Boolean)
+      } catch {
+        /* parse falhou, trata como texto */
+      }
+    }
+    // Tolerância com rascunhos que salvaram string isolada
+    return [s]
+  }
+  return []
+}
+
 function RenderSecaoLiteral({
   secaoKey,
   secao,
@@ -1762,8 +1923,8 @@ function RenderSecaoLiteral({
 }: {
   secaoKey: string
   secao: SecaoQuestionarioLiteral
-  respostas: Record<string, string>
-  setResposta: (secaoKey: string, numero: string, val: string) => void
+  respostas: Record<string, string | string[]>
+  setResposta: (secaoKey: string, numero: string, val: string | string[]) => void
   notaImportante?: string
 }) {
   return (
@@ -1779,8 +1940,15 @@ function RenderSecaoLiteral({
       </div>
 
       {secao.perguntas.map((p) => {
-        const val = respostas[`${secaoKey}-${p.numero}`] || ''
-        const subVal = respostas[`${secaoKey}-${p.numero}-sub`] || ''
+        const rawVal = respostas[`${secaoKey}-${p.numero}`]
+        const rawSub = respostas[`${secaoKey}-${p.numero}-sub`]
+        const strVal =
+          typeof rawVal === 'string' ? rawVal : Array.isArray(rawVal) ? rawVal.join(', ') : ''
+        const subVal =
+          typeof rawSub === 'string' ? rawSub : Array.isArray(rawSub) ? rawSub.join(', ') : ''
+
+        // Detecta se esta pergunta é uma pergunta de listagem múltipla
+        const isMultipla = isPerguntaDeListagemMultipla(p)
 
         return (
           <div
@@ -1788,24 +1956,41 @@ function RenderSecaoLiteral({
             className="border border-[#24334F] bg-[#111A2E]/60 rounded-[4px] p-4 space-y-3"
           >
             {/* Enunciado Literal do PDF */}
-            <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
-              • {p.numero} {p.enunciado}
-            </Label>
+            <div className="flex items-start justify-between gap-2">
+              <Label className="text-xs sm:text-sm font-medium leading-relaxed block text-[#F8FAFC]">
+                • {p.numero} {p.enunciado}
+              </Label>
+              {isMultipla && (
+                <span className="text-[10px] text-[#5B9DFF] font-semibold uppercase tracking-wider shrink-0 bg-[#16213A] border border-[#24334F] px-2 py-0.5 rounded-[2px]">
+                  Múltipla Seleção
+                </span>
+              )}
+            </div>
 
-            {/* Forma 1: Dissertativo em linha */}
-            {p.tipoForma === 'dissertativo' && (
+            {/* SELEÇÃO MÚLTIPLA: Perguntas de LISTAGEM (fontes de receita, certificações, barreiras, processos automatizados) */}
+            {isMultipla && (
+              <RenderCampoMultiplo
+                secaoKey={secaoKey}
+                pergunta={p}
+                valorAtual={rawVal}
+                onChange={(novoArray) => setResposta(secaoKey, p.numero, novoArray)}
+              />
+            )}
+
+            {/* Forma 1: Dissertativo em linha (quando NÃO for de listagem múltipla) */}
+            {!isMultipla && p.tipoForma === 'dissertativo' && (
               <Input
-                value={val}
+                value={strVal}
                 onChange={(e) => setResposta(secaoKey, p.numero, e.target.value)}
                 placeholder="Digite sua resposta..."
                 className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4]/60 rounded-[4px]"
               />
             )}
 
-            {/* Forma 2: Radio com alternativas "( ) ..." */}
-            {p.tipoForma === 'radio' && p.opcoes && (
+            {/* Forma 2: Radio com alternativas "( ) ..." (exclusivo para escolha única quando NÃO for múltiplo) */}
+            {!isMultipla && p.tipoForma === 'radio' && p.opcoes && (
               <RadioGroup
-                value={val}
+                value={strVal}
                 onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
                 className="flex flex-wrap gap-2.5 pt-1"
               >
@@ -1831,10 +2016,10 @@ function RenderSecaoLiteral({
               </RadioGroup>
             )}
 
-            {/* Forma 3: Maturidade 1 / 2 / 3 */}
+            {/* Forma 3: Maturidade 1 / 2 / 3 (SEMPRE RADIO - ESCOLHA ÚNICA) */}
             {p.tipoForma === 'maturidade' && p.opcoes && (
               <RadioGroup
-                value={val}
+                value={strVal}
                 onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
                 className="flex flex-wrap gap-2.5 pt-1"
               >
@@ -1868,11 +2053,11 @@ function RenderSecaoLiteral({
               </div>
             )}
 
-            {/* Estrutura especial Trading 1.9: Sim/Não + campo condicional */}
+            {/* ITEM (b.1): Estrutura especial Trading 1.9: Sim/Não + Textarea condicional para política de repasse */}
             {p.tipoForma === 'trading_condicional_1_9' && p.opcoes && (
               <div className="space-y-3">
                 <RadioGroup
-                  value={val}
+                  value={strVal}
                   onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
                   className="flex flex-wrap gap-2.5 pt-1"
                 >
@@ -1880,7 +2065,7 @@ function RenderSecaoLiteral({
                     <div
                       key={opt}
                       onClick={() => setResposta(secaoKey, p.numero, opt)}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer"
+                      className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer transition-colors"
                     >
                       <RadioGroupItem
                         value={opt}
@@ -1897,15 +2082,16 @@ function RenderSecaoLiteral({
                   ))}
                 </RadioGroup>
 
-                {val === 'Sim' && p.subpergunta && (
+                {strVal === 'Sim' && (
                   <div className="p-3 rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/40 space-y-2 mt-2">
                     <Label className="text-xs text-[#C7D0E0] leading-relaxed block">
-                      {p.subpergunta.enunciado}
+                      {p.subpergunta?.enunciado ||
+                        'Em caso afirmativo, descreva a política de repasse (critérios, percentuais e forma de repasse):'}
                     </Label>
                     <Textarea
                       value={subVal}
                       onChange={(e) => setResposta(secaoKey, `${p.numero}-sub`, e.target.value)}
-                      placeholder="_________________________"
+                      placeholder="Descreva a política de repasse de ganhos de incentivo fiscal..."
                       rows={3}
                       className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC]"
                     />
@@ -1914,11 +2100,11 @@ function RenderSecaoLiteral({
               </div>
             )}
 
-            {/* Estrutura especial Trading 1.13: Sim/Não + subpergunta condicional */}
+            {/* ITEM (b.2): Estrutura especial Trading 1.13: Sim/Não + Subpergunta condicional com radio Sim/Não */}
             {p.tipoForma === 'trading_condicional_1_13' && p.opcoes && (
               <div className="space-y-3">
                 <RadioGroup
-                  value={val}
+                  value={strVal}
                   onValueChange={(v) => setResposta(secaoKey, p.numero, v)}
                   className="flex flex-wrap gap-2.5 pt-1"
                 >
@@ -1926,7 +2112,7 @@ function RenderSecaoLiteral({
                     <div
                       key={opt}
                       onClick={() => setResposta(secaoKey, p.numero, opt)}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer"
+                      className="flex items-center space-x-2 px-3 py-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer transition-colors"
                     >
                       <RadioGroupItem
                         value={opt}
@@ -1943,17 +2129,18 @@ function RenderSecaoLiteral({
                   ))}
                 </RadioGroup>
 
-                {val === 'Não' && p.subpergunta && p.subpergunta.opcoes && (
+                {strVal === 'Não' && (
                   <div className="p-3 rounded-[4px] bg-[#16213A] border border-[#5B9DFF]/40 space-y-2 mt-2">
                     <Label className="text-xs text-[#C7D0E0] leading-relaxed block">
-                      {p.subpergunta.enunciado}
+                      {p.subpergunta?.enunciado ||
+                        'Em caso negativo, as operações são estruturadas como Importação por Encomenda?'}
                     </Label>
                     <RadioGroup
                       value={subVal}
                       onValueChange={(v) => setResposta(secaoKey, `${p.numero}-sub`, v)}
                       className="flex flex-wrap gap-2.5 pt-1"
                     >
-                      {p.subpergunta.opcoes.map((subOpt) => (
+                      {(p.subpergunta?.opcoes || simNaoOpcoes).map((subOpt) => (
                         <div
                           key={subOpt}
                           onClick={() => setResposta(secaoKey, `${p.numero}-sub`, subOpt)}
@@ -1980,6 +2167,136 @@ function RenderSecaoLiteral({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * Componente dedicado para renderizar perguntas de seleção múltipla (checkbox)
+ * com suporte a opções estruturadas extraídas da pergunta ou fornecidas em `p.opcoes`,
+ * mais campo de texto adicional / opção "Outro" / dissertativo complementar integrado.
+ */
+function RenderCampoMultiplo({
+  secaoKey,
+  pergunta,
+  valorAtual,
+  onChange,
+}: {
+  secaoKey: string
+  pergunta: PerguntaItemLiteral
+  valorAtual: string | string[] | undefined
+  onChange: (val: string[]) => void
+}) {
+  const selecionados = useMemo(() => normalizarArrayDeRespostas(valorAtual), [valorAtual])
+
+  // Opções estruturadas para o checkbox: usa opcoes se existirem; senão extrai do enunciado
+  const opcoesBase = useMemo(() => {
+    if (pergunta.opcoes && pergunta.opcoes.length > 0) return pergunta.opcoes
+    const extraidas = extrairOpcoesDeListagem(pergunta.enunciado)
+    if (extraidas && extraidas.length > 0) return extraidas
+    return []
+  }, [pergunta.opcoes, pergunta.enunciado])
+
+  const toggleOpcao = (opt: string) => {
+    if (selecionados.includes(opt)) {
+      onChange(selecionados.filter((s) => s !== opt))
+    } else {
+      onChange([...selecionados, opt])
+    }
+  }
+
+  // Identifica se há itens personalizados digitados (que não estão em opcoesBase)
+  const itensCustomizados = selecionados.filter(
+    (s) => !opcoesBase.includes(s) && !s.startsWith('Outro:'),
+  )
+  const [outroInput, setOutroInput] = useState('')
+
+  const handleAddOutro = () => {
+    const val = outroInput.trim()
+    if (!val) return
+    if (!selecionados.includes(val)) {
+      onChange([...selecionados, val])
+    }
+    setOutroInput('')
+  }
+
+  return (
+    <div className="space-y-3 pt-1">
+      {/* Grade de checkboxes */}
+      {opcoesBase.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {opcoesBase.map((opt) => {
+            const checked = selecionados.includes(opt)
+            return (
+              <div
+                key={opt}
+                onClick={() => toggleOpcao(opt)}
+                className="flex items-center space-x-2.5 p-2 rounded-[3px] bg-[#16213A] border border-[#24334F] hover:bg-[#1F2E4D] cursor-pointer transition-colors"
+              >
+                <Checkbox
+                  checked={checked}
+                  id={`${secaoKey}-${pergunta.numero}-${opt}`}
+                  className="border-[#24334F] data-[state=checked]:bg-[#5B9DFF]"
+                />
+                <Label
+                  htmlFor={`${secaoKey}-${pergunta.numero}-${opt}`}
+                  className="text-xs text-[#F8FAFC] cursor-pointer font-normal leading-tight"
+                >
+                  {opt}
+                </Label>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Itens adicionados manualmente */}
+      {itensCustomizados.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {itensCustomizados.map((item) => (
+            <span
+              key={item}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-[#1F2E4D] border border-[#5B9DFF]/40 text-xs text-[#F8FAFC]"
+            >
+              <span>{item}</span>
+              <button
+                type="button"
+                onClick={() => toggleOpcao(item)}
+                className="text-[#8B98B4] hover:text-[#FF6B6B] text-xs font-bold leading-none"
+                title="Remover"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Campo complementar para adicionar outra opção / especificar */}
+      <div className="flex items-center gap-2 pt-1">
+        <Input
+          value={outroInput}
+          onChange={(e) => setOutroInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleAddOutro()
+            }
+          }}
+          placeholder="Adicionar outra opção à lista..."
+          className="bg-[#16213A] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4]/60 rounded-[4px] h-8"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAddOutro}
+          disabled={!outroInput.trim()}
+          className="h-8 px-3 text-xs bg-[#1F2E4D] border-[#24334F] text-[#F8FAFC] hover:bg-[#24334F] shrink-0"
+        >
+          Adicionar
+        </Button>
+      </div>
     </div>
   )
 }
