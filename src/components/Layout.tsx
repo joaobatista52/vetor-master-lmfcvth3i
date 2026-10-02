@@ -39,6 +39,7 @@ const routeNames: Record<string, string> = {
   '/admin': 'Painel Geral Admin',
   '/admin/dashboard': 'Métricas do Projeto',
   '/admin/biblioteca': 'Biblioteca Profissional (Admin)',
+  '/admin/divergencias': 'Log de Divergências — Paridade V7.2',
   '/admin/logs': 'Logs de Auditoria',
   '/admin/convites': 'Gestão de Convites',
 }

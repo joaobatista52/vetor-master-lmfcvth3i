@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, History, Mail, Shield, BookOpen, ArrowRight } from 'lucide-react'
+import {
+  LayoutDashboard,
+  History,
+  Mail,
+  Shield,
+  BookOpen,
+  GitCompare,
+  ArrowRight,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const adminTools = [
@@ -17,16 +25,23 @@ const adminTools = [
     path: '/admin/biblioteca',
   },
   {
-    title: 'Gerenciar Convites',
-    description: 'Convide novos membros da equipe e gerencie funções de acesso.',
-    icon: Mail,
-    path: '/admin/convites',
+    title: 'Log de Divergências — Paridade V7.2',
+    description:
+      'Relatório de paridade do Gate 0B e 10 ajustes de alinhamento com o site e PDF canônico.',
+    icon: GitCompare,
+    path: '/admin/divergencias',
   },
   {
     title: 'Logs de Auditoria',
     description: 'Acompanhe todas as ações de criação, edição e exclusão no sistema.',
     icon: History,
     path: '/admin/logs',
+  },
+  {
+    title: 'Gerenciar Convites',
+    description: 'Convide novos membros da equipe e gerencie funções de acesso.',
+    icon: Mail,
+    path: '/admin/convites',
   },
 ]
 
