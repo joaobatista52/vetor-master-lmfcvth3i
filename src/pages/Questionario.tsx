@@ -51,6 +51,7 @@ import {
   nomePilares,
   simNaoOpcoes,
   formatoInteresseOpcoes,
+  BLOCO_ABERTURA_DOSSIE_ESTRATEGICO,
   BLOCO_DOCUMENTACAO_FINAL,
   type Setor,
   type PerguntaItemLiteral,
@@ -1050,6 +1051,23 @@ export default function Questionario() {
           </CardHeader>
 
           <CardContent className="pt-6">
+            {/* Bloco de Abertura do Dossiê Estratégico nas etapas 2 a 12 (literais do PDF) */}
+            {etapaAtual >= 2 && etapaAtual <= 12 && (
+              <div className="mb-6 p-4 sm:p-5 rounded-[4px] bg-[#111A2E] border border-[#5B9DFF]/40 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/40 text-[10px] sm:text-xs font-semibold tracking-wide">
+                    {BLOCO_ABERTURA_DOSSIE_ESTRATEGICO.avisoCaixaAlta}
+                  </Badge>
+                </div>
+                <p className="text-xs sm:text-sm text-[#F8FAFC] leading-relaxed">
+                  {BLOCO_ABERTURA_DOSSIE_ESTRATEGICO.paragrafo1}.
+                </p>
+                <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                  {BLOCO_ABERTURA_DOSSIE_ESTRATEGICO.paragrafo2}
+                </p>
+              </div>
+            )}
+
             {/* ETAPA 1: SETOR DE ATUAÇÃO (Card FECHADO igual ao do site, sem textos próprios de metas/soluções) */}
             {etapaAtual === 1 && (
               <div className="space-y-6">
