@@ -74,8 +74,8 @@ import {
  *   08: Seção 6 — Saúde Econômico-Financeira (Buffett) (6.1 a 6.6 / 6.10 literal)
  *   09: Seção 7 — Expectativas e Ambição (7.1 a 7.5 literal)
  *   10: Seção 8 — Inovação e Tecnologia (8.1 a 8.7 / 8.9 literal)
- *   11: Bloco de Documentação Adicional e Anexos (Páginas 44 e 45 do PDF)
- *   12: Seção 9 — Próximos Passos & Devolutiva Executiva (9.1 a 9.4 literal)
+ *   11: Seção 9 — Próximos Passos & Devolutiva Executiva (9.1 a 9.4 literal)
+ *   12: Bloco de Documentação Adicional e Anexos (Páginas 44 e 45 do PDF) com submissão final
  */
 
 interface EtapaInfo {
