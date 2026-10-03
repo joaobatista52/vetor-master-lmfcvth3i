@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { ArrowRight, Sparkles, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowRight, Sparkles, CheckCircle2, ChevronDown, ChevronUp, X } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,13 +26,36 @@ export default function InstitucionalVendedora() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [setorAbertoId, setSetorAbertoId] = useState<string>('saude')
+  const caixaRef = useRef<HTMLDivElement | null>(null)
 
   const loginOrAppPath = isAuthenticated ? '/app' : '/login'
   const loginButtonLabel = isAuthenticated ? 'Acessar Plataforma' : 'Entrar'
 
-  const toggleSetor = (id: string) => {
-    setSetorAbertoId((atual) => (atual === id ? '' : id))
+  const rolarParaCaixa = () => {
+    // Pequeno timeout para garantir que o DOM renderizou a caixa (se estava fechada ou trocou)
+    setTimeout(() => {
+      if (caixaRef.current) {
+        const navbarHeight = 80 // header h-20 = 80px
+        const rect = caixaRef.current.getBoundingClientRect()
+        const targetY = window.pageYOffset + rect.top - navbarHeight - 24 // 24px de respiro visual
+        window.scrollTo({
+          top: Math.max(0, targetY),
+          behavior: 'smooth',
+        })
+      }
+    }, 50)
   }
+
+  const toggleSetor = (id: string) => {
+    if (setorAbertoId === id) {
+      setSetorAbertoId('')
+    } else {
+      setSetorAbertoId(id)
+      rolarParaCaixa()
+    }
+  }
+
+  const setorSelecionado = SETORES_CANONICOS_12.find((s) => s.id === setorAbertoId)
 
   return (
     <div className="min-h-screen bg-[#0B1120] text-[#F8FAFC] selection:bg-[#0066CC] selection:text-white">
@@ -322,22 +345,39 @@ export default function InstitucionalVendedora() {
             </p>
           </div>
 
+          {/* Grade fixa de 12 cards fechados — intacta, sem expansão inline */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {SETORES_CANONICOS_12.map((setor) => {
               const isAberto = setorAbertoId === setor.id
               return (
                 <div
                   key={setor.numero}
-                  className="rounded-[4px] border bg-[#16213A] border-[#24334F] hover:border-[#5B9DFF]/40 transition-all duration-200 flex flex-col justify-between"
+                  onClick={() => toggleSetor(setor.id)}
+                  className={`rounded-[4px] border bg-[#16213A] transition-all duration-200 flex flex-col justify-between cursor-pointer select-none ${
+                    isAberto
+                      ? 'border-[#5B9DFF] ring-1 ring-[#5B9DFF]/40 shadow-lg shadow-[#0066CC]/10'
+                      : 'border-[#24334F] hover:border-[#5B9DFF]/60 hover:bg-[#1B2742]'
+                  }`}
                 >
                   <div className="p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-bold text-[#5B9DFF] bg-[#111A2E] px-2 py-0.5 rounded-[3px] border border-[#24334F]">
+                        <span
+                          className={`font-mono text-sm font-bold px-2 py-0.5 rounded-[3px] border transition-colors ${
+                            isAberto
+                              ? 'text-white bg-[#0066CC] border-[#5B9DFF]'
+                              : 'text-[#5B9DFF] bg-[#111A2E] border-[#24334F]'
+                          }`}
+                        >
                           {setor.numero}
                         </span>
                         <h3 className="font-bold text-base text-[#F8FAFC]">{setor.nome}</h3>
                       </div>
+                      {isAberto && (
+                        <span className="text-[10px] font-semibold text-[#5B9DFF] uppercase tracking-wider bg-[#5B9DFF]/10 px-2 py-0.5 rounded-[3px] border border-[#5B9DFF]/30">
+                          Aberto abaixo
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -351,84 +391,26 @@ export default function InstitucionalVendedora() {
                       ))}
                     </div>
 
-                    <div className="pt-2">
-                      {!isAberto ? (
-                        <div className="space-y-2.5">
-                          <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                            {setor.subsegmentosLinha}
-                          </p>
-                          <div className="text-[11px] font-medium text-[#3DDC74] pt-1 border-t border-[#24334F]/60">
-                            {setor.linhaSla}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-4 animate-fade-in bg-[#111A2E]/90 p-3.5 rounded-[4px] border border-[#24334F]">
-                          {/* Identificação e Linha de SLA */}
-                          <div className="border-b border-[#24334F] pb-2">
-                            <span className="font-mono text-[10px] font-bold text-[#5B9DFF] tracking-wider uppercase block">
-                              SETOR {setor.numero} · {setor.nome.toUpperCase()}
-                            </span>
-                            <span className="text-[11px] font-medium text-[#3DDC74] block mt-0.5">
-                              {setor.linhaSla}
-                            </span>
-                          </div>
-
-                          {/* Descrição introdutória do setor */}
-                          <div>
-                            <h4 className="text-sm font-bold text-[#F8FAFC] mb-1">{setor.nome}</h4>
-                            <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                              {setor.descricaoIntro}
-                            </p>
-                          </div>
-
-                          {/* Gargalo Crítico Típico */}
-                          <div className="space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-[#FFB84D] tracking-wider block">
-                              Gargalo Crítico Típico
-                            </span>
-                            <p className="text-xs text-[#C7D0E0] leading-relaxed bg-[#16213A] p-2.5 rounded-[3px] border border-[#24334F]">
-                              {setor.gargaloCritico}
-                            </p>
-                          </div>
-
-                          {/* Alavanca Determinística VETOR MASTER */}
-                          <div className="space-y-1">
-                            <span className="text-[10px] uppercase font-bold text-[#5B9DFF] tracking-wider block">
-                              Alavanca Determinística VETOR MASTER
-                            </span>
-                            <p className="text-xs text-[#C7D0E0] leading-relaxed bg-[#16213A] p-2.5 rounded-[3px] border border-[#24334F]">
-                              {setor.alavancaDeterministica}
-                            </p>
-                          </div>
-
-                          {/* Bloco Pronto para destravar o setor de [Setor]? */}
-                          <div className="space-y-2.5 pt-2 border-t border-[#24334F]">
-                            <h5 className="text-xs font-bold text-[#F8FAFC]">
-                              {setor.blocoDestravarTitulo}
-                            </h5>
-                            <p className="text-xs text-[#C7D0E0] leading-relaxed">
-                              {setor.blocoDestravarTexto}
-                            </p>
-                            <Button
-                              size="sm"
-                              asChild
-                              className="w-full bg-[#0066CC] hover:bg-[#22B14C] text-white text-xs font-semibold rounded-[4px] py-2 mt-1 shadow-sm transition-all"
-                            >
-                              <Link to={setor.questionarioPath}>{setor.botaoDestravarTexto}</Link>
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+                    <div className="pt-2 space-y-2.5">
+                      <p className="text-xs text-[#C7D0E0] leading-relaxed">
+                        {setor.subsegmentosLinha}
+                      </p>
+                      <div className="text-[11px] font-medium text-[#3DDC74] pt-1 border-t border-[#24334F]/60">
+                        {setor.linhaSla}
+                      </div>
                     </div>
                   </div>
 
                   <div className="p-4 pt-0 border-t border-[#24334F]/60 flex items-center justify-between text-xs mt-3">
                     <button
                       type="button"
-                      onClick={() => toggleSetor(setor.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleSetor(setor.id)
+                      }}
                       className="text-[#5B9DFF] hover:text-[#F8FAFC] font-medium flex items-center gap-1 focus:outline-none"
                     >
-                      <span>{isAberto ? 'Ver menos' : 'Ver setor completo'}</span>
+                      <span>{isAberto ? 'Fechar setor' : 'Ver setor completo'}</span>
                       {isAberto ? (
                         <ChevronUp className="w-3.5 h-3.5" />
                       ) : (
@@ -439,6 +421,7 @@ export default function InstitucionalVendedora() {
                       size="sm"
                       variant="ghost"
                       asChild
+                      onClick={(e) => e.stopPropagation()}
                       className="h-7 text-xs text-[#C7D0E0] hover:text-white hover:bg-[#1B2742] p-1.5 rounded-[3px]"
                     >
                       <Link to={setor.questionarioPath}>Diagnosticar →</Link>
@@ -448,6 +431,100 @@ export default function InstitucionalVendedora() {
               )
             })}
           </div>
+
+          {/* CAIXA EXCLUSIVA posicionada logo após a última linha de cards, em largura total */}
+          {setorSelecionado && (
+            <div
+              ref={caixaRef}
+              className="scroll-mt-28 rounded-[6px] bg-[#111A2E] border-2 border-[#5B9DFF] shadow-2xl ring-1 ring-[#5B9DFF]/30 p-6 md:p-8 space-y-6 relative animate-fade-in transition-all"
+            >
+              {/* Botão de Fechar (X) no canto superior */}
+              <button
+                type="button"
+                onClick={() => setSetorAbertoId('')}
+                aria-label="Fechar detalhes do setor"
+                className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-[4px] bg-[#16213A] text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#1B2742] border border-[#24334F] transition-all focus:outline-none focus:ring-2 focus:ring-[#5B9DFF]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Cabeçalho: Identificação SETOR XX · NOME e Linha SLA */}
+              <div className="border-b border-[#24334F] pb-4 pr-12">
+                <span className="font-mono text-xs md:text-sm font-bold text-[#5B9DFF] tracking-wider uppercase block">
+                  SETOR {setorSelecionado.numero} · {setorSelecionado.nome.toUpperCase()}
+                </span>
+                <span className="text-xs md:text-sm font-medium text-[#3DDC74] block mt-1">
+                  {setorSelecionado.linhaSla}
+                </span>
+              </div>
+
+              {/* Descrição introdutória do setor */}
+              <div className="space-y-1.5">
+                <h3 className="text-lg md:text-xl font-bold text-[#F8FAFC] font-heading">
+                  {setorSelecionado.nome}
+                </h3>
+                <p className="text-sm md:text-base text-[#C7D0E0] leading-relaxed">
+                  {setorSelecionado.descricaoIntro}
+                </p>
+              </div>
+
+              {/* Grid 2 colunas para Gargalo Crítico Típico e Alavanca Determinística */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                {/* Gargalo Crítico Típico */}
+                <div className="space-y-2 bg-[#16213A] p-4 md:p-5 rounded-[4px] border border-[#24334F] flex flex-col justify-start">
+                  <span className="text-xs uppercase font-bold text-[#FFB84D] tracking-wider block">
+                    Gargalo Crítico Típico
+                  </span>
+                  <p className="text-xs md:text-sm text-[#C7D0E0] leading-relaxed">
+                    {setorSelecionado.gargaloCritico}
+                  </p>
+                </div>
+
+                {/* Alavanca Determinística VETOR MASTER */}
+                <div className="space-y-2 bg-[#16213A] p-4 md:p-5 rounded-[4px] border border-[#24334F] flex flex-col justify-start">
+                  <span className="text-xs uppercase font-bold text-[#5B9DFF] tracking-wider block">
+                    Alavanca Determinística VETOR MASTER
+                  </span>
+                  <p className="text-xs md:text-sm text-[#C7D0E0] leading-relaxed">
+                    {setorSelecionado.alavancaDeterministica}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bloco Pronto para destravar o setor de [Setor]? */}
+              <div className="space-y-3 pt-4 border-t border-[#24334F]">
+                <h4 className="text-sm md:text-base font-bold text-[#F8FAFC] font-heading">
+                  {setorSelecionado.blocoDestravarTitulo}
+                </h4>
+                <p className="text-xs md:text-sm text-[#C7D0E0] leading-relaxed max-w-4xl">
+                  {setorSelecionado.blocoDestravarTexto}
+                </p>
+                <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <Button
+                    size="lg"
+                    asChild
+                    className="bg-[#0066CC] hover:bg-[#22B14C] text-white text-xs md:text-sm font-semibold rounded-[4px] px-6 py-5 shadow-lg shadow-[#0066CC]/20 transition-all"
+                  >
+                    <Link
+                      to={setorSelecionado.questionarioPath}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <span>{setorSelecionado.botaoDestravarTexto}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    onClick={() => setSetorAbertoId('')}
+                    className="text-[#8B98B4] hover:text-[#F8FAFC] hover:bg-[#16213A] text-xs font-medium rounded-[4px]"
+                  >
+                    Recolher caixa
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
