@@ -163,11 +163,21 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       const protocolo = item.protocolo || '#VM-' + siteId
 
       let localRecord = null
+      let isTest = false
       try {
         localRecord = $app.findFirstRecordByData('leads', 'site_lead_id', siteId)
+        if (localRecord && (localRecord.get('status') || '').toString().toLowerCase() === 'teste') {
+          isTest = true
+        }
       } catch (_) {
         try {
           localRecord = $app.findFirstRecordByData('leads', 'protocolo', protocolo)
+          if (
+            localRecord &&
+            (localRecord.get('status') || '').toString().toLowerCase() === 'teste'
+          ) {
+            isTest = true
+          }
         } catch (_) {}
       }
 
@@ -179,7 +189,12 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       rec.set('protocolo', protocolo)
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
-      rec.set('status', item.status || 'Novo')
+      // Se já for lead existente marcado como 'teste', preservar o status 'teste'
+      if (isTest) {
+        rec.set('status', 'teste')
+      } else {
+        rec.set('status', item.status || 'novo')
+      }
       rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
       rec.set('formato_interesse', item.formato_interesse || '')
       rec.set(
@@ -438,11 +453,18 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     const protocolo = item.protocolo || '#VM-' + siteId
 
     let localRecord = null
+    let isTest = false
     try {
       localRecord = $app.findFirstRecordByData('leads', 'site_lead_id', siteId)
+      if (localRecord && (localRecord.get('status') || '').toString().toLowerCase() === 'teste') {
+        isTest = true
+      }
     } catch (_) {
       try {
         localRecord = $app.findFirstRecordByData('leads', 'protocolo', protocolo)
+        if (localRecord && (localRecord.get('status') || '').toString().toLowerCase() === 'teste') {
+          isTest = true
+        }
       } catch (_) {}
     }
 
@@ -454,7 +476,12 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     rec.set('protocolo', protocolo)
     rec.set('origem', item.origem || 'Site Institucional')
     rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
-    rec.set('status', item.status || 'Novo')
+    // Se já for lead existente marcado como 'teste', preservar o status 'teste'
+    if (isTest) {
+      rec.set('status', 'teste')
+    } else {
+      rec.set('status', item.status || 'novo')
+    }
     rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
     rec.set('formato_interesse', item.formato_interesse || '')
     rec.set(
@@ -701,11 +728,21 @@ routerAdd(
       const protocolo = item.protocolo || '#VM-' + siteId
 
       let localRecord = null
+      let isTest = false
       try {
         localRecord = $app.findFirstRecordByData('leads', 'site_lead_id', siteId)
+        if (localRecord && (localRecord.get('status') || '').toString().toLowerCase() === 'teste') {
+          isTest = true
+        }
       } catch (_) {
         try {
           localRecord = $app.findFirstRecordByData('leads', 'protocolo', protocolo)
+          if (
+            localRecord &&
+            (localRecord.get('status') || '').toString().toLowerCase() === 'teste'
+          ) {
+            isTest = true
+          }
         } catch (_) {}
       }
 
@@ -715,7 +752,12 @@ routerAdd(
       rec.set('protocolo', protocolo)
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
-      rec.set('status', item.status || 'Novo')
+      // Se já for lead existente marcado como 'teste', preservar o status 'teste'
+      if (isTest) {
+        rec.set('status', 'teste')
+      } else {
+        rec.set('status', item.status || 'novo')
+      }
       rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
       rec.set('formato_interesse', item.formato_interesse || '')
       rec.set('nome_completo', item.nome_completo || item.respondente || '')

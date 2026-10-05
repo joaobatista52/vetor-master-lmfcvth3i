@@ -13,6 +13,10 @@ import {
   ExternalLink,
   ShieldCheck,
   Send,
+  MoreVertical,
+  FlaskConical,
+  RotateCcw,
+  Filter,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -28,10 +32,18 @@ import {
 } from '@/components/ui/table'
 import { useRealtime } from '@/hooks/use-realtime'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   getLeadsList,
   getIntegracaoSiteConfig,
   dispararSincronizacaoSite,
   dispararTesteE2E,
+  updateLeadStatus,
   type LeadRecord,
   type IntegracaoSiteConfig,
   type SyncResult,
@@ -44,7 +56,9 @@ export default function AdminLeads() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [testingE2E, setTestingE2E] = useState(false)
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'ativos' | 'todos' | 'teste' | 'novo'>('ativos')
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [credConfig, setCredConfig] = useState<IntegracaoSiteConfig | null>(null)
@@ -144,7 +158,44 @@ export default function AdminLeads() {
     }
   }
 
+  // Alteração de status (Marcar como teste / Reativar)
+  const handleSetStatus = async (lead: LeadRecord, newStatus: string) => {
+    setActionLoadingId(lead.id)
+    setFeedback(null)
+    try {
+      await updateLeadStatus(lead.id, newStatus)
+      setFeedback({
+        type: 'success',
+        message: `Lead ${lead.razao_social || lead.protocolo} atualizado para status '${newStatus}'.`,
+      })
+      await loadLeads()
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: err?.message || `Erro ao atualizar status do lead para '${newStatus}'.`,
+      })
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const countTestLeads = leads.filter((l) => (l.status || '').toLowerCase() === 'teste').length
+  const countRealLeads = leads.length - countTestLeads
+
   const filteredLeads = leads.filter((lead) => {
+    const statusNormalized = (lead.status || '').toLowerCase()
+
+    // Filtro por status
+    if (statusFilter === 'ativos' && statusNormalized === 'teste') {
+      return false
+    }
+    if (statusFilter === 'teste' && statusNormalized !== 'teste') {
+      return false
+    }
+    if (statusFilter === 'novo' && statusNormalized !== 'novo') {
+      return false
+    }
+
     const q = searchTerm.toLowerCase()
     return (
       (lead.protocolo || '').toLowerCase().includes(q) ||
@@ -340,24 +391,74 @@ export default function AdminLeads() {
       {/* Tabela de Leads */}
       <Card className="bg-[#16213A] border-[#24334F]">
         <CardHeader className="border-b border-[#24334F] pb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
-              <CardTitle className="text-base font-bold text-[#F8FAFC]">
-                Listagem de Sessões & Leads Sincronizados
-              </CardTitle>
-              <CardDescription className="text-xs text-[#8B98B4]">
-                Clique em &quot;Ver Respostas&quot; para auditar o dossiê e questionário completo do
-                lead
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base font-bold text-[#F8FAFC]">
+                  Listagem de Sessões & Leads Sincronizados
+                </CardTitle>
+                <span className="text-xs text-[#8B98B4]">
+                  ({filteredLeads.length} exibidos de {leads.length})
+                </span>
+              </div>
+              <CardDescription className="text-xs text-[#8B98B4] mt-0.5">
+                Clique em &quot;Ver Respostas&quot; para auditar o dossiê completo. Use o menu de
+                ações para marcar como teste ou reativar.
               </CardDescription>
             </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#8B98B4]" />
-              <Input
-                placeholder="Buscar por nome, empresa, protocolo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-[#0B1120] border-[#24334F] text-xs text-[#F8FAFC] rounded-[4px] h-9"
-              />
+
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              {/* Filtro por status */}
+              <div className="flex items-center bg-[#0B1120] p-1 rounded-[4px] border border-[#24334F] text-xs">
+                <Filter className="w-3.5 h-3.5 text-[#8B98B4] ml-2 mr-1" />
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('ativos')}
+                  className={`px-2.5 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'ativos'
+                      ? 'bg-[#0066CC] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Oculta leads com status teste (padrão)"
+                >
+                  Ativos ({countRealLeads})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('todos')}
+                  className={`px-2.5 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'todos'
+                      ? 'bg-[#0066CC] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Exibir todos incluindo leads de teste"
+                >
+                  Todos ({leads.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('teste')}
+                  className={`px-2.5 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'teste'
+                      ? 'bg-[#64748B] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Apenas leads de teste"
+                >
+                  Testes ({countTestLeads})
+                </button>
+              </div>
+
+              {/* Busca */}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#8B98B4]" />
+                <Input
+                  placeholder="Buscar por nome, empresa, protocolo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-[#0B1120] border-[#24334F] text-xs text-[#F8FAFC] rounded-[4px] h-9"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -440,16 +541,29 @@ export default function AdminLeads() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            lead.status === 'Novo'
-                              ? 'border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px]'
-                              : 'border-[#8B98B4] text-[#C7D0E0] text-[10px]'
-                          }
-                        >
-                          {lead.status}
-                        </Badge>
+                        {(lead.status || '').toLowerCase() === 'teste' ? (
+                          <Badge
+                            variant="outline"
+                            className="border-slate-500/60 text-slate-300 bg-slate-700/40 text-[10px] font-semibold gap-1"
+                          >
+                            <FlaskConical className="w-3 h-3 text-slate-400" />
+                            <span>Teste</span>
+                          </Badge>
+                        ) : (lead.status || '').toLowerCase() === 'novo' ? (
+                          <Badge
+                            variant="outline"
+                            className="border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px] font-semibold"
+                          >
+                            Novo
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="border-[#8B98B4] text-[#C7D0E0] text-[10px]"
+                          >
+                            {lead.status}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-xs text-[#8B98B4] whitespace-nowrap">
                         {lead.synced_at
@@ -457,18 +571,71 @@ export default function AdminLeads() {
                           : new Date(lead.created).toLocaleString('pt-BR')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedLead(lead)
-                            setDialogOpen(true)
-                          }}
-                          className="border-[#24334F] bg-[#0B1120] text-[#5B9DFF] hover:bg-[#0066CC] hover:text-white rounded-[4px] text-xs h-8 gap-1.5"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Ver Respostas</span>
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedLead(lead)
+                              setDialogOpen(true)
+                            }}
+                            className="border-[#24334F] bg-[#0B1120] text-[#5B9DFF] hover:bg-[#0066CC] hover:text-white rounded-[4px] text-xs h-8 gap-1.5"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ver Respostas</span>
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={actionLoadingId === lead.id}
+                                className="border-[#24334F] bg-[#0B1120] text-[#8B98B4] hover:text-white hover:bg-[#16213A] rounded-[4px] h-8 w-8 p-0"
+                                title="Ações do Lead"
+                              >
+                                {actionLoadingId === lead.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#5B9DFF]" />
+                                ) : (
+                                  <MoreVertical className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="bg-[#111A2E] border-[#24334F] text-[#F8FAFC] text-xs min-w-[170px]"
+                            >
+                              {(lead.status || '').toLowerCase() === 'teste' ? (
+                                <DropdownMenuItem
+                                  onClick={() => handleSetStatus(lead, 'novo')}
+                                  className="gap-2 cursor-pointer text-[#3DDC74] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#3DDC74]"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5 text-[#3DDC74]" />
+                                  <span>Reativar (voltar a Novo)</span>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => handleSetStatus(lead, 'teste')}
+                                  className="gap-2 cursor-pointer text-[#FFB84D] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#FFB84D]"
+                                >
+                                  <FlaskConical className="w-3.5 h-3.5 text-[#FFB84D]" />
+                                  <span>Marcar como teste</span>
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator className="bg-[#24334F]" />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedLead(lead)
+                                  setDialogOpen(true)
+                                }}
+                                className="gap-2 cursor-pointer text-[#5B9DFF] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#5B9DFF]"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-[#5B9DFF]" />
+                                <span>Ver detalhes completos</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

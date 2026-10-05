@@ -50,16 +50,25 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                 <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border border-[#5B9DFF]/40 font-mono text-xs">
                   {lead.protocolo}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className={
-                    lead.status === 'Novo'
-                      ? 'border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10'
-                      : 'border-[#8B98B4] text-[#C7D0E0]'
-                  }
-                >
-                  {lead.status}
-                </Badge>
+                {(lead.status || '').toLowerCase() === 'teste' ? (
+                  <Badge
+                    variant="outline"
+                    className="border-slate-500/60 text-slate-300 bg-slate-700/40 text-xs font-semibold gap-1"
+                  >
+                    <span>Teste</span>
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className={
+                      (lead.status || '').toLowerCase() === 'novo'
+                        ? 'border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-xs'
+                        : 'border-[#8B98B4] text-[#C7D0E0] text-xs'
+                    }
+                  >
+                    {lead.status}
+                  </Badge>
+                )}
                 {lead.origem && (
                   <Badge className="bg-[#FF9900]/20 text-[#FFB84D] border border-[#FF9900]/40 text-xs">
                     {lead.origem}

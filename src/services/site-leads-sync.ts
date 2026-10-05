@@ -80,6 +80,16 @@ export async function getLeadById(id: string): Promise<LeadRecord | null> {
   }
 }
 
+export async function updateLeadStatus(id: string, status: string): Promise<LeadRecord | null> {
+  try {
+    const updated = await pb.collection('leads').update<LeadRecord>(id, { status })
+    return updated
+  } catch (err) {
+    console.error('Falha ao atualizar status do lead:', err)
+    throw err
+  }
+}
+
 export async function dispararSincronizacaoSite(): Promise<SyncResult> {
   try {
     const res = await pb.send<SyncResult>('/backend/v1/sync/leads', {
