@@ -218,9 +218,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
   if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
   const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-  const sitePassword =
-    $os.getenv('SITE_SYNC_PASSWORD') ||
-    'VmApp#2026@SecureAccess!'
+  const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || 'VmApp#2026@SecureAccess!'
   if (!sitePassword) {
     return e.json(500, {
       success: false,
@@ -407,9 +405,7 @@ routerAdd(
       'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
     if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
     const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-    const sitePassword =
-      $os.getenv('SITE_SYNC_PASSWORD') ||
-      'VmApp#2026@SecureAccess!'
+    const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || 'VmApp#2026@SecureAccess!'
 
     if (!sitePassword) {
       return e.json(500, {
@@ -799,9 +795,7 @@ routerAdd(
       'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
     if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
     const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-    const sitePassword =
-      $os.getenv('SITE_SYNC_PASSWORD') ||
-      'VmApp#2026@SecureAccess!'
+    const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || 'VmApp#2026@SecureAccess!'
 
     // 1. Autenticar no site institucional
     const authRes = $http.send({
