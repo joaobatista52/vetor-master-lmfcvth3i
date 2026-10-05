@@ -1,55 +1,39 @@
 // Sincronização automática e sob demanda da coleção 'leads' do Site Institucional para o App
-// Frequência do cron: a cada 5 minutos ("*/5 * * * *")
+// Frequência do cron: a cada minuto ("* * * * *")
 // Endpoint manual sob demanda: POST /backend/v1/sync/leads (Requer Admin)
 // Endpoint de teste/criação ponta-a-ponta: POST /backend/v1/sync/test-e2e (Requer Admin)
 
 cronAdd('sync_site_leads_cron', '* * * * *', () => {
   try {
-    let siteUrl =
-      $os.getenv('SITE_BACKEND_URL') ||
-      'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
-    if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
-    const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+    let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    if (!siteUrl) {
+      try {
+        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+      } catch (_) {}
+    }
+    if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
 
-    let secretsPwd = ''
-    try {
-      secretsPwd = $secrets.get('SITE_SYNC_PASSWORD') || ''
-    } catch (_) {}
-    if (!sitePassword && secretsPwd) {
-      sitePassword = secretsPwd
+    let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (!siteEmail) {
+      try {
+        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+      } catch (_) {}
     }
 
-    let osAllKeys = ''
-    try {
-      // test what is visible
-      osAllKeys =
-        'osHasPwd=' +
-        Boolean($os.getenv('SITE_SYNC_PASSWORD')) +
-        ' secHasPwd=' +
-        Boolean(secretsPwd)
-    } catch (_) {}
-
-    try {
-      const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
-      let adminUser = null
-      try {
-        adminUser = $app.findFirstRecordByData('users', 'role', 'admin')
-      } catch (_) {}
-      if (adminUser) {
-        const l = new Record(logsCol)
-        l.set('user', adminUser.id)
-        l.set('action', 'Cron Debug')
-        l.set('resource', 'leads')
-        l.set(
-          'details',
-          'Cron tick: ' + osAllKeys + ' siteUrl=' + siteUrl + ' siteEmail=' + siteEmail,
-        )
-        $app.save(l)
-      }
-    } catch (_) {}
-
+    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
     if (!sitePassword) {
+      try {
+        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+      } catch (_) {}
+    }
+
+    // Validação estrita dos secrets: sem credenciais configuradas, aborta e registra nos logs
+    if (!siteUrl || !siteEmail || !sitePassword) {
+      $app
+        .logger()
+        .warn(
+          'sync_site_leads_cron abortado: secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes.',
+        )
       return
     }
 
@@ -94,9 +78,9 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
     const token = authRes.json.token
 
-    // 2. Buscar leads do site institucional (últimos 50 por página ordenados por criação)
+    // 2. Buscar leads do site institucional (coleção completa de leads)
     const leadsRes = $http.send({
-      url: siteUrl + '/api/collections/leads/records?perPage=50&sort=-created',
+      url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
       method: 'GET',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -181,7 +165,7 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       }
     }
 
-    // Se houve novos leads sincronizados, registrar nos Logs de Auditoria
+    // Se houve novos leads sincronizados ou atualizados, registrar nos Logs de Auditoria
     if (novosLeads > 0 || atualizadosLeads > 0) {
       try {
         const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
@@ -196,11 +180,13 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
           syncLog.set('resource', 'leads')
           syncLog.set(
             'details',
-            'Cron a cada 5 min: ' +
+            'Cron automático: ' +
               novosLeads +
               ' novo(s) lead(s) importado(s), ' +
               atualizadosLeads +
-              ' atualizado(s) do site institucional.',
+              ' atualizado(s) do site institucional (' +
+              remoteItems.length +
+              ' processados).',
           )
           $app.save(syncLog)
         }
@@ -213,16 +199,56 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
 // Endpoint manual de sincronização sob demanda (Admin)
 routerAdd('POST', '/backend/v1/sync/leads', (e) => {
-  let siteUrl =
-    $os.getenv('SITE_BACKEND_URL') ||
-    'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
-  if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
-  const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-  const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || 'VmApp#2026@SecureAccess!'
+  let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+  if (!siteUrl) {
+    try {
+      siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+    } catch (_) {}
+  }
+  if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
+
+  let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+  if (!siteEmail) {
+    try {
+      siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+    } catch (_) {}
+  }
+
+  let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
   if (!sitePassword) {
+    try {
+      sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+    } catch (_) {}
+  }
+
+  const authUser = e.requestInfo ? e.requestInfo().auth : null
+  let adminUserId = authUser ? authUser.id : null
+  if (!adminUserId) {
+    try {
+      const u = $app.findFirstRecordByData('users', 'role', 'admin')
+      adminUserId = u.id
+    } catch (_) {}
+  }
+
+  if (!siteUrl || !siteEmail || !sitePassword) {
+    if (adminUserId) {
+      try {
+        const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+        const errLog = new Record(logsCol)
+        errLog.set('user', adminUserId)
+        errLog.set('action', 'Erro Sincronização Site')
+        errLog.set('resource', 'leads')
+        errLog.set(
+          'details',
+          'Abortado: secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+        )
+        $app.save(errLog)
+      } catch (_) {}
+    }
     return e.json(500, {
       success: false,
-      message: 'Credenciais de sincronização SITE_SYNC_PASSWORD não configuradas no app.',
+      message:
+        'Credenciais de sincronização (SITE_BACKEND_URL, SITE_SYNC_EMAIL, SITE_SYNC_PASSWORD) não configuradas no app.',
     })
   }
 
@@ -237,15 +263,6 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     }),
     timeout: 20,
   })
-
-  const authUser = e.requestInfo ? e.requestInfo().auth : null
-  let adminUserId = authUser ? authUser.id : null
-  if (!adminUserId) {
-    try {
-      const u = $app.findFirstRecordByData('users', 'role', 'admin')
-      adminUserId = u.id
-    } catch (_) {}
-  }
 
   if (authRes.statusCode !== 200) {
     if (adminUserId) {
@@ -278,7 +295,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
 
   // 2. Buscar leads do site institucional
   const leadsRes = $http.send({
-    url: siteUrl + '/api/collections/leads/records?perPage=100&sort=-created',
+    url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
     method: 'GET',
     headers: {
       Authorization: 'Bearer ' + token,
@@ -400,14 +417,46 @@ routerAdd(
   'POST',
   '/backend/v1/sync/leads-admin-only',
   (e) => {
-    let siteUrl =
-      $os.getenv('SITE_BACKEND_URL') ||
-      'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
-    if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
-    const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-    const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || 'VmApp#2026@SecureAccess!'
+    let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    if (!siteUrl) {
+      try {
+        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+      } catch (_) {}
+    }
+    if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
 
+    let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (!siteEmail) {
+      try {
+        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+      } catch (_) {}
+    }
+
+    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
     if (!sitePassword) {
+      try {
+        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+      } catch (_) {}
+    }
+
+    const authUser = e.requestInfo ? e.requestInfo().auth : null
+    const adminUserId = authUser ? authUser.id : null
+
+    if (!siteUrl || !siteEmail || !sitePassword) {
+      if (adminUserId) {
+        try {
+          const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+          const errLog = new Record(logsCol)
+          errLog.set('user', adminUserId)
+          errLog.set('action', 'Erro Sincronização Site')
+          errLog.set('resource', 'leads')
+          errLog.set(
+            'details',
+            'Abortado: secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+          )
+          $app.save(errLog)
+        } catch (_) {}
+      }
       return e.json(500, {
         success: false,
         message: 'Credenciais de sincronização SITE_SYNC_PASSWORD não configuradas no app.',
@@ -425,9 +474,6 @@ routerAdd(
       }),
       timeout: 20,
     })
-
-    const authUser = e.requestInfo ? e.requestInfo().auth : null
-    const adminUserId = authUser ? authUser.id : null
 
     if (authRes.statusCode !== 200) {
       if (adminUserId) {
@@ -462,7 +508,7 @@ routerAdd(
 
     // 2. Buscar leads do site institucional
     const leadsRes = $http.send({
-      url: siteUrl + '/api/collections/leads/records?perPage=100&sort=-created',
+      url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
       method: 'GET',
       headers: {
         Authorization: 'Bearer ' + token,
@@ -584,12 +630,35 @@ routerAdd(
 
 // Endpoint para criação de lead de teste ponta-a-ponta no site institucional e sincronização imediata
 routerAdd('POST', '/backend/v1/sync/test-e2e-open', (e) => {
-  let siteUrl =
-    $os.getenv('SITE_BACKEND_URL') ||
-    'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
-  if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
-  const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-  const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+  let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+  if (!siteUrl) {
+    try {
+      siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+    } catch (_) {}
+  }
+  if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
+
+  let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+  if (!siteEmail) {
+    try {
+      siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+    } catch (_) {}
+  }
+
+  let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+  if (!sitePassword) {
+    try {
+      sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+    } catch (_) {}
+  }
+
+  if (!siteUrl || !siteEmail || !sitePassword) {
+    return e.json(500, {
+      success: false,
+      message:
+        'Secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+    })
+  }
 
   // 1. Autenticar no site institucional
   const authRes = $http.send({
@@ -790,12 +859,35 @@ routerAdd(
   'POST',
   '/backend/v1/sync/test-e2e',
   (e) => {
-    let siteUrl =
-      $os.getenv('SITE_BACKEND_URL') ||
-      'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
-    if (siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
-    const siteEmail = $os.getenv('SITE_SYNC_EMAIL') || 'app@vetormaster.com.br'
-    const sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || 'VmApp#2026@SecureAccess!'
+    let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    if (!siteUrl) {
+      try {
+        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+      } catch (_) {}
+    }
+    if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
+
+    let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (!siteEmail) {
+      try {
+        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+      } catch (_) {}
+    }
+
+    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+    if (!sitePassword) {
+      try {
+        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+      } catch (_) {}
+    }
+
+    if (!siteUrl || !siteEmail || !sitePassword) {
+      return e.json(500, {
+        success: false,
+        message:
+          'Secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+      })
+    }
 
     // 1. Autenticar no site institucional
     const authRes = $http.send({
