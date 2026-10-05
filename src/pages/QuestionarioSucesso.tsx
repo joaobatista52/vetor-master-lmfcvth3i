@@ -73,7 +73,7 @@ export default function QuestionarioSucesso() {
           <AlertCircle className="w-12 h-12 text-[#FFB84D] mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2 text-[#F8FAFC]">Diagnóstico Não Localizado</h2>
           <p className="text-xs sm:text-sm text-[#C7D0E0] mb-6">
-            Inicie seu diagnóstico gratuito agora ou importe um dossiê .json previamente preenchido.
+            Inicie seu diagnóstico estratégico gratuito preenchendo o questionário oficial.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
