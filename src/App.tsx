@@ -20,6 +20,7 @@ import AdminMetrics from './pages/AdminMetrics'
 import AdminLogsPage from './pages/AdminLogs'
 import AdminDivergenciasPage from './pages/AdminDivergencias'
 import AdminInvitesPage from './pages/AdminInvites'
+import AdminLeadsPage from './pages/AdminLeads'
 import BibliotecaProfissional from './pages/BibliotecaProfissional'
 import AreasDaEmpresa from './pages/AreasDaEmpresa'
 import NotFound from './pages/NotFound'
@@ -67,6 +68,7 @@ const App = () => (
           <Route element={<AdminRoute />}>
             <Route element={<Layout />}>
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/leads" element={<AdminLeadsPage />} />
               <Route path="/admin/dashboard" element={<AdminMetrics />} />
               <Route path="/admin/biblioteca" element={<BibliotecaProfissional />} />
               <Route path="/admin/divergencias" element={<AdminDivergenciasPage />} />

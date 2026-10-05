@@ -20,8 +20,17 @@ const ACTION_CONFIG: Record<string, { icon: typeof FilePlus; color: string; labe
 }
 
 function getActionConfig(action: string) {
-  const key = action.toLowerCase()
-  return ACTION_CONFIG[key] || { icon: History, color: 'text-muted-foreground', label: action }
+  const lower = action.toLowerCase()
+  if (lower.includes('sincroniza') || lower.includes('teste e2e')) {
+    return { icon: FilePlus, color: 'text-[#3DDC74]', label: action }
+  }
+  if (lower.includes('erro')) {
+    return { icon: FileX, color: 'text-red-500', label: action }
+  }
+  if (ACTION_CONFIG[lower]) {
+    return ACTION_CONFIG[lower]
+  }
+  return { icon: History, color: 'text-muted-foreground', label: action }
 }
 
 export default function AdminLogs() {

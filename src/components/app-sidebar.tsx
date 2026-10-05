@@ -13,6 +13,7 @@ import {
   GitCompare,
   Mail,
   StickyNote,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -55,6 +56,7 @@ const complementaryNavItems = [{ title: 'Notas do Projeto', path: '/notas', icon
 
 const adminNavItems = [
   { title: 'Painel Geral', path: '/admin', icon: Shield },
+  { title: 'Leads do Site', path: '/admin/leads', icon: Users },
   { title: 'Métricas Admin', path: '/admin/dashboard', icon: LayoutDashboard },
   { title: 'Biblioteca Profissional', path: '/admin/biblioteca', icon: BookOpen },
   { title: 'Log de Divergências', path: '/admin/divergencias', icon: GitCompare },

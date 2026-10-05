@@ -75,22 +75,41 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
               </DialogDescription>
             </div>
             <div className="text-right text-xs text-[#8B98B4]">
-              <div>ID Site: <span className="font-mono text-[#5B9DFF]">{lead.site_lead_id || '—'}</span></div>
-              <div>Sincronizado: {lead.synced_at ? new Date(lead.synced_at).toLocaleString('pt-BR') : '—'}</div>
+              <div>
+                ID Site:{' '}
+                <span className="font-mono text-[#5B9DFF]">{lead.site_lead_id || '—'}</span>
+              </div>
+              <div>
+                Sincronizado:{' '}
+                {lead.synced_at ? new Date(lead.synced_at).toLocaleString('pt-BR') : '—'}
+              </div>
             </div>
           </div>
         </DialogHeader>
 
         <div className="p-6 flex-1 overflow-hidden flex flex-col">
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="flex-1 flex flex-col">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v: any) => setActiveTab(v)}
+            className="flex-1 flex flex-col"
+          >
             <TabsList className="bg-[#16213A] border border-[#24334F] text-[#8B98B4] mb-4">
-              <TabsTrigger value="geral" className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs">
+              <TabsTrigger
+                value="geral"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs"
+              >
                 Visão Geral & Contato
               </TabsTrigger>
-              <TabsTrigger value="respostas" className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs">
+              <TabsTrigger
+                value="respostas"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs"
+              >
                 Questionário & 3 Pilares
               </TabsTrigger>
-              <TabsTrigger value="bruto" className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs">
+              <TabsTrigger
+                value="bruto"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs"
+              >
                 Dossiê Completo (JSON)
               </TabsTrigger>
             </TabsList>
@@ -107,7 +126,9 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                     <CardContent className="space-y-2 text-xs">
                       <div>
                         <span className="text-[#8B98B4]">Razão Social / Nome:</span>{' '}
-                        <span className="font-medium text-[#F8FAFC]">{lead.razao_social || '—'}</span>
+                        <span className="font-medium text-[#F8FAFC]">
+                          {lead.razao_social || '—'}
+                        </span>
                       </div>
                       <div>
                         <span className="text-[#8B98B4]">CNPJ:</span>{' '}
@@ -121,7 +142,9 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                       </div>
                       <div>
                         <span className="text-[#8B98B4]">Faturamento:</span>{' '}
-                        <span className="text-[#F8FAFC]">{lead.faturamento_mensal || perfil.faturamento_anual || '—'}</span>
+                        <span className="text-[#F8FAFC]">
+                          {lead.faturamento_mensal || perfil.faturamento_anual || '—'}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
@@ -135,7 +158,9 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                     <CardContent className="space-y-2 text-xs">
                       <div>
                         <span className="text-[#8B98B4]">Nome:</span>{' '}
-                        <span className="font-medium text-[#F8FAFC]">{lead.nome_completo || '—'}</span>
+                        <span className="font-medium text-[#F8FAFC]">
+                          {lead.nome_completo || '—'}
+                        </span>
                       </div>
                       <div>
                         <span className="text-[#8B98B4]">Cargo / Função:</span>{' '}
@@ -174,7 +199,9 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                     </div>
                     <div>
                       <span className="text-[#8B98B4] block mb-1">Responsável Documentos:</span>
-                      <span className="text-[#F8FAFC] font-medium">{lead.responsavel_envio || doc.responsavel_envio || '—'}</span>
+                      <span className="text-[#F8FAFC] font-medium">
+                        {lead.responsavel_envio || doc.responsavel_envio || '—'}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -184,7 +211,8 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                 {/* 3 Pilares */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-[#FFB84D] flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" /> Diagnóstico dos 3 Pilares e Lentes Metodológicas
+                    <Sparkles className="w-4 h-4" /> Diagnóstico dos 3 Pilares e Lentes
+                    Metodológicas
                   </h4>
 
                   {/* Pilar 1 */}
@@ -195,16 +223,29 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-3 text-xs space-y-2">
-                      {pilares.pilar_1_prisao_fundador && Array.isArray(pilares.pilar_1_prisao_fundador) && pilares.pilar_1_prisao_fundador.length > 0 ? (
+                      {pilares.pilar_1_prisao_fundador &&
+                      Array.isArray(pilares.pilar_1_prisao_fundador) &&
+                      pilares.pilar_1_prisao_fundador.length > 0 ? (
                         pilares.pilar_1_prisao_fundador.map((p: any, idx: number) => (
-                          <div key={idx} className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0">
-                            <span className="font-medium text-[#C7D0E0]">{p.pergunta || p.item || `Pergunta ${idx + 1}`}: </span>
-                            <span className="text-[#3DDC74] font-semibold">{String(p.resposta || p.valor || p.nota || '—')}</span>
-                            {p.nota && p.resposta && <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>}
+                          <div
+                            key={idx}
+                            className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0"
+                          >
+                            <span className="font-medium text-[#C7D0E0]">
+                              {p.pergunta || p.item || `Pergunta ${idx + 1}`}:{' '}
+                            </span>
+                            <span className="text-[#3DDC74] font-semibold">
+                              {String(p.resposta || p.valor || p.nota || '—')}
+                            </span>
+                            {p.nota && p.resposta && (
+                              <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>
+                            )}
                           </div>
                         ))
                       ) : (
-                        <div className="text-[#8B98B4]">Nenhuma resposta detalhada registrada neste bloco.</div>
+                        <div className="text-[#8B98B4]">
+                          Nenhuma resposta detalhada registrada neste bloco.
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -217,16 +258,29 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-3 text-xs space-y-2">
-                      {pilares.pilar_2_ineficiencia_invisivel && Array.isArray(pilares.pilar_2_ineficiencia_invisivel) && pilares.pilar_2_ineficiencia_invisivel.length > 0 ? (
+                      {pilares.pilar_2_ineficiencia_invisivel &&
+                      Array.isArray(pilares.pilar_2_ineficiencia_invisivel) &&
+                      pilares.pilar_2_ineficiencia_invisivel.length > 0 ? (
                         pilares.pilar_2_ineficiencia_invisivel.map((p: any, idx: number) => (
-                          <div key={idx} className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0">
-                            <span className="font-medium text-[#C7D0E0]">{p.pergunta || p.item || `Pergunta ${idx + 1}`}: </span>
-                            <span className="text-[#3DDC74] font-semibold">{String(p.resposta || p.valor || p.nota || '—')}</span>
-                            {p.nota && p.resposta && <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>}
+                          <div
+                            key={idx}
+                            className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0"
+                          >
+                            <span className="font-medium text-[#C7D0E0]">
+                              {p.pergunta || p.item || `Pergunta ${idx + 1}`}:{' '}
+                            </span>
+                            <span className="text-[#3DDC74] font-semibold">
+                              {String(p.resposta || p.valor || p.nota || '—')}
+                            </span>
+                            {p.nota && p.resposta && (
+                              <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>
+                            )}
                           </div>
                         ))
                       ) : (
-                        <div className="text-[#8B98B4]">Nenhuma resposta detalhada registrada neste bloco.</div>
+                        <div className="text-[#8B98B4]">
+                          Nenhuma resposta detalhada registrada neste bloco.
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -239,16 +293,29 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-3 text-xs space-y-2">
-                      {pilares.pilar_3_abismo_estrategia_execucao && Array.isArray(pilares.pilar_3_abismo_estrategia_execucao) && pilares.pilar_3_abismo_estrategia_execucao.length > 0 ? (
+                      {pilares.pilar_3_abismo_estrategia_execucao &&
+                      Array.isArray(pilares.pilar_3_abismo_estrategia_execucao) &&
+                      pilares.pilar_3_abismo_estrategia_execucao.length > 0 ? (
                         pilares.pilar_3_abismo_estrategia_execucao.map((p: any, idx: number) => (
-                          <div key={idx} className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0">
-                            <span className="font-medium text-[#C7D0E0]">{p.pergunta || p.item || `Pergunta ${idx + 1}`}: </span>
-                            <span className="text-[#3DDC74] font-semibold">{String(p.resposta || p.valor || p.nota || '—')}</span>
-                            {p.nota && p.resposta && <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>}
+                          <div
+                            key={idx}
+                            className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0"
+                          >
+                            <span className="font-medium text-[#C7D0E0]">
+                              {p.pergunta || p.item || `Pergunta ${idx + 1}`}:{' '}
+                            </span>
+                            <span className="text-[#3DDC74] font-semibold">
+                              {String(p.resposta || p.valor || p.nota || '—')}
+                            </span>
+                            {p.nota && p.resposta && (
+                              <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>
+                            )}
                           </div>
                         ))
                       ) : (
-                        <div className="text-[#8B98B4]">Nenhuma resposta detalhada registrada neste bloco.</div>
+                        <div className="text-[#8B98B4]">
+                          Nenhuma resposta detalhada registrada neste bloco.
+                        </div>
                       )}
                     </CardContent>
                   </Card>

@@ -7,10 +7,18 @@ import {
   BookOpen,
   GitCompare,
   ArrowRight,
+  Users,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 const adminTools = [
+  {
+    title: 'Leads & Sessões do Site',
+    description:
+      'Acesse todos os leads do site institucional em tempo real, sem importador .json. Respostas completas do questionário.',
+    icon: Users,
+    path: '/admin/leads',
+  },
   {
     title: 'Dashboard de Métricas',
     description: 'Visualize estatísticas das notas por status e prioridade em tempo real.',
