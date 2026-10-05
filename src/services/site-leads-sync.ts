@@ -1,5 +1,16 @@
 import pb from '@/lib/pocketbase/client'
 
+export interface IntegracaoSiteConfig {
+  id: string
+  chave: string
+  site_backend_url: string
+  site_sync_email: string
+  site_sync_password?: string
+  descricao?: string
+  ativo: boolean
+  updated: string
+}
+
 export interface LeadRecord {
   id: string
   protocolo: string
@@ -98,5 +109,17 @@ export async function dispararTesteE2E(): Promise<E2ETestResult> {
       message: err?.message || 'Erro ao executar teste ponta-a-ponta.',
       error: String(err),
     }
+  }
+}
+
+export async function getIntegracaoSiteConfig(): Promise<IntegracaoSiteConfig | null> {
+  try {
+    const record = await pb
+      .collection('integracoes_site')
+      .getFirstListItem<IntegracaoSiteConfig>('chave="site_institucional_vetor_master"')
+    return record
+  } catch (err) {
+    console.error('Falha ao obter integracoes_site:', err)
+    return null
   }
 }

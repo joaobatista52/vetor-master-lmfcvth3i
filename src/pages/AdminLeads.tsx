@@ -29,9 +29,11 @@ import {
 import { useRealtime } from '@/hooks/use-realtime'
 import {
   getLeadsList,
+  getIntegracaoSiteConfig,
   dispararSincronizacaoSite,
   dispararTesteE2E,
   type LeadRecord,
+  type IntegracaoSiteConfig,
   type SyncResult,
   type E2ETestResult,
 } from '@/services/site-leads-sync'
@@ -45,10 +47,23 @@ export default function AdminLeads() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [credConfig, setCredConfig] = useState<IntegracaoSiteConfig | null>(null)
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error'
     message: string
   } | null>(null)
+
+  const loadData = useCallback(async () => {
+    try {
+      const [leadsData, configData] = await Promise.all([getLeadsList(), getIntegracaoSiteConfig()])
+      setLeads(leadsData)
+      setCredConfig(configData)
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   const loadLeads = useCallback(async () => {
     try {
@@ -56,18 +71,21 @@ export default function AdminLeads() {
       setLeads(data)
     } catch (err) {
       console.error('Erro ao carregar leads:', err)
-    } finally {
-      setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    loadLeads()
-  }, [loadLeads])
+    loadData()
+  }, [loadData])
 
-  // Ouvir atualizações da coleção leads via Realtime do PocketBase
+  // Ouvir atualizações da coleção leads e integracoes_site via Realtime do PocketBase
   useRealtime('leads', () => {
     loadLeads()
+  })
+
+  useRealtime('integracoes_site', async () => {
+    const configData = await getIntegracaoSiteConfig()
+    setCredConfig(configData)
   })
 
   // Sincronização manual sob demanda
@@ -228,7 +246,7 @@ export default function AdminLeads() {
               Ativa e Monitorada
             </div>
             <p className="text-[11px] text-[#8B98B4] mt-1">
-              Poller via cron ativo a cada 5 min + endpoint manual
+              Poller via cron ativo a cada 1 min + endpoint manual
             </p>
           </CardContent>
         </Card>
@@ -263,6 +281,61 @@ export default function AdminLeads() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bloco de Credenciais do Site Institucional (Protegido e Mascarado) */}
+      <Card className="bg-[#16213A] border-[#24334F]">
+        <CardHeader className="pb-3 border-b border-[#24334F]">
+          <CardTitle className="text-xs font-bold text-[#8B98B4] uppercase flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#0066CC]" />
+              Credenciais da Integração Site (Coleção Interna Protegida)
+            </span>
+            <Badge
+              variant="outline"
+              className={
+                credConfig?.ativo
+                  ? 'border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px]'
+                  : 'border-[#FF9900]/50 text-[#FF9900] bg-[#FF9900]/10 text-[10px]'
+              }
+            >
+              {credConfig?.ativo ? 'Ativo na Coleção' : 'Aguardando Configuração'}
+            </Badge>
+          </CardTitle>
+          <CardDescription className="text-xs text-[#8B98B4]">
+            Credenciais armazenadas com segurança no PocketBase (
+            <code className="text-[#5B9DFF]">integracoes_site</code>) com acesso restrito a
+            administradores. A senha é mantida estritamente mascarada na interface.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="space-y-1">
+            <span className="text-[#8B98B4] font-medium block">Backend do Site (URL):</span>
+            <div
+              className="font-mono text-[11px] text-[#5B9DFF] bg-[#0B1120] p-2 rounded border border-[#24334F] truncate"
+              title={
+                credConfig?.site_backend_url ||
+                'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'
+              }
+            >
+              {credConfig?.site_backend_url ||
+                'https://site-institucional-vetor-master-165d3.shrd00.internal.goskip.dev'}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[#8B98B4] font-medium block">E-mail de Sincronização:</span>
+            <div className="font-mono text-[11px] text-[#F8FAFC] bg-[#0B1120] p-2 rounded border border-[#24334F] truncate">
+              {credConfig?.site_sync_email || 'app@vetormaster.com.br'}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[#8B98B4] font-medium block">Senha de Acesso Dedicada:</span>
+            <div className="font-mono text-[11px] text-[#8B98B4] bg-[#0B1120] p-2 rounded border border-[#24334F] flex items-center justify-between">
+              <span>••••••••••••••••••••</span>
+              <span className="text-[10px] text-[#3DDC74] font-semibold">MASCARADA</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabela de Leads */}
       <Card className="bg-[#16213A] border-[#24334F]">

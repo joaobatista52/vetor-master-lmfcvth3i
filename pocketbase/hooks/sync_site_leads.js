@@ -3,36 +3,76 @@
 // Endpoint manual sob demanda: POST /backend/v1/sync/leads (Requer Admin)
 // Endpoint de teste/criação ponta-a-ponta: POST /backend/v1/sync/test-e2e (Requer Admin)
 
+// Nota de arquitetura PocketBase/Goja:
+// O JSVM executa callbacks em pools de VMs separados, portanto nenhuma função auxiliar no escopo do arquivo
+// pode ser referenciada dentro de callbacks (routerAdd, cronAdd). A lógica de obtenção e cache de credenciais
+// fica auto-contida em cada callback.
+
 cronAdd('sync_site_leads_cron', '* * * * *', () => {
   try {
-    let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    let siteUrl = ''
+    let siteEmail = ''
+    let sitePassword = ''
+    let fonte = ''
+
+    // 1. Tentar ler da coleção interna protegida 'integracoes_site'
+    try {
+      const credRec = $app.findFirstRecordByData(
+        'integracoes_site',
+        'chave',
+        'site_institucional_vetor_master',
+      )
+      if (credRec && credRec.getBool('ativo') !== false) {
+        siteUrl = credRec.getString('site_backend_url') || ''
+        siteEmail = credRec.getString('site_sync_email') || ''
+        sitePassword = credRec.getString('site_sync_password') || ''
+        if (siteUrl && siteEmail && sitePassword) {
+          fonte = 'colecao_interna'
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fallback para variáveis de ambiente $os.getenv / $secrets
     if (!siteUrl) {
-      try {
-        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
-      } catch (_) {}
+      siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+      if (!siteUrl) {
+        try {
+          siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+        } catch (_) {}
+      }
+      if (siteUrl && !fonte) fonte = 'ambiente'
     }
-    if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
 
-    let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (siteUrl && siteUrl.endsWith('/')) {
+      siteUrl = siteUrl.slice(0, -1)
+    }
+
     if (!siteEmail) {
-      try {
-        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
-      } catch (_) {}
+      siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+      if (!siteEmail) {
+        try {
+          siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+        } catch (_) {}
+      }
+      if (siteEmail && !fonte) fonte = 'ambiente'
     }
 
-    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
     if (!sitePassword) {
-      try {
-        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
-      } catch (_) {}
+      sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+      if (!sitePassword) {
+        try {
+          sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+        } catch (_) {}
+      }
+      if (sitePassword && !fonte) fonte = 'ambiente'
     }
 
-    // Validação estrita dos secrets: sem credenciais configuradas, aborta e registra nos logs
+    // Validação estrita: sem credenciais configuradas, aborta defensivamente
     if (!siteUrl || !siteEmail || !sitePassword) {
       $app
         .logger()
         .warn(
-          'sync_site_leads_cron abortado: secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes.',
+          'sync_site_leads_cron abortado: credenciais (SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD) ausentes tanto na coleção integracoes_site quanto no ambiente.',
         )
       return
     }
@@ -50,7 +90,6 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
     })
 
     if (authRes.statusCode !== 200) {
-      // Registrar log de auditoria de erro
       try {
         const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
         let adminUser = null
@@ -67,7 +106,9 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
             'details',
             'Falha de autenticação no site institucional (HTTP ' +
               authRes.statusCode +
-              '): ' +
+              ') [fonte: ' +
+              fonte +
+              ']: ' +
               (authRes.raw || '').substring(0, 300),
           )
           $app.save(errLog)
@@ -133,23 +174,34 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       const isNew = !localRecord
       const rec = isNew ? new Record(leadsCol) : localRecord
 
+      const cad = item.cadastro || (item.dados_completos && item.dados_completos.cadastro) || {}
+
       rec.set('protocolo', protocolo)
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
       rec.set('status', item.status || 'Novo')
       rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
       rec.set('formato_interesse', item.formato_interesse || '')
-      rec.set('nome_completo', item.nome_completo || item.respondente || '')
-      rec.set('razao_social', item.razao_social || '')
-      rec.set('cnpj', item.cnpj || '')
-      rec.set('cargo', item.cargo || '')
-      rec.set('email', item.email || item.email_corporativo || '')
-      rec.set('whatsapp', item.whatsapp || '')
+      rec.set(
+        'nome_completo',
+        item.nome_completo || item.respondente || cad.nomeCompleto || cad.nome || '',
+      )
+      rec.set(
+        'razao_social',
+        item.razao_social || cad.empresa || cad.razaoSocial || cad.razao_social || '',
+      )
+      rec.set('cnpj', item.cnpj || cad.cnpj || '')
+      rec.set('cargo', item.cargo || cad.cargo || '')
+      rec.set(
+        'email',
+        item.email || item.email_corporativo || cad.email || cad.emailCorporativo || '',
+      )
+      rec.set('whatsapp', item.whatsapp || cad.whatsapp || cad.telefone || '')
       rec.set('setor', item.setor || '')
       rec.set('segmento', item.segmento || '')
-      rec.set('faturamento_mensal', item.faturamento_mensal || '')
+      rec.set('faturamento_mensal', item.faturamento_mensal || cad.faturamento || '')
       rec.set('plano_interesse', item.plano_interesse || '')
-      rec.set('responsavel_envio', item.responsavel_envio || '')
+      rec.set('responsavel_envio', item.responsavel_envio || cad.nomeCompleto || '')
       rec.set('dados_completos', item.dados_completos || item)
       rec.set('site_lead_id', siteId)
       rec.set('site_created', item.created || '')
@@ -163,6 +215,14 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       } else {
         atualizadosLeads++
       }
+    }
+
+    if (remoteItems.length === 0) {
+      $app
+        .logger()
+        .info(
+          'sync_site_leads_cron executado com sucesso: backend respondeu 200, mas 0 leads na coleção do site.',
+        )
     }
 
     // Se houve novos leads sincronizados ou atualizados, registrar nos Logs de Auditoria
@@ -186,7 +246,8 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
               atualizadosLeads +
               ' atualizado(s) do site institucional (' +
               remoteItems.length +
-              ' processados).',
+              ' processados). Credenciais via: ' +
+              fonte,
           )
           $app.save(syncLog)
         }
@@ -199,26 +260,61 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
 // Endpoint manual de sincronização sob demanda (Admin)
 routerAdd('POST', '/backend/v1/sync/leads', (e) => {
-  let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+  let siteUrl = ''
+  let siteEmail = ''
+  let sitePassword = ''
+  let fonte = ''
+
+  // 1. Tentar ler da coleção interna protegida 'integracoes_site'
+  try {
+    const credRec = $app.findFirstRecordByData(
+      'integracoes_site',
+      'chave',
+      'site_institucional_vetor_master',
+    )
+    if (credRec && credRec.getBool('ativo') !== false) {
+      siteUrl = credRec.getString('site_backend_url') || ''
+      siteEmail = credRec.getString('site_sync_email') || ''
+      sitePassword = credRec.getString('site_sync_password') || ''
+      if (siteUrl && siteEmail && sitePassword) {
+        fonte = 'colecao_interna'
+      }
+    }
+  } catch (_) {}
+
+  // 2. Fallback para variáveis de ambiente $os.getenv / $secrets
   if (!siteUrl) {
-    try {
-      siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
-    } catch (_) {}
+    siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    if (!siteUrl) {
+      try {
+        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+      } catch (_) {}
+    }
+    if (siteUrl && !fonte) fonte = 'ambiente'
   }
-  if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
 
-  let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+  if (siteUrl && siteUrl.endsWith('/')) {
+    siteUrl = siteUrl.slice(0, -1)
+  }
+
   if (!siteEmail) {
-    try {
-      siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
-    } catch (_) {}
+    siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (!siteEmail) {
+      try {
+        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+      } catch (_) {}
+    }
+    if (siteEmail && !fonte) fonte = 'ambiente'
   }
 
-  let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
   if (!sitePassword) {
-    try {
-      sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
-    } catch (_) {}
+    sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+    if (!sitePassword) {
+      try {
+        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+      } catch (_) {}
+    }
+    if (sitePassword && !fonte) fonte = 'ambiente'
   }
 
   const authUser = e.requestInfo ? e.requestInfo().auth : null
@@ -240,7 +336,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
         errLog.set('resource', 'leads')
         errLog.set(
           'details',
-          'Abortado: secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+          'Abortado: credenciais (SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD) ausentes na coleção integracoes_site e no ambiente.',
         )
         $app.save(errLog)
       } catch (_) {}
@@ -248,7 +344,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     return e.json(500, {
       success: false,
       message:
-        'Credenciais de sincronização (SITE_BACKEND_URL, SITE_SYNC_EMAIL, SITE_SYNC_PASSWORD) não configuradas no app.',
+        'Credenciais de sincronização (SITE_BACKEND_URL, SITE_SYNC_EMAIL, SITE_SYNC_PASSWORD) não configuradas no app (verifique a coleção integracoes_site ou as variáveis de ambiente).',
     })
   }
 
@@ -276,7 +372,9 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
           'details',
           'Falha de autenticação no site institucional (HTTP ' +
             authRes.statusCode +
-            '): ' +
+            ') [fonte: ' +
+            fonte +
+            ']: ' +
             (authRes.raw || '').substring(0, 300),
         )
         $app.save(errLog)
@@ -288,6 +386,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       message:
         'Falha de autenticação no backend do site institucional (HTTP ' + authRes.statusCode + ').',
       error: authRes.raw,
+      credentialsSource: fonte,
     })
   }
 
@@ -350,23 +449,34 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     const isNew = !localRecord
     const rec = isNew ? new Record(leadsCol) : localRecord
 
+    const cad = item.cadastro || (item.dados_completos && item.dados_completos.cadastro) || {}
+
     rec.set('protocolo', protocolo)
     rec.set('origem', item.origem || 'Site Institucional')
     rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
     rec.set('status', item.status || 'Novo')
     rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
     rec.set('formato_interesse', item.formato_interesse || '')
-    rec.set('nome_completo', item.nome_completo || item.respondente || '')
-    rec.set('razao_social', item.razao_social || '')
-    rec.set('cnpj', item.cnpj || '')
-    rec.set('cargo', item.cargo || '')
-    rec.set('email', item.email || item.email_corporativo || '')
-    rec.set('whatsapp', item.whatsapp || '')
+    rec.set(
+      'nome_completo',
+      item.nome_completo || item.respondente || cad.nomeCompleto || cad.nome || '',
+    )
+    rec.set(
+      'razao_social',
+      item.razao_social || cad.empresa || cad.razaoSocial || cad.razao_social || '',
+    )
+    rec.set('cnpj', item.cnpj || cad.cnpj || '')
+    rec.set('cargo', item.cargo || cad.cargo || '')
+    rec.set(
+      'email',
+      item.email || item.email_corporativo || cad.email || cad.emailCorporativo || '',
+    )
+    rec.set('whatsapp', item.whatsapp || cad.whatsapp || cad.telefone || '')
     rec.set('setor', item.setor || '')
     rec.set('segmento', item.segmento || '')
-    rec.set('faturamento_mensal', item.faturamento_mensal || '')
+    rec.set('faturamento_mensal', item.faturamento_mensal || cad.faturamento || '')
     rec.set('plano_interesse', item.plano_interesse || '')
-    rec.set('responsavel_envio', item.responsavel_envio || '')
+    rec.set('responsavel_envio', item.responsavel_envio || cad.nomeCompleto || '')
     rec.set('dados_completos', item.dados_completos || item)
     rec.set('site_lead_id', siteId)
     rec.set('site_created', item.created || '')
@@ -390,16 +500,20 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       syncLog.set('user', adminUserId)
       syncLog.set('action', 'Sincronização Manual Site')
       syncLog.set('resource', 'leads')
-      syncLog.set(
-        'details',
-        'Sincronização sob demanda: ' +
-          novosLeads +
-          ' novo(s) lead(s), ' +
-          atualizadosLeads +
-          ' atualizado(s), ' +
-          remoteItems.length +
-          ' avaliado(s).',
-      )
+      const auditDetails =
+        remoteItems.length === 0
+          ? 'Sincronização concluída com sucesso: backend do site autenticado e acessível (HTTP 200), porém 0 leads retornados da coleção remota. Credenciais lidas via: ' +
+            fonte
+          : 'Sincronização sob demanda: ' +
+            novosLeads +
+            ' novo(s) lead(s), ' +
+            atualizadosLeads +
+            ' atualizado(s), ' +
+            remoteItems.length +
+            ' avaliado(s). Credenciais lidas via: ' +
+            fonte
+
+      syncLog.set('details', auditDetails)
       $app.save(syncLog)
     } catch (_) {}
   }
@@ -409,34 +523,69 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     totalRemote: remoteItems.length,
     novosLeads: novosLeads,
     atualizadosLeads: atualizadosLeads,
+    credentialsSource: fonte,
     syncedAt: new Date().toISOString(),
   })
 })
 
+// Endpoint protegido (requireAdminAuth) mantido para compatibilidade
 routerAdd(
   'POST',
   '/backend/v1/sync/leads-admin-only',
   (e) => {
-    let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    let siteUrl = ''
+    let siteEmail = ''
+    let sitePassword = ''
+    let fonte = ''
+
+    try {
+      const credRec = $app.findFirstRecordByData(
+        'integracoes_site',
+        'chave',
+        'site_institucional_vetor_master',
+      )
+      if (credRec && credRec.getBool('ativo') !== false) {
+        siteUrl = credRec.getString('site_backend_url') || ''
+        siteEmail = credRec.getString('site_sync_email') || ''
+        sitePassword = credRec.getString('site_sync_password') || ''
+        if (siteUrl && siteEmail && sitePassword) {
+          fonte = 'colecao_interna'
+        }
+      }
+    } catch (_) {}
+
     if (!siteUrl) {
-      try {
-        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
-      } catch (_) {}
+      siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+      if (!siteUrl) {
+        try {
+          siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+        } catch (_) {}
+      }
+      if (siteUrl && !fonte) fonte = 'ambiente'
     }
-    if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
 
-    let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (siteUrl && siteUrl.endsWith('/')) {
+      siteUrl = siteUrl.slice(0, -1)
+    }
+
     if (!siteEmail) {
-      try {
-        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
-      } catch (_) {}
+      siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+      if (!siteEmail) {
+        try {
+          siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+        } catch (_) {}
+      }
+      if (siteEmail && !fonte) fonte = 'ambiente'
     }
 
-    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
     if (!sitePassword) {
-      try {
-        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
-      } catch (_) {}
+      sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+      if (!sitePassword) {
+        try {
+          sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+        } catch (_) {}
+      }
+      if (sitePassword && !fonte) fonte = 'ambiente'
     }
 
     const authUser = e.requestInfo ? e.requestInfo().auth : null
@@ -452,14 +601,14 @@ routerAdd(
           errLog.set('resource', 'leads')
           errLog.set(
             'details',
-            'Abortado: secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+            'Abortado: credenciais (SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD) ausentes.',
           )
           $app.save(errLog)
         } catch (_) {}
       }
       return e.json(500, {
         success: false,
-        message: 'Credenciais de sincronização SITE_SYNC_PASSWORD não configuradas no app.',
+        message: 'Credenciais de sincronização não configuradas no app.',
       })
     }
 
@@ -595,7 +744,6 @@ routerAdd(
       }
     }
 
-    // Gravar log de auditoria
     if (adminUserId) {
       try {
         const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
@@ -611,7 +759,8 @@ routerAdd(
             atualizadosLeads +
             ' atualizado(s), ' +
             remoteItems.length +
-            ' avaliado(s).',
+            ' avaliado(s). Credenciais via: ' +
+            fonte,
         )
         $app.save(syncLog)
       } catch (_) {}
@@ -628,264 +777,70 @@ routerAdd(
   $apis.requireAdminAuth(),
 )
 
-// Endpoint para criação de lead de teste ponta-a-ponta no site institucional e sincronização imediata
-routerAdd('POST', '/backend/v1/sync/test-e2e-open', (e) => {
-  let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
-  if (!siteUrl) {
-    try {
-      siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
-    } catch (_) {}
-  }
-  if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
-
-  let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
-  if (!siteEmail) {
-    try {
-      siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
-    } catch (_) {}
-  }
-
-  let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
-  if (!sitePassword) {
-    try {
-      sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
-    } catch (_) {}
-  }
-
-  if (!siteUrl || !siteEmail || !sitePassword) {
-    return e.json(500, {
-      success: false,
-      message:
-        'Secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
-    })
-  }
-
-  // 1. Autenticar no site institucional
-  const authRes = $http.send({
-    url: siteUrl + '/api/collections/users/auth-with-password',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      identity: siteEmail,
-      password: sitePassword,
-    }),
-    timeout: 20,
-  })
-
-  if (authRes.statusCode !== 200) {
-    return e.json(502, {
-      success: false,
-      step: 'auth',
-      statusCode: authRes.statusCode,
-      raw: authRes.raw,
-    })
-  }
-
-  const token = authRes.json.token
-  const ts = Date.now().toString(36).toUpperCase()
-  const rand = Math.random().toString(36).substring(2, 6).toUpperCase()
-  const testProtocol = '#TEST-VM-V72-' + ts + '-' + rand
-
-  const testLeadPayload = {
-    protocolo: testProtocol,
-    origem: 'Site Institucional',
-    origem_tipo: 'site',
-    status: 'Novo',
-    autorizacao_devolutiva: 'Sim',
-    formato_interesse: 'MaaS',
-    nome_completo: 'Carlos Eduardo Silveira (Lead E2E Teste)',
-    razao_social: 'Silveira & Associados Distribuidora S/A',
-    cnpj: '12.345.678/0001-99',
-    cargo: 'Diretor Geral / Fundador',
-    email: 'carlos.silveira@silveiradistribuidora.com.br',
-    whatsapp: '(11) 98765-4321',
-    setor: 'Distribuição e Logística',
-    segmento: 'Distribuição B2B de Alimentos',
-    faturamento_mensal: 'R$ 1.500.000 a R$ 3.000.000',
-    plano_interesse: 'MaaS Híbrido',
-    responsavel_envio: 'Carlos Eduardo Silveira',
-    dados_completos: {
-      origem: 'Site Institucional',
-      protocolo: testProtocol,
-      razao_social: 'Silveira & Associados Distribuidora S/A',
-      cnpj: '12.345.678/0001-99',
-      data_preenchimento: new Date().toISOString(),
-      setor: 'Distribuição e Logística',
-      segmento: 'Distribuição B2B de Alimentos',
-      respondente: 'Carlos Eduardo Silveira (Lead E2E Teste)',
-      cargo: 'Diretor Geral / Fundador',
-      email_corporativo: 'carlos.silveira@silveiradistribuidora.com.br',
-      whatsapp: '(11) 98765-4321',
-      autorizacao_devolutiva: 'Sim',
-      formato_interesse: 'MaaS',
-      perfil: {
-        faturamento_anual: 'R$ 25.000.000',
-        colaboradores: 45,
-        tempo_empresa: '12 anos',
-      },
-      pilares: {
-        pilar_1_prisao_fundador: [
-          {
-            pergunta: '1.1 Centralização Decisória',
-            resposta: 'Alta',
-            nota: 'Fundador aprova 90% dos pedidos',
-          },
-          {
-            pergunta: '1.2 Dependência de Pessoas-Chave',
-            resposta: 'Crítica',
-            nota: 'Sem sucessor para logística',
-          },
-        ],
-        pilar_2_ineficiencia_invisivel: [
-          {
-            pergunta: '2.1 Retrabalho Operacional',
-            resposta: 'Frequente',
-            nota: 'Ruídos entre vendas e faturamento',
-          },
-          {
-            pergunta: '2.2 Margem Real por SKU',
-            resposta: 'Desconhecida com precisão',
-            nota: 'Sem custeio ABC',
-          },
-        ],
-        pilar_3_abismo_estrategia_execucao: [
-          {
-            pergunta: '3.1 Metas Desdobradas em OKRs',
-            resposta: 'Não',
-            nota: 'Equipe opera no modo apagar incêndio',
-          },
-        ],
-      },
-      hackman: [
-        { dimensao: 'Autonomia da Liderança', nota: 2 },
-        { dimensao: 'Clareza de Papéis', nota: 2 },
-      ],
-      buffett: [{ dimensao: 'Fosso Competitivo (Moat)', nota: 3 }],
-      documentacao: {
-        responsavel_envio: 'Carlos Eduardo Silveira',
-        documentos_adicionais: ['Balanco_2025.pdf', 'DRE_Gerencial.xlsx'],
-      },
-    },
-    criado_em: new Date().toISOString(),
-  }
-
-  // 2. Criar lead no site
-  const createRes = $http.send({
-    url: siteUrl + '/api/collections/leads/records',
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + token,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(testLeadPayload),
-    timeout: 20,
-  })
-
-  if (createRes.statusCode !== 200 && createRes.statusCode !== 201) {
-    return e.json(502, {
-      success: false,
-      step: 'create_lead_in_site',
-      statusCode: createRes.statusCode,
-      raw: createRes.raw,
-    })
-  }
-
-  const siteCreatedRecord = createRes.json
-
-  // 3. Sincronizar imediatamente para a coleção local 'leads'
-  const leadsCol = $app.findCollectionByNameOrId('leads')
-  const localRec = new Record(leadsCol)
-  localRec.set('protocolo', testLeadPayload.protocolo)
-  localRec.set('origem', testLeadPayload.origem)
-  localRec.set('origem_tipo', testLeadPayload.origem_tipo)
-  localRec.set('status', testLeadPayload.status)
-  localRec.set('autorizacao_devolutiva', testLeadPayload.autorizacao_devolutiva)
-  localRec.set('formato_interesse', testLeadPayload.formato_interesse)
-  localRec.set('nome_completo', testLeadPayload.nome_completo)
-  localRec.set('razao_social', testLeadPayload.razao_social)
-  localRec.set('cnpj', testLeadPayload.cnpj)
-  localRec.set('cargo', testLeadPayload.cargo)
-  localRec.set('email', testLeadPayload.email)
-  localRec.set('whatsapp', testLeadPayload.whatsapp)
-  localRec.set('setor', testLeadPayload.setor)
-  localRec.set('segmento', testLeadPayload.segmento)
-  localRec.set('faturamento_mensal', testLeadPayload.faturamento_mensal)
-  localRec.set('plano_interesse', testLeadPayload.plano_interesse)
-  localRec.set('responsavel_envio', testLeadPayload.responsavel_envio)
-  localRec.set('dados_completos', testLeadPayload.dados_completos)
-  localRec.set('site_lead_id', siteCreatedRecord.id)
-  localRec.set('site_created', siteCreatedRecord.created || '')
-  localRec.set('site_updated', siteCreatedRecord.updated || '')
-  localRec.set('synced_at', new Date().toISOString())
-
-  $app.save(localRec)
-
-  // 4. Gravar log de auditoria do teste
-  try {
-    const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
-    const auditRecord = new Record(logsCol)
-    let userToLog = null
-    try {
-      const u = $app.findFirstRecordByData('users', 'role', 'admin')
-      userToLog = u.id
-    } catch (_) {}
-
-    if (userToLog) {
-      auditRecord.set('user', userToLog)
-      auditRecord.set('action', 'Teste E2E Integração Site')
-      auditRecord.set('resource', 'leads')
-      auditRecord.set(
-        'details',
-        'Lead de teste E2E criado no site (' +
-          siteCreatedRecord.id +
-          ') e sincronizado com sucesso no app! Protocolo: ' +
-          testLeadPayload.protocolo,
-      )
-      $app.save(auditRecord)
-    }
-  } catch (_) {}
-
-  return e.json(200, {
-    success: true,
-    message:
-      'Teste ponta-a-ponta executado com sucesso! Lead criado no site institucional e sincronizado para o app.',
-    siteLead: siteCreatedRecord,
-    localLeadId: localRec.id,
-    protocolo: testLeadPayload.protocolo,
-  })
-})
-
+// Endpoint de teste/criação ponta-a-ponta (requer admin)
 routerAdd(
   'POST',
   '/backend/v1/sync/test-e2e',
   (e) => {
-    let siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+    let siteUrl = ''
+    let siteEmail = ''
+    let sitePassword = ''
+    let fonte = ''
+
+    try {
+      const credRec = $app.findFirstRecordByData(
+        'integracoes_site',
+        'chave',
+        'site_institucional_vetor_master',
+      )
+      if (credRec && credRec.getBool('ativo') !== false) {
+        siteUrl = credRec.getString('site_backend_url') || ''
+        siteEmail = credRec.getString('site_sync_email') || ''
+        sitePassword = credRec.getString('site_sync_password') || ''
+        if (siteUrl && siteEmail && sitePassword) {
+          fonte = 'colecao_interna'
+        }
+      }
+    } catch (_) {}
+
     if (!siteUrl) {
-      try {
-        siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
-      } catch (_) {}
+      siteUrl = $os.getenv('SITE_BACKEND_URL') || ''
+      if (!siteUrl) {
+        try {
+          siteUrl = $secrets.get('SITE_BACKEND_URL') || ''
+        } catch (_) {}
+      }
+      if (siteUrl && !fonte) fonte = 'ambiente'
     }
-    if (siteUrl && siteUrl.endsWith('/')) siteUrl = siteUrl.slice(0, -1)
 
-    let siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+    if (siteUrl && siteUrl.endsWith('/')) {
+      siteUrl = siteUrl.slice(0, -1)
+    }
+
     if (!siteEmail) {
-      try {
-        siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
-      } catch (_) {}
+      siteEmail = $os.getenv('SITE_SYNC_EMAIL') || ''
+      if (!siteEmail) {
+        try {
+          siteEmail = $secrets.get('SITE_SYNC_EMAIL') || ''
+        } catch (_) {}
+      }
+      if (siteEmail && !fonte) fonte = 'ambiente'
     }
 
-    let sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
     if (!sitePassword) {
-      try {
-        sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
-      } catch (_) {}
+      sitePassword = $os.getenv('SITE_SYNC_PASSWORD') || ''
+      if (!sitePassword) {
+        try {
+          sitePassword = $secrets.get('SITE_SYNC_PASSWORD') || ''
+        } catch (_) {}
+      }
+      if (sitePassword && !fonte) fonte = 'ambiente'
     }
 
     if (!siteUrl || !siteEmail || !sitePassword) {
       return e.json(500, {
         success: false,
-        message:
-          'Secrets SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD ausentes no backend.',
+        message: 'Credenciais de sincronização ausentes na coleção integracoes_site e no ambiente.',
       })
     }
 
@@ -1072,7 +1027,9 @@ routerAdd(
           'Lead de teste E2E criado no site (' +
             siteCreatedRecord.id +
             ') e sincronizado com sucesso no app! Protocolo: ' +
-            testLeadPayload.protocolo,
+            testLeadPayload.protocolo +
+            ' | Credenciais via: ' +
+            fonte,
         )
         $app.save(auditRecord)
       }

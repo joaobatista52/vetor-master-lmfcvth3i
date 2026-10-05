@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-05T20:11:55.093Z",
+  "generatedAt": "2026-10-05T20:35:05.631Z",
   "collections": [
     {
       "name": "users",
@@ -928,6 +928,70 @@
         "CREATE INDEX idx_leads_email ON leads (email)",
         "CREATE INDEX idx_leads_status ON leads (status)"
       ]
+    },
+    {
+      "name": "integracoes_site",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin'",
+        "view": "@request.auth.role = 'admin'",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "chave",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "site_backend_url",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "site_sync_email",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "site_sync_password",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_integracoes_site_chave ON integracoes_site (chave)"]
     }
   ]
 }
