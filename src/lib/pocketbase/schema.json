@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-05T21:02:00.501Z",
+  "generatedAt": "2026-10-05T23:37:35.259Z",
   "collections": [
     {
       "name": "users",
@@ -920,6 +920,30 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "respostas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contrato_social",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "certificacoes",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "documentacao_adicional",
+          "type": "file",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

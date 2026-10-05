@@ -31,6 +31,10 @@ export interface LeadRecord {
   plano_interesse: string
   responsavel_envio: string
   dados_completos: Record<string, any>
+  respostas?: Record<string, any>
+  contrato_social?: string[] | string
+  certificacoes?: string[] | string
+  documentacao_adicional?: string[] | string
   site_lead_id: string
   site_created: string
   site_updated: string

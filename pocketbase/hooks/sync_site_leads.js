@@ -6,7 +6,7 @@
 // Nota de arquitetura PocketBase/Goja:
 // O JSVM executa callbacks em pools de VMs separados, portanto nenhuma função auxiliar no escopo do arquivo
 // pode ser referenciada dentro de callbacks (routerAdd, cronAdd). A lógica de obtenção e cache de credenciais
-// fica auto-contida em cada callback.
+// e download de arquivos fica auto-contida em cada callback.
 
 cronAdd('sync_site_leads_cron', '* * * * *', () => {
   try {
@@ -72,7 +72,7 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       $app
         .logger()
         .warn(
-          'sync_site_leads_cron abortado: credenciais (SITE_BACKEND_URL, SITE_SYNC_EMAIL ou SITE_SYNC_PASSWORD) ausentes tanto na coleção integracoes_site quanto no ambiente.',
+          'sync_site_leads_cron abortado: credenciais ausentes na coleção integracoes_site e no ambiente.',
         )
       return
     }
@@ -119,6 +119,22 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
     const token = authRes.json.token
 
+    // Obter file token do site para download de arquivos caso o campo seja protegido
+    let siteFileToken = ''
+    try {
+      const ftRes = $http.send({
+        url: siteUrl + '/api/files/token',
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+        timeout: 10,
+      })
+      if (ftRes.statusCode === 200 && ftRes.json && ftRes.json.token) {
+        siteFileToken = ftRes.json.token
+      }
+    } catch (_) {}
+
     // 2. Buscar leads do site institucional (coleção completa de leads)
     const leadsRes = $http.send({
       url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
@@ -156,6 +172,66 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
     let novosLeads = 0
     let atualizadosLeads = 0
+
+    // Função interna para baixar arquivos do site e converter em Filesystem Files
+    const downloadRemoteFiles = (collectionIdOrName, recordId, fileNames) => {
+      const resultFiles = []
+      if (!fileNames) return resultFiles
+      const list = Array.isArray(fileNames) ? fileNames : [fileNames]
+
+      for (let f = 0; f < list.length; f++) {
+        const fn = list[f]
+        if (!fn || typeof fn !== 'string') continue
+        try {
+          let downloadUrl = siteUrl + '/api/files/' + collectionIdOrName + '/' + recordId + '/' + fn
+          if (siteFileToken) {
+            downloadUrl += '?token=' + siteFileToken
+          }
+          const fileResp = $http.send({
+            url: downloadUrl,
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer ' + token,
+            },
+            timeout: 30,
+          })
+
+          if (
+            fileResp.statusCode === 200 &&
+            ((fileResp.body && fileResp.body.length > 0) ||
+              (fileResp.raw && fileResp.raw.length > 0))
+          ) {
+            const dataBytes =
+              fileResp.body && fileResp.body.length > 0 ? fileResp.body : fileResp.raw
+            const fileObj = $filesystem.fileFromBytes(dataBytes, fn)
+            resultFiles.push(fileObj)
+          } else {
+            $app
+              .logger()
+              .warn(
+                'Falha ao baixar arquivo remoto: ' +
+                  fn +
+                  ' do lead ' +
+                  recordId +
+                  ' HTTP ' +
+                  fileResp.statusCode,
+              )
+          }
+        } catch (fileErr) {
+          $app
+            .logger()
+            .warn(
+              'Erro ao processar download do arquivo ' +
+                fn +
+                ' do lead ' +
+                recordId +
+                ': ' +
+                fileErr.message,
+            )
+        }
+      }
+      return resultFiles
+    }
 
     for (let i = 0; i < remoteItems.length; i++) {
       const item = remoteItems[i]
@@ -223,6 +299,44 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       rec.set('site_updated', item.updated || '')
       rec.set('synced_at', new Date().toISOString())
 
+      // 1. Mapeamento do campo respostas (JSON das etapas 1 a 11)
+      if (item.respostas) {
+        rec.set('respostas', item.respostas)
+      } else if (item.dados_completos && item.dados_completos.respostas) {
+        rec.set('respostas', item.dados_completos.respostas)
+      }
+
+      // 2. Mapeamento e download/re-hospedagem dos arquivos dos 3 grupos
+      // Grupo 1: Demonstrativos Financeiros (no site: documentacao_adicional)
+      const remoteDocAdicional = item.documentacao_adicional
+      if (
+        remoteDocAdicional &&
+        (Array.isArray(remoteDocAdicional) ? remoteDocAdicional.length > 0 : true)
+      ) {
+        const files1 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteDocAdicional)
+        if (files1.length > 0) {
+          rec.set('documentacao_adicional', files1)
+        }
+      }
+
+      // Grupo 2: Relatórios Gerenciais (no site: certificacoes)
+      const remoteCert = item.certificacoes
+      if (remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
+        const files2 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteCert)
+        if (files2.length > 0) {
+          rec.set('certificacoes', files2)
+        }
+      }
+
+      // Grupo 3: Sociedade/Complementares (no site: contrato_social)
+      const remoteContrato = item.contrato_social
+      if (remoteContrato && (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)) {
+        const files3 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteContrato)
+        if (files3.length > 0) {
+          rec.set('contrato_social', files3)
+        }
+      }
+
       $app.save(rec)
 
       if (isNew) {
@@ -257,9 +371,9 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
             'details',
             'Cron automático: ' +
               novosLeads +
-              ' novo(s) lead(s) importado(s), ' +
+              ' novo(s) lead(s), ' +
               atualizadosLeads +
-              ' atualizado(s) do site institucional (' +
+              ' atualizado(s) do site com respostas e anexos (' +
               remoteItems.length +
               ' processados). Credenciais via: ' +
               fonte,
@@ -359,7 +473,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     return e.json(500, {
       success: false,
       message:
-        'Credenciais de sincronização (SITE_BACKEND_URL, SITE_SYNC_EMAIL, SITE_SYNC_PASSWORD) não configuradas no app (verifique a coleção integracoes_site ou as variáveis de ambiente).',
+        'Credenciais de sincronização não configuradas no app (verifique a coleção integracoes_site ou as variáveis de ambiente).',
     })
   }
 
@@ -407,6 +521,22 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
 
   const token = authRes.json.token
 
+  // Obter file token do site para download seguro
+  let siteFileToken = ''
+  try {
+    const ftRes = $http.send({
+      url: siteUrl + '/api/files/token',
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      },
+      timeout: 10,
+    })
+    if (ftRes.statusCode === 200 && ftRes.json && ftRes.json.token) {
+      siteFileToken = ftRes.json.token
+    }
+  } catch (_) {}
+
   // 2. Buscar leads do site institucional
   const leadsRes = $http.send({
     url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
@@ -446,6 +576,66 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
 
   let novosLeads = 0
   let atualizadosLeads = 0
+  let totalArquivosBaixados = 0
+
+  // Função interna para baixar arquivos do site e converter em Filesystem Files
+  const downloadRemoteFiles = (collectionIdOrName, recordId, fileNames) => {
+    const resultFiles = []
+    if (!fileNames) return resultFiles
+    const list = Array.isArray(fileNames) ? fileNames : [fileNames]
+
+    for (let f = 0; f < list.length; f++) {
+      const fn = list[f]
+      if (!fn || typeof fn !== 'string') continue
+      try {
+        let downloadUrl = siteUrl + '/api/files/' + collectionIdOrName + '/' + recordId + '/' + fn
+        if (siteFileToken) {
+          downloadUrl += '?token=' + siteFileToken
+        }
+        const fileResp = $http.send({
+          url: downloadUrl,
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer ' + token,
+          },
+          timeout: 30,
+        })
+
+        if (
+          fileResp.statusCode === 200 &&
+          ((fileResp.body && fileResp.body.length > 0) || (fileResp.raw && fileResp.raw.length > 0))
+        ) {
+          const dataBytes = fileResp.body && fileResp.body.length > 0 ? fileResp.body : fileResp.raw
+          const fileObj = $filesystem.fileFromBytes(dataBytes, fn)
+          resultFiles.push(fileObj)
+          totalArquivosBaixados++
+        } else {
+          $app
+            .logger()
+            .warn(
+              'Falha ao baixar arquivo remoto: ' +
+                fn +
+                ' do lead ' +
+                recordId +
+                ' HTTP ' +
+                fileResp.statusCode,
+            )
+        }
+      } catch (fileErr) {
+        $app
+          .logger()
+          .warn(
+            'Erro ao processar download do arquivo ' +
+              fn +
+              ' do lead ' +
+              recordId +
+              ': ' +
+              fileErr.message,
+          )
+      }
+    }
+    return resultFiles
+  }
 
   for (let i = 0; i < remoteItems.length; i++) {
     const item = remoteItems[i]
@@ -510,6 +700,44 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     rec.set('site_updated', item.updated || '')
     rec.set('synced_at', new Date().toISOString())
 
+    // 1. Mapeamento do campo respostas (JSON das etapas 1 a 11)
+    if (item.respostas) {
+      rec.set('respostas', item.respostas)
+    } else if (item.dados_completos && item.dados_completos.respostas) {
+      rec.set('respostas', item.dados_completos.respostas)
+    }
+
+    // 2. Mapeamento e download/re-hospedagem dos arquivos dos 3 grupos
+    // Grupo 1: Demonstrativos Financeiros (no site: documentacao_adicional)
+    const remoteDocAdicional = item.documentacao_adicional
+    if (
+      remoteDocAdicional &&
+      (Array.isArray(remoteDocAdicional) ? remoteDocAdicional.length > 0 : true)
+    ) {
+      const files1 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteDocAdicional)
+      if (files1.length > 0) {
+        rec.set('documentacao_adicional', files1)
+      }
+    }
+
+    // Grupo 2: Relatórios Gerenciais (no site: certificacoes)
+    const remoteCert = item.certificacoes
+    if (remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
+      const files2 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteCert)
+      if (files2.length > 0) {
+        rec.set('certificacoes', files2)
+      }
+    }
+
+    // Grupo 3: Sociedade/Complementares (no site: contrato_social)
+    const remoteContrato = item.contrato_social
+    if (remoteContrato && (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)) {
+      const files3 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteContrato)
+      if (files3.length > 0) {
+        rec.set('contrato_social', files3)
+      }
+    }
+
     $app.save(rec)
 
     if (isNew) {
@@ -529,13 +757,14 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       syncLog.set('resource', 'leads')
       const auditDetails =
         remoteItems.length === 0
-          ? 'Sincronização concluída com sucesso: backend do site autenticado e acessível (HTTP 200), porém 0 leads retornados da coleção remota. Credenciais lidas via: ' +
-            fonte
+          ? 'Sincronização concluída: 0 leads retornados do site. Credenciais lidas via: ' + fonte
           : 'Sincronização sob demanda: ' +
             novosLeads +
             ' novo(s) lead(s), ' +
             atualizadosLeads +
             ' atualizado(s), ' +
+            totalArquivosBaixados +
+            ' arquivo(s) re-hospedado(s), ' +
             remoteItems.length +
             ' avaliado(s). Credenciais lidas via: ' +
             fonte
@@ -550,6 +779,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     totalRemote: remoteItems.length,
     novosLeads: novosLeads,
     atualizadosLeads: atualizadosLeads,
+    arquivosRehospedados: totalArquivosBaixados,
     credentialsSource: fonte,
     syncedAt: new Date().toISOString(),
   })
@@ -682,6 +912,21 @@ routerAdd(
 
     const token = authRes.json.token
 
+    let siteFileToken = ''
+    try {
+      const ftRes = $http.send({
+        url: siteUrl + '/api/files/token',
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+        timeout: 10,
+      })
+      if (ftRes.statusCode === 200 && ftRes.json && ftRes.json.token) {
+        siteFileToken = ftRes.json.token
+      }
+    } catch (_) {}
+
     // 2. Buscar leads do site institucional
     const leadsRes = $http.send({
       url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
@@ -721,6 +966,45 @@ routerAdd(
 
     let novosLeads = 0
     let atualizadosLeads = 0
+    let totalArquivosBaixados = 0
+
+    const downloadRemoteFiles = (collectionIdOrName, recordId, fileNames) => {
+      const resultFiles = []
+      if (!fileNames) return resultFiles
+      const list = Array.isArray(fileNames) ? fileNames : [fileNames]
+
+      for (let f = 0; f < list.length; f++) {
+        const fn = list[f]
+        if (!fn || typeof fn !== 'string') continue
+        try {
+          let downloadUrl = siteUrl + '/api/files/' + collectionIdOrName + '/' + recordId + '/' + fn
+          if (siteFileToken) {
+            downloadUrl += '?token=' + siteFileToken
+          }
+          const fileResp = $http.send({
+            url: downloadUrl,
+            method: 'GET',
+            headers: {
+              Authorization: 'Bearer ' + token,
+            },
+            timeout: 30,
+          })
+
+          if (
+            fileResp.statusCode === 200 &&
+            ((fileResp.body && fileResp.body.length > 0) ||
+              (fileResp.raw && fileResp.raw.length > 0))
+          ) {
+            const dataBytes =
+              fileResp.body && fileResp.body.length > 0 ? fileResp.body : fileResp.raw
+            const fileObj = $filesystem.fileFromBytes(dataBytes, fn)
+            resultFiles.push(fileObj)
+            totalArquivosBaixados++
+          }
+        } catch (_) {}
+      }
+      return resultFiles
+    }
 
     for (let i = 0; i < remoteItems.length; i++) {
       const item = remoteItems[i]
@@ -752,7 +1036,6 @@ routerAdd(
       rec.set('protocolo', protocolo)
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
-      // Se já for lead existente marcado como 'teste', preservar o status 'teste'
       if (isTest) {
         rec.set('status', 'teste')
       } else {
@@ -777,6 +1060,39 @@ routerAdd(
       rec.set('site_updated', item.updated || '')
       rec.set('synced_at', new Date().toISOString())
 
+      if (item.respostas) {
+        rec.set('respostas', item.respostas)
+      } else if (item.dados_completos && item.dados_completos.respostas) {
+        rec.set('respostas', item.dados_completos.respostas)
+      }
+
+      const remoteDocAdicional = item.documentacao_adicional
+      if (
+        remoteDocAdicional &&
+        (Array.isArray(remoteDocAdicional) ? remoteDocAdicional.length > 0 : true)
+      ) {
+        const files1 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteDocAdicional)
+        if (files1.length > 0) {
+          rec.set('documentacao_adicional', files1)
+        }
+      }
+
+      const remoteCert = item.certificacoes
+      if (remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
+        const files2 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteCert)
+        if (files2.length > 0) {
+          rec.set('certificacoes', files2)
+        }
+      }
+
+      const remoteContrato = item.contrato_social
+      if (remoteContrato && (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)) {
+        const files3 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteContrato)
+        if (files3.length > 0) {
+          rec.set('contrato_social', files3)
+        }
+      }
+
       $app.save(rec)
 
       if (isNew) {
@@ -800,6 +1116,8 @@ routerAdd(
             ' novo(s) lead(s), ' +
             atualizadosLeads +
             ' atualizado(s), ' +
+            totalArquivosBaixados +
+            ' arquivo(s) re-hospedado(s), ' +
             remoteItems.length +
             ' avaliado(s). Credenciais via: ' +
             fonte,
@@ -813,6 +1131,7 @@ routerAdd(
       totalRemote: remoteItems.length,
       novosLeads: novosLeads,
       atualizadosLeads: atualizadosLeads,
+      arquivosRehospedados: totalArquivosBaixados,
       syncedAt: new Date().toISOString(),
     })
   },
@@ -992,6 +1311,21 @@ routerAdd(
           documentos_adicionais: ['Balanco_2025.pdf', 'DRE_Gerencial.xlsx'],
         },
       },
+      respostas: {
+        etapa_1: {
+          setor: 'Distribuição e Logística',
+          segmento: 'Distribuição B2B de Alimentos',
+        },
+        etapa_2: {
+          faturamento_anual: 'R$ 25.000.000',
+          colaboradores: 45,
+          tempo_empresa: '12 anos',
+        },
+        etapa_3: {
+          centralizacao_decisoria: 'Alta',
+          dependencia_chave: 'Crítica',
+        },
+      },
       criado_em: new Date().toISOString(),
     }
 
@@ -1039,6 +1373,7 @@ routerAdd(
     localRec.set('plano_interesse', testLeadPayload.plano_interesse)
     localRec.set('responsavel_envio', testLeadPayload.responsavel_envio)
     localRec.set('dados_completos', testLeadPayload.dados_completos)
+    localRec.set('respostas', testLeadPayload.respostas)
     localRec.set('site_lead_id', siteCreatedRecord.id)
     localRec.set('site_created', siteCreatedRecord.created || '')
     localRec.set('site_updated', siteCreatedRecord.updated || '')
