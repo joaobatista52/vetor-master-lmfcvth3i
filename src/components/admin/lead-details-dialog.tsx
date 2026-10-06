@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -26,14 +26,223 @@ import {
   CheckCircle2,
   Clock,
   ListOrdered,
+  Loader2,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
+import { getLeadById } from '@/services/site-leads-sync'
 
 interface LeadDetailsDialogProps {
   lead: LeadRecord | null
+  leadId?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+}
+
+// Prefixos de setores canônicos utilizados nos questionários do site institucional
+const SETOR_PREFIXES = [
+  'saude',
+  'varejo',
+  'servicos',
+  'trade',
+  'trading',
+  'facilities',
+  'industria',
+  'tecnologia',
+  'construcao',
+  'transporte',
+  'educacao',
+  'agronegocio',
+  'academias',
+]
+
+/**
+ * Identifica a qual etapa (1 a 11) uma chave do campo `respostas` pertence.
+ * Retorna o número da etapa (1..11) ou null se for não-padronizada / Outras Respostas.
+ */
+function classificarChaveEtapa(chave: string): number | null {
+  const k = chave.trim().toLowerCase()
+
+  // 1. Padrão Setor + Seção + Pergunta (ex: saude_1_1, varejo_1_2, trade_1_1, servicos_2_3, etc.)
+  for (const prefix of SETOR_PREFIXES) {
+    if (k.startsWith(`${prefix}_`)) {
+      const rest = k.slice(prefix.length + 1) // ex: "1_1", "2_3", "cap1", "anosoperacao"
+      const match = rest.match(/^(\d+)_(\d+)$/)
+      if (match) {
+        const secaoNum = parseInt(match[1], 10)
+        // No questionário canônico:
+        // Seção 1 (Perfil) -> Etapa 3
+        // Seção 2 (Pilar 1) -> Etapa 4
+        // Seção 3 (Pilar 2) -> Etapa 5
+        // Seção 4 (Pilar 3) -> Etapa 6
+        // Seção 5 (Hackman) -> Etapa 7
+        // Seção 6 (Buffett) -> Etapa 8
+        // Seção 7 (Expectativas) -> Etapa 9
+        // Seção 8 (Inovação) -> Etapa 10
+        // Seção 9 (Próximos Passos) -> Etapa 11
+        if (secaoNum >= 1 && secaoNum <= 9) {
+          return secaoNum + 2
+        }
+      }
+      // Outros sufixos setoriais conhecidos
+      if (
+        rest.startsWith('cap') ||
+        rest.includes('anosoperacao') ||
+        rest.includes('colaboradores') ||
+        rest.includes('unidades')
+      ) {
+        return 3 // Perfil da empresa
+      }
+      if (
+        rest.includes('cargo') ||
+        rest.includes('cnpj') ||
+        rest.includes('empresa') ||
+        rest.includes('contato')
+      ) {
+        return 2 // Identificação
+      }
+      if (rest.includes('hackman')) return 7
+      if (rest.includes('buffett')) return 8
+      if (rest.includes('expectativa')) return 9
+      if (rest.includes('inovacao') || rest.includes('tecnologia')) return 10
+      if (rest.includes('proximos') || rest.includes('passos')) return 11
+    }
+  }
+
+  // 2. Chaves com prefixo secaoX (ex: secao1_1, secao2_1) ou pilarX
+  const secaoMatch = k.match(/^(?:secao|seção)[_-]?(\d+)/)
+  if (secaoMatch) {
+    const sNum = parseInt(secaoMatch[1], 10)
+    if (sNum >= 1 && sNum <= 9) return sNum + 2
+  }
+
+  const pilarMatch = k.match(/^(?:pilar)[_-]?(\d+)/)
+  if (pilarMatch) {
+    const pNum = parseInt(pilarMatch[1], 10)
+    if (pNum === 1) return 4
+    if (pNum === 2) return 5
+    if (pNum === 3) return 6
+  }
+
+  // 3. Etapa direta (ex: etapa_1, etapa1, etapa_3)
+  const etapaMatch = k.match(/^(?:etapa)[_-]?(\d+)/)
+  if (etapaMatch) {
+    const eNum = parseInt(etapaMatch[1], 10)
+    if (eNum >= 1 && eNum <= 11) return eNum
+  }
+
+  // 4. Mapeamento semântico de campos específicos do lead / formulário
+  if (
+    ['setor', 'segmento', 'setor_id', 'segmento_outro', 'modalidade_trading', 'ramo'].some(
+      (w) => k === w || k.startsWith(`${w}_`),
+    )
+  ) {
+    return 1
+  }
+
+  if (
+    [
+      'razao_social',
+      'cnpj',
+      'data',
+      'respondente',
+      'cargo',
+      'email',
+      'whatsapp',
+      'telefone',
+      'cadastro',
+      'nomecompleto',
+      'nome_completo',
+      'empresa',
+    ].some((w) => k === w || k.startsWith(`${w}_`))
+  ) {
+    return 2
+  }
+
+  if (
+    [
+      'perfil',
+      'faturamento',
+      'faturamento_anual',
+      'faturamento_mensal',
+      'colaboradores',
+      'unidades',
+      'anosoperacao',
+      'anos_operacao',
+      'regime_tributario',
+      'estrutura_propriedade',
+    ].some((w) => k === w || k.startsWith(`${w}_`))
+  ) {
+    return 3
+  }
+
+  if (
+    k.includes('prisao') ||
+    k.includes('fundador') ||
+    k.includes('centralizacao') ||
+    k.startsWith('cap1') ||
+    k.startsWith('cap2')
+  ) {
+    return 4
+  }
+
+  if (
+    k.includes('ineficiencia') ||
+    k.includes('retrabalho') ||
+    k.includes('gargalo') ||
+    k.startsWith('cap3') ||
+    k.startsWith('cap4')
+  ) {
+    return 5
+  }
+
+  if (
+    k.includes('abismo') ||
+    k.includes('estrategia') ||
+    k.includes('execucao') ||
+    k.startsWith('cap5') ||
+    k.startsWith('cap6')
+  ) {
+    return 6
+  }
+
+  if (k.includes('hackman') || k.includes('equipe') || k.includes('lideranca')) {
+    return 7
+  }
+
+  if (
+    k.includes('buffett') ||
+    k.includes('ebitda') ||
+    k.includes('endividamento') ||
+    k.includes('inadimplencia')
+  ) {
+    return 8
+  }
+
+  if (k.includes('expectativa') || k.includes('ambicao') || k.includes('horizonte')) {
+    return 9
+  }
+
+  if (k.includes('inovacao') || k.includes('tecnologia') || k.includes('maturidade_digital')) {
+    return 10
+  }
+
+  if (
+    [
+      'proximos_passos',
+      'autorizacao_devolutiva',
+      'formato_interesse',
+      'plano_interesse',
+      'plano_escolhido',
+      'responsavel_documentos',
+      'responsavel_envio',
+    ].some((w) => k === w || k.startsWith(`${w}_`))
+  ) {
+    return 11
+  }
+
+  // Não classificado -> Seção "Outras Respostas"
+  return null
 }
 
 // Definição canônica das 11 etapas do questionário estratégico
@@ -59,65 +268,72 @@ const ETAPAS_QUESTIONARIO_CONFIG = [
       'telefone',
       'etapa_2',
       'cadastro',
+      'nomecompleto',
     ],
   },
   {
     numero: 3,
     titulo: 'Etapa 3 — Seção 1: Perfil da Empresa e Contexto',
-    descricao: 'Mapeamento estrutural de faturamento, equipe e modelo de negócio',
+    descricao:
+      'Mapeamento estrutural de faturamento, equipe e modelo de negócio (perguntas 1.1 a 1.8)',
     chaves: ['secao1', 'perfil', 'etapa_3'],
   },
   {
     numero: 4,
     titulo: 'Etapa 4 — Seção 2: Pilar 1: Prisão do Fundador',
-    descricao: 'Centralização decisória, dependência de pessoas-chave e autonomia',
+    descricao:
+      'Centralização decisória, dependência de pessoas-chave e autonomia (perguntas 2.1 a 2.6)',
     chaves: ['secao2', 'pilar1', 'pilar_1', 'pilar_1_prisao_fundador', 'etapa_4'],
   },
   {
     numero: 5,
     titulo: 'Etapa 5 — Seção 3: Pilar 2: Ineficiência Invisível',
-    descricao: 'Gargalos operacionais, retrabalho e vazamento de margem',
+    descricao: 'Gargalos operacionais, retrabalho e vazamento de margem (perguntas 3.1 a 3.6)',
     chaves: ['secao3', 'pilar2', 'pilar_2', 'pilar_2_ineficiencia_invisivel', 'etapa_5'],
   },
   {
     numero: 6,
     titulo: 'Etapa 6 — Seção 4: Pilar 3: Abismo Estratégia vs. Execução',
-    descricao: 'Alinhamento tático, governança, metas e desdobramento',
+    descricao: 'Alinhamento tático, governança, metas e desdobramento (perguntas 4.1 a 4.6)',
     chaves: ['secao4', 'pilar3', 'pilar_3', 'pilar_3_abismo_estrategia_execucao', 'etapa_6'],
   },
   {
     numero: 7,
     titulo: 'Etapa 7 — Seção 5: Capacidade e Design Organizacional (Hackman)',
-    descricao: 'As 5 condições determinísticas para eficácia de equipes',
+    descricao: 'As 5 condições determinísticas para eficácia de equipes (perguntas 5.1 a 5.6)',
     chaves: ['secao5', 'hackman', 'etapa_7'],
   },
   {
     numero: 8,
     titulo: 'Etapa 8 — Seção 6: Saúde Econômico-Financeira (Buffett)',
-    descricao: 'Solidez de caixa, margens, endividamento e governança contábil',
+    descricao:
+      'Solidez de caixa, margens, endividamento e governança contábil (perguntas 6.1 a 6.6)',
     chaves: ['secao6', 'buffett', 'etapa_8'],
   },
   {
     numero: 9,
     titulo: 'Etapa 9 — Seção 7: Expectativas e Ambição',
-    descricao: 'Objetivos prioritários de crescimento e consolidação para os próximos 12 meses',
+    descricao: 'Objetivos prioritários de crescimento e consolidação (perguntas 7.1 a 7.5)',
     chaves: ['secao7', 'expectativas', 'etapa_9'],
   },
   {
     numero: 10,
     titulo: 'Etapa 10 — Seção 8: Inovação e Tecnologia',
-    descricao: 'Maturidade digital, automações e barreiras tecnológicas',
+    descricao: 'Maturidade digital, automações e barreiras tecnológicas (perguntas 8.1 a 8.4)',
     chaves: ['secao8', 'inovacao', 'tecnologia', 'etapa_10'],
   },
   {
     numero: 11,
     titulo: 'Etapa 11 — Seção 9: Próximos Passos',
-    descricao: 'Autorização da sessão devolutiva executiva de 45 min e formato de interesse',
+    descricao:
+      'Autorização da sessão devolutiva executiva de 45 min e formato de interesse (9.1 a 9.4)',
     chaves: [
       'secao9',
       'proximos_passos',
       'autorizacao_devolutiva',
       'formato_interesse',
+      'plano_interesse',
+      'plano_escolhido',
       'responsavel_documentos',
       'responsavel_envio',
       'etapa_11',
@@ -157,11 +373,57 @@ function getFileIcon(filename: string) {
   return <Paperclip className="w-4 h-4 text-[#FFB84D] shrink-0" />
 }
 
-export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialogProps) {
+export function LeadDetailsDialog({
+  lead: initialLead,
+  leadId,
+  open,
+  onOpenChange,
+}: LeadDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState<
     'geral' | 'questionario' | 'anexos' | 'pilares' | 'bruto'
   >('geral')
+  const [currentLead, setCurrentLead] = useState<LeadRecord | null>(initialLead)
+  const [loadingFresh, setLoadingFresh] = useState<boolean>(false)
 
+  // Sempre que o modal abre ou o lead/leadId muda, buscar o registro fresco do banco por ID
+  useEffect(() => {
+    const targetId = leadId || initialLead?.id
+    if (open && targetId) {
+      let isMounted = true
+      setLoadingFresh(true)
+      getLeadById(targetId)
+        .then((fresh) => {
+          if (isMounted) {
+            if (fresh) {
+              setCurrentLead(fresh)
+            } else if (initialLead) {
+              setCurrentLead(initialLead)
+            }
+          }
+        })
+        .catch((err) => {
+          console.error('Erro ao buscar lead fresco:', err)
+          if (isMounted && initialLead) {
+            setCurrentLead(initialLead)
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoadingFresh(false)
+          }
+        })
+
+      return () => {
+        isMounted = false
+      }
+    } else if (!open) {
+      setCurrentLead(initialLead)
+    }
+  }, [open, leadId, initialLead])
+
+  const lead = currentLead || initialLead
+
+  if (!lead && !open) return null
   if (!lead) return null
 
   const dadosCompletos = lead.dados_completos || {}
@@ -177,52 +439,79 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
   const totalAnexos =
     arquivosFinanceiros.length + arquivosGerenciais.length + arquivosSociedade.length
 
-  const getDownloadUrl = (campo: string, fileName: string) => {
+  const getDownloadUrl = (_campo: string, fileName: string) => {
     try {
-      return pb.files.getUrl(lead as any, fileName)
+      const url = pb.files.getUrl(lead as any, fileName)
+      const token = pb.authStore.token
+      if (token && !url.includes('token=')) {
+        return `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`
+      }
+      return url
     } catch (_) {
-      return `/api/files/leads/${lead.id}/${fileName}`
+      const base = `/api/files/leads/${lead.id}/${fileName}`
+      const token = pb.authStore.token
+      return token ? `${base}?token=${encodeURIComponent(token)}` : base
     }
   }
+  // Mapa de todas as chaves de respostas classificadas por etapa (1..11)
+  // e as chaves não padronizadas ("Outras Respostas")
+  const respostasPorEtapa: Record<number, { chave: string; resposta: any; nota?: string }[]> = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+    6: [],
+    7: [],
+    8: [],
+    9: [],
+    10: [],
+    11: [],
+  }
+  const outrasRespostas: { chave: string; resposta: any }[] = []
 
-  // Agrupamento de respostas por etapa 1 a 11
-  const extrairRespostasEtapa = (etapaNum: number, chaves: string[]) => {
-    const itens: { chave: string; pergunta?: string; resposta: any; nota?: string }[] = []
+  // Preencher a partir de `respostasObj` (fonte primária do questionário gravado no banco)
+  Object.keys(respostasObj).forEach((k) => {
+    const val = respostasObj[k]
+    const etapaAlvo = classificarChaveEtapa(k)
 
-    // 1. Verificar em respostasObj com prefixo ou chave direta
-    Object.keys(respostasObj).forEach((k) => {
-      const kLower = k.toLowerCase()
-      const match =
-        chaves.some((c) => kLower.startsWith(c) || kLower.includes(c)) ||
-        (etapaNum === 3 && kLower.startsWith('secao1')) ||
-        (etapaNum === 4 && kLower.startsWith('secao2')) ||
-        (etapaNum === 5 && kLower.startsWith('secao3')) ||
-        (etapaNum === 6 && kLower.startsWith('secao4')) ||
-        (etapaNum === 7 && kLower.startsWith('secao5')) ||
-        (etapaNum === 8 && kLower.startsWith('secao6')) ||
-        (etapaNum === 9 && kLower.startsWith('secao7')) ||
-        (etapaNum === 10 && kLower.startsWith('secao8')) ||
-        (etapaNum === 11 && kLower.startsWith('secao9'))
-
-      if (match) {
-        const val = respostasObj[k]
-        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
-          Object.keys(val).forEach((subK) => {
-            itens.push({
-              chave: `${k} - ${subK}`,
-              resposta: val[subK],
-            })
+    if (etapaAlvo !== null && etapaAlvo >= 1 && etapaAlvo <= 11) {
+      if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+        Object.keys(val).forEach((subK) => {
+          respostasPorEtapa[etapaAlvo].push({
+            chave: `${k} - ${subK}`,
+            resposta: val[subK],
           })
-        } else {
-          itens.push({
-            chave: k,
-            resposta: val,
-          })
-        }
+        })
+      } else {
+        respostasPorEtapa[etapaAlvo].push({
+          chave: k,
+          resposta: val,
+        })
       }
-    })
+    } else {
+      // Chave não padronizada -> Outras respostas
+      if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+        Object.keys(val).forEach((subK) => {
+          outrasRespostas.push({
+            chave: `${k} - ${subK}`,
+            resposta: val[subK],
+          })
+        })
+      } else {
+        outrasRespostas.push({
+          chave: k,
+          resposta: val,
+        })
+      }
+    }
+  })
 
-    // 2. Fallbacks específicos dos dados estruturados da base
+  // Agrupamento de respostas por etapa 1 a 11 com fallbacks contextuais
+  const extrairRespostasEtapa = (etapaNum: number) => {
+    const itens = [...(respostasPorEtapa[etapaNum] || [])]
+
+    // Fallbacks dos dados estruturados da base para complementar campos em branco
     if (etapaNum === 1) {
       if (!itens.some((i) => i.chave.toLowerCase().includes('setor'))) {
         itens.push({ chave: 'Setor de Atuação', resposta: lead.setor || '—' })
@@ -254,7 +543,10 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
       ) {
         itens.push({ chave: 'Faturamento Anual', resposta: perfil.faturamento_anual })
       }
-      if (perfil.colaboradores) {
+      if (
+        perfil.colaboradores &&
+        !itens.some((i) => i.chave.toLowerCase().includes('colaborador'))
+      ) {
         itens.push({ chave: 'Número de Colaboradores', resposta: perfil.colaboradores })
       }
     } else if (etapaNum === 4) {
@@ -360,6 +652,11 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
       }
     }
 
+    // Ordenar itens por chave alfabética/numérica para manter a leitura limpa (ex: saude_1_1 antes de saude_1_2)
+    itens.sort((a, b) =>
+      a.chave.localeCompare(b.chave, undefined, { numeric: true, sensitivity: 'base' }),
+    )
+
     return itens
   }
 
@@ -403,9 +700,12 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                   </Badge>
                 )}
               </div>
-              <DialogTitle className="text-xl font-bold mt-2 text-[#F8FAFC]">
-                {lead.razao_social || lead.nome_completo || 'Lead do Site Institucional'}
-              </DialogTitle>
+              <div className="flex items-center gap-2 mt-2">
+                <DialogTitle className="text-xl font-bold text-[#F8FAFC]">
+                  {lead.razao_social || lead.nome_completo || 'Lead do Site Institucional'}
+                </DialogTitle>
+                {loadingFresh && <Loader2 className="w-4 h-4 text-[#5B9DFF] animate-spin" />}
+              </div>
               <DialogDescription className="text-xs text-[#8B98B4] mt-0.5">
                 Respondente: <span className="text-[#C7D0E0]">{lead.nome_completo || '—'}</span> (
                 {lead.cargo || 'Cargo não informado'})
@@ -631,10 +931,9 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                     Setor: {lead.setor || 'Geral'}
                   </Badge>
                 </div>
-
                 <div className="space-y-4">
                   {ETAPAS_QUESTIONARIO_CONFIG.map((etapa) => {
-                    const respostasEtapa = extrairRespostasEtapa(etapa.numero, etapa.chaves)
+                    const respostasEtapa = extrairRespostasEtapa(etapa.numero)
                     return (
                       <Card key={etapa.numero} className="bg-[#16213A] border-[#24334F]">
                         <CardHeader className="py-3 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/70">
@@ -708,7 +1007,68 @@ export function LeadDetailsDialog({ lead, open, onOpenChange }: LeadDetailsDialo
                       </Card>
                     )
                   })}
-                </div>
+
+                  {/* Seção adicional para respostas não-padronizadas */}
+                  {outrasRespostas.length > 0 && (
+                    <Card className="bg-[#16213A] border-[#FFB84D]/40">
+                      <CardHeader className="py-3 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/70">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-xs sm:text-sm font-bold text-[#FFB84D]">
+                              Outras Respostas & Metadados Extras
+                            </CardTitle>
+                            <p className="text-[11px] text-[#8B98B4] mt-0.5">
+                              Chaves enviadas no campo &apos;respostas&apos; sem correlação direta
+                              com as etapas 1 a 11
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="border-[#FFB84D]/50 text-[#FFB84D] bg-[#FFB84D]/10 text-[10px]"
+                          >
+                            {outrasRespostas.length}{' '}
+                            {outrasRespostas.length === 1 ? 'item' : 'itens'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-2.5 text-xs">
+                        {outrasRespostas.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="border-b border-[#24334F]/40 pb-2.5 last:border-0 last:pb-0"
+                          >
+                            <div className="text-[11px] font-semibold text-[#FFB84D] uppercase tracking-wide">
+                              {item.chave}
+                            </div>
+                            <div className="text-[#F8FAFC] font-medium mt-1">
+                              {Array.isArray(item.resposta) ? (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {item.resposta.map((r: any, rIdx: number) => (
+                                    <Badge
+                                      key={rIdx}
+                                      variant="secondary"
+                                      className="bg-[#111A2E] text-[#5B9DFF] border border-[#24334F] text-[11px]"
+                                    >
+                                      {String(r)}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : typeof item.resposta === 'object' && item.resposta !== null ? (
+                                <pre className="text-[10px] font-mono bg-[#111A2E] p-2 rounded text-[#3DDC74] overflow-x-auto mt-1">
+                                  {JSON.stringify(item.resposta, null, 2)}
+                                </pre>
+                              ) : (
+                                <span className="text-[#3DDC74]">
+                                  {String(item.resposta ?? '—')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>{' '}
               </TabsContent>
 
               {/* ABA 3: ANEXOS RE-HOSPEDADOS */}

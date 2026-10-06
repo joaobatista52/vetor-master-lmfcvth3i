@@ -258,7 +258,6 @@ export default function AdminLeads() {
           </Button>
         </div>
       </div>
-
       {/* Alerta de Feedback */}
       {feedback && (
         <div
@@ -281,7 +280,6 @@ export default function AdminLeads() {
           </div>
         </div>
       )}
-
       {/* Cards de Status da Conexão */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="bg-[#16213A] border-[#24334F]">
@@ -332,7 +330,6 @@ export default function AdminLeads() {
           </CardContent>
         </Card>
       </div>
-
       {/* Bloco de Credenciais do Site Institucional (Protegido e Mascarado) */}
       <Card className="bg-[#16213A] border-[#24334F]">
         <CardHeader className="pb-3 border-b border-[#24334F]">
@@ -387,7 +384,6 @@ export default function AdminLeads() {
           </div>
         </CardContent>
       </Card>
-
       {/* Tabela de Leads */}
       <Card className="bg-[#16213A] border-[#24334F]">
         <CardHeader className="border-b border-[#24334F] pb-4">
@@ -645,16 +641,16 @@ export default function AdminLeads() {
           )}
         </CardContent>
       </Card>
-
       {/* Modal com detalhes e respostas completas do lead */}
       <LeadDetailsDialog
         lead={selectedLead}
+        leadId={selectedLead?.id}
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open)
           if (!open) setSelectedLead(null)
         }}
-      />
+      />{' '}
     </div>
   )
 }

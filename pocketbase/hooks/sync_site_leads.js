@@ -307,9 +307,15 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       }
 
       // 2. Mapeamento e download/re-hospedagem dos arquivos dos 3 grupos
+      // Apenas baixa e re-hospeda se o lead local ainda NÃO possui arquivos gravados neste campo
       // Grupo 1: Demonstrativos Financeiros (no site: documentacao_adicional)
       const remoteDocAdicional = item.documentacao_adicional
+      const localDocAdicional = rec.get('documentacao_adicional')
+      const hasLocalDocAdicional =
+        localDocAdicional &&
+        (Array.isArray(localDocAdicional) ? localDocAdicional.length > 0 : true)
       if (
+        !hasLocalDocAdicional &&
         remoteDocAdicional &&
         (Array.isArray(remoteDocAdicional) ? remoteDocAdicional.length > 0 : true)
       ) {
@@ -321,7 +327,13 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
       // Grupo 2: Relatórios Gerenciais (no site: certificacoes)
       const remoteCert = item.certificacoes
-      if (remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
+      const localCert = rec.get('certificacoes')
+      const hasLocalCert = localCert && (Array.isArray(localCert) ? localCert.length > 0 : true)
+      if (
+        !hasLocalCert &&
+        remoteCert &&
+        (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)
+      ) {
         const files2 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteCert)
         if (files2.length > 0) {
           rec.set('certificacoes', files2)
@@ -330,13 +342,19 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
       // Grupo 3: Sociedade/Complementares (no site: contrato_social)
       const remoteContrato = item.contrato_social
-      if (remoteContrato && (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)) {
+      const localContrato = rec.get('contrato_social')
+      const hasLocalContrato =
+        localContrato && (Array.isArray(localContrato) ? localContrato.length > 0 : true)
+      if (
+        !hasLocalContrato &&
+        remoteContrato &&
+        (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)
+      ) {
         const files3 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteContrato)
         if (files3.length > 0) {
           rec.set('contrato_social', files3)
         }
       }
-
       $app.save(rec)
 
       if (isNew) {
@@ -708,9 +726,14 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     }
 
     // 2. Mapeamento e download/re-hospedagem dos arquivos dos 3 grupos
+    // Apenas baixa e re-hospeda se o lead local ainda NÃO possui arquivos gravados neste campo
     // Grupo 1: Demonstrativos Financeiros (no site: documentacao_adicional)
     const remoteDocAdicional = item.documentacao_adicional
+    const localDocAdicional = rec.get('documentacao_adicional')
+    const hasLocalDocAdicional =
+      localDocAdicional && (Array.isArray(localDocAdicional) ? localDocAdicional.length > 0 : true)
     if (
+      !hasLocalDocAdicional &&
       remoteDocAdicional &&
       (Array.isArray(remoteDocAdicional) ? remoteDocAdicional.length > 0 : true)
     ) {
@@ -722,7 +745,9 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
 
     // Grupo 2: Relatórios Gerenciais (no site: certificacoes)
     const remoteCert = item.certificacoes
-    if (remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
+    const localCert = rec.get('certificacoes')
+    const hasLocalCert = localCert && (Array.isArray(localCert) ? localCert.length > 0 : true)
+    if (!hasLocalCert && remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
       const files2 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteCert)
       if (files2.length > 0) {
         rec.set('certificacoes', files2)
@@ -731,13 +756,19 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
 
     // Grupo 3: Sociedade/Complementares (no site: contrato_social)
     const remoteContrato = item.contrato_social
-    if (remoteContrato && (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)) {
+    const localContrato = rec.get('contrato_social')
+    const hasLocalContrato =
+      localContrato && (Array.isArray(localContrato) ? localContrato.length > 0 : true)
+    if (
+      !hasLocalContrato &&
+      remoteContrato &&
+      (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)
+    ) {
       const files3 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteContrato)
       if (files3.length > 0) {
         rec.set('contrato_social', files3)
       }
     }
-
     $app.save(rec)
 
     if (isNew) {
@@ -1067,7 +1098,12 @@ routerAdd(
       }
 
       const remoteDocAdicional = item.documentacao_adicional
+      const localDocAdicional = rec.get('documentacao_adicional')
+      const hasLocalDocAdicional =
+        localDocAdicional &&
+        (Array.isArray(localDocAdicional) ? localDocAdicional.length > 0 : true)
       if (
+        !hasLocalDocAdicional &&
         remoteDocAdicional &&
         (Array.isArray(remoteDocAdicional) ? remoteDocAdicional.length > 0 : true)
       ) {
@@ -1078,7 +1114,13 @@ routerAdd(
       }
 
       const remoteCert = item.certificacoes
-      if (remoteCert && (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)) {
+      const localCert = rec.get('certificacoes')
+      const hasLocalCert = localCert && (Array.isArray(localCert) ? localCert.length > 0 : true)
+      if (
+        !hasLocalCert &&
+        remoteCert &&
+        (Array.isArray(remoteCert) ? remoteCert.length > 0 : true)
+      ) {
         const files2 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteCert)
         if (files2.length > 0) {
           rec.set('certificacoes', files2)
@@ -1086,13 +1128,19 @@ routerAdd(
       }
 
       const remoteContrato = item.contrato_social
-      if (remoteContrato && (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)) {
+      const localContrato = rec.get('contrato_social')
+      const hasLocalContrato =
+        localContrato && (Array.isArray(localContrato) ? localContrato.length > 0 : true)
+      if (
+        !hasLocalContrato &&
+        remoteContrato &&
+        (Array.isArray(remoteContrato) ? remoteContrato.length > 0 : true)
+      ) {
         const files3 = downloadRemoteFiles(item.collectionId || 'leads', siteId, remoteContrato)
         if (files3.length > 0) {
           rec.set('contrato_social', files3)
         }
       }
-
       $app.save(rec)
 
       if (isNew) {
