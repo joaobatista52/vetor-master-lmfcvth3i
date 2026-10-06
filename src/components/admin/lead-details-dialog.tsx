@@ -966,7 +966,18 @@ export function LeadDetailsDialog({
   // 3) Outras Respostas & Metadados Extras (chaves não padronizadas)
   const extrairRespostasIdentificacaoUnificada = (): RespostaExibicao[] => {
     const respostasEtapa1 = extrairRespostasEtapa(1)
-    const respostasEtapa2 = extrairRespostasEtapa(2)
+    // Filtra de respostasEtapa2 chaves com prefixo de setor seguido de "_" e contendo razao, empresa ou social
+    // (ex.: "varejo_razao_social", "trade_razao_social", "saude_razao_social", "varejo_empresa"),
+    // mantendo apenas o item canônico de fallback "Razão Social / Nome da Empresa" (lead.razao_social).
+    const respostasEtapa2 = extrairRespostasEtapa(2).filter((item) => {
+      const k = item.chave.trim().toLowerCase()
+      const ehRazaoSetorial = SETOR_PREFIXES.some(
+        (prefix) =>
+          k.startsWith(`${prefix}_`) &&
+          (k.includes('razao') || k.includes('empresa') || k.includes('social')),
+      )
+      return !ehRazaoSetorial
+    })
     const respostasExtras = [...outrasRespostas]
 
     const todos: RespostaExibicao[] = [...respostasEtapa1, ...respostasEtapa2, ...respostasExtras]
