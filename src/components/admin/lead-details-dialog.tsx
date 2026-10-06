@@ -9,7 +9,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import {
   Building2,
@@ -657,8 +656,8 @@ export function LeadDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-[#111A2E] text-[#F8FAFC] border-[#24334F] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="p-6 pb-4 border-b border-[#24334F] bg-[#0B1120] space-y-3">
+      <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] bg-[#111A2E] text-[#F8FAFC] border-[#24334F] p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-6 pb-4 border-b border-[#24334F] bg-[#0B1120] space-y-3 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -800,13 +799,13 @@ export function LeadDetailsDialog({
           </div>
         </DialogHeader>
 
-        <div className="p-6 flex-1 overflow-hidden flex flex-col">
+        <div className="p-6 flex-1 min-h-0 overflow-hidden flex flex-col">
           <Tabs
             value={activeTab}
             onValueChange={(v: any) => setActiveTab(v)}
-            className="flex-1 flex flex-col"
+            className="flex-1 min-h-0 flex flex-col"
           >
-            <TabsList className="bg-[#16213A] border border-[#24334F] text-[#8B98B4] mb-4 flex-wrap h-auto p-1 gap-1">
+            <TabsList className="bg-[#16213A] border border-[#24334F] text-[#8B98B4] mb-4 flex-wrap h-auto p-1 gap-1 shrink-0">
               <TabsTrigger
                 value="questionario"
                 className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
@@ -829,9 +828,9 @@ export function LeadDetailsDialog({
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="flex-1 pr-4">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-2">
               {/* ABA 1: QUESTIONÁRIO COMPLETO */}
-              <TabsContent value="questionario" className="mt-0 space-y-4">
+              <TabsContent value="questionario" className="mt-0 space-y-4 pb-4">
                 <div className="p-3 bg-[#16213A] border border-[#5B9DFF]/40 rounded-[4px] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#3DDC74]" />
@@ -983,8 +982,8 @@ export function LeadDetailsDialog({
                 </div>{' '}
               </TabsContent>
 
-              {/* ABA 3: ANEXOS RE-HOSPEDADOS */}
-              <TabsContent value="anexos" className="mt-0 space-y-4">
+              {/* ABA 2: ANEXOS RE-HOSPEDADOS */}
+              <TabsContent value="anexos" className="mt-0 space-y-4 pb-4">
                 <div className="p-3 bg-[#16213A] border border-[#3DDC74]/40 rounded-[4px] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <FileCheck2 className="w-4 h-4 text-[#3DDC74]" />
@@ -1159,7 +1158,7 @@ export function LeadDetailsDialog({
               </TabsContent>
 
               {/* ABA 3: DADOS BRUTOS */}
-              <TabsContent value="bruto" className="mt-0">
+              <TabsContent value="bruto" className="mt-0 pb-4">
                 <Card className="bg-[#0B1120] border-[#24334F]">
                   <CardContent className="p-4">
                     <pre className="text-[11px] font-mono text-[#3DDC74] whitespace-pre-wrap break-words overflow-x-auto">
@@ -1179,7 +1178,7 @@ export function LeadDetailsDialog({
                   </CardContent>
                 </Card>
               </TabsContent>
-            </ScrollArea>
+            </div>
           </Tabs>
         </div>
       </DialogContent>

@@ -35,7 +35,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -618,17 +617,6 @@ export default function AdminLeads() {
                                   <span>Marcar como teste</span>
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuSeparator className="bg-[#24334F]" />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedLead(lead)
-                                  setDialogOpen(true)
-                                }}
-                                className="gap-2 cursor-pointer text-[#5B9DFF] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#5B9DFF]"
-                              >
-                                <Eye className="w-3.5 h-3.5 text-[#5B9DFF]" />
-                                <span>Ver detalhes completos</span>
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
