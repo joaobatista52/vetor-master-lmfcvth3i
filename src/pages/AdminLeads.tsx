@@ -17,6 +17,8 @@ import {
   FlaskConical,
   RotateCcw,
   Filter,
+  Clock,
+  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -57,7 +59,9 @@ export default function AdminLeads() {
   const [testingE2E, setTestingE2E] = useState(false)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'ativos' | 'todos' | 'teste' | 'novo'>('ativos')
+  const [statusFilter, setStatusFilter] = useState<
+    'ativos' | 'todos' | 'novo' | 'em_processamento' | 'concluido' | 'teste' | 'lista_espera'
+  >('ativos')
   const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [credConfig, setCredConfig] = useState<IntegracaoSiteConfig | null>(null)
@@ -178,11 +182,40 @@ export default function AdminLeads() {
     }
   }
 
+  // Utilitário para verificar se um lead possui questionário estrutural preenchido
+  const hasQuestionarioRespondido = (lead: LeadRecord): boolean => {
+    const resp = lead.respostas || (lead.dados_completos && lead.dados_completos.respostas)
+    if (!resp || typeof resp !== 'object') return false
+    const chaves = Object.keys(resp).filter(
+      (k) =>
+        k !== 'origem' &&
+        k !== 'plano_escolhido' &&
+        k !== 'acesso_antecipado_solicitado' &&
+        k !== 'condicao_fundador_solicitada' &&
+        k !== 'faturamento_anual' &&
+        k !== 'data_cadastro',
+    )
+    return chaves.length > 0
+  }
+
   const countTestLeads = leads.filter((l) => (l.status || '').toLowerCase() === 'teste').length
+  const countNovos = leads.filter((l) => (l.status || '').toLowerCase() === 'novo').length
+  const countEmProcessamento = leads.filter((l) => {
+    const s = (l.status || '').toLowerCase()
+    return s === 'em_processamento' || s === 'processamento' || s === 'em andamento'
+  }).length
+  const countConcluidos = leads.filter((l) => {
+    const s = (l.status || '').toLowerCase()
+    return s === 'concluido' || s === 'concluído' || s === 'processado'
+  }).length
+  const countListaEspera = leads.filter((l) => {
+    const s = (l.status || '').toLowerCase()
+    return s === 'lista_espera' || s === 'espera' || s === 'prioridade'
+  }).length
   const countRealLeads = leads.length - countTestLeads
 
   const filteredLeads = leads.filter((lead) => {
-    const statusNormalized = (lead.status || '').toLowerCase()
+    const statusNormalized = (lead.status || '').toLowerCase().trim()
 
     // Filtro por status
     if (statusFilter === 'ativos' && statusNormalized === 'teste') {
@@ -192,6 +225,30 @@ export default function AdminLeads() {
       return false
     }
     if (statusFilter === 'novo' && statusNormalized !== 'novo') {
+      return false
+    }
+    if (
+      statusFilter === 'em_processamento' &&
+      statusNormalized !== 'em_processamento' &&
+      statusNormalized !== 'processamento' &&
+      statusNormalized !== 'em andamento'
+    ) {
+      return false
+    }
+    if (
+      statusFilter === 'concluido' &&
+      statusNormalized !== 'concluido' &&
+      statusNormalized !== 'concluído' &&
+      statusNormalized !== 'processado'
+    ) {
+      return false
+    }
+    if (
+      statusFilter === 'lista_espera' &&
+      statusNormalized !== 'lista_espera' &&
+      statusNormalized !== 'espera' &&
+      statusNormalized !== 'prioridade'
+    ) {
       return false
     }
 
@@ -404,12 +461,12 @@ export default function AdminLeads() {
 
             <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
               {/* Filtro por status */}
-              <div className="flex items-center bg-[#0B1120] p-1 rounded-[4px] border border-[#24334F] text-xs">
-                <Filter className="w-3.5 h-3.5 text-[#8B98B4] ml-2 mr-1" />
+              <div className="flex flex-wrap items-center bg-[#0B1120] p-1 rounded-[4px] border border-[#24334F] text-xs gap-0.5">
+                <Filter className="w-3.5 h-3.5 text-[#8B98B4] ml-2 mr-1 shrink-0" />
                 <button
                   type="button"
                   onClick={() => setStatusFilter('ativos')}
-                  className={`px-2.5 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
                     statusFilter === 'ativos'
                       ? 'bg-[#0066CC] text-white font-semibold'
                       : 'text-[#8B98B4] hover:text-[#F8FAFC]'
@@ -420,8 +477,68 @@ export default function AdminLeads() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setStatusFilter('novo')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'novo'
+                      ? 'bg-[#0066CC] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Apenas leads com status Novo"
+                >
+                  Novo ({countNovos})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('em_processamento')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'em_processamento'
+                      ? 'bg-[#0066CC] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Em processamento"
+                >
+                  Em processamento ({countEmProcessamento})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('concluido')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'concluido'
+                      ? 'bg-[#0066CC] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Processamento concluído"
+                >
+                  Concluído ({countConcluidos})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('lista_espera')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'lista_espera'
+                      ? 'bg-[#FF9900] text-[#0B1120] font-bold shadow-sm'
+                      : 'text-[#FFB84D] hover:text-white'
+                  }`}
+                  title="Leads na Lista de Prioridade SaaS (aguardando aprovação manual do Admin)"
+                >
+                  Lista de Prioridade ({countListaEspera})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('teste')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'teste'
+                      ? 'bg-[#64748B] text-white font-semibold'
+                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                  }`}
+                  title="Apenas leads de teste"
+                >
+                  Teste ({countTestLeads})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setStatusFilter('todos')}
-                  className={`px-2.5 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
                     statusFilter === 'todos'
                       ? 'bg-[#0066CC] text-white font-semibold'
                       : 'text-[#8B98B4] hover:text-[#F8FAFC]'
@@ -429,18 +546,6 @@ export default function AdminLeads() {
                   title="Exibir todos incluindo leads de teste"
                 >
                   Todos ({leads.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('teste')}
-                  className={`px-2.5 py-1 rounded-[3px] text-xs font-medium transition-colors ${
-                    statusFilter === 'teste'
-                      ? 'bg-[#64748B] text-white font-semibold'
-                      : 'text-[#8B98B4] hover:text-[#F8FAFC]'
-                  }`}
-                  title="Apenas leads de teste"
-                >
-                  Testes ({countTestLeads})
                 </button>
               </div>
 
@@ -536,29 +641,67 @@ export default function AdminLeads() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {(lead.status || '').toLowerCase() === 'teste' ? (
-                          <Badge
-                            variant="outline"
-                            className="border-slate-500/60 text-slate-300 bg-slate-700/40 text-[10px] font-semibold gap-1"
-                          >
-                            <FlaskConical className="w-3 h-3 text-slate-400" />
-                            <span>Teste</span>
-                          </Badge>
-                        ) : (lead.status || '').toLowerCase() === 'novo' ? (
-                          <Badge
-                            variant="outline"
-                            className="border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px] font-semibold"
-                          >
-                            Novo
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="border-[#8B98B4] text-[#C7D0E0] text-[10px]"
-                          >
-                            {lead.status}
-                          </Badge>
-                        )}
+                        <div className="space-y-1">
+                          {(lead.status || '').toLowerCase() === 'teste' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-slate-500/60 text-slate-300 bg-slate-700/40 text-[10px] font-semibold gap-1"
+                            >
+                              <FlaskConical className="w-3 h-3 text-slate-400" />
+                              <span>Teste</span>
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'novo' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px] font-semibold"
+                            >
+                              Novo
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'lista_espera' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#FF9900]/60 text-[#FFB84D] bg-[#FF9900]/15 text-[10px] font-semibold gap-1"
+                            >
+                              <Clock className="w-3 h-3 text-[#FF9900]" />
+                              <span>Lista de Prioridade</span>
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'em_processamento' ||
+                            (lead.status || '').toLowerCase() === 'processamento' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#5B9DFF]/60 text-[#5B9DFF] bg-[#0066CC]/15 text-[10px] font-semibold"
+                            >
+                              Em processamento
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'concluido' ||
+                            (lead.status || '').toLowerCase() === 'concluído' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#3DDC74]/60 text-[#3DDC74] bg-[#3DDC74]/15 text-[10px] font-semibold"
+                            >
+                              Concluído
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="border-[#8B98B4] text-[#C7D0E0] text-[10px]"
+                            >
+                              {lead.status}
+                            </Badge>
+                          )}
+
+                          {/* Indício visual caso lead em lista_espera tenha questionário respondido */}
+                          {(lead.status || '').toLowerCase() === 'lista_espera' &&
+                            hasQuestionarioRespondido(lead) && (
+                              <div
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px] font-medium leading-none"
+                                title="O lead respondeu as etapas do questionário estrutural e aguarda aprovação manual do Admin para virar 'Novo'."
+                              >
+                                <Sparkles className="w-2.5 h-2.5 text-[#3DDC74] shrink-0" />
+                                <span>Questionário respondido — aguardando aprovação</span>
+                              </div>
+                            )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs text-[#8B98B4] whitespace-nowrap">
                         {lead.synced_at
@@ -598,8 +741,19 @@ export default function AdminLeads() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="bg-[#111A2E] border-[#24334F] text-[#F8FAFC] text-xs min-w-[170px]"
+                              className="bg-[#111A2E] border-[#24334F] text-[#F8FAFC] text-xs min-w-[210px] space-y-0.5"
                             >
+                              {/* Ação especial para leads em lista_espera: Aprovar e processar (virar Novo) */}
+                              {(lead.status || '').toLowerCase() === 'lista_espera' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleSetStatus(lead, 'novo')}
+                                  className="gap-2 cursor-pointer text-[#3DDC74] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#3DDC74] font-semibold"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-[#3DDC74]" />
+                                  <span>Aprovar e processar (virar Novo)</span>
+                                </DropdownMenuItem>
+                              )}
+
                               {(lead.status || '').toLowerCase() === 'teste' ? (
                                 <DropdownMenuItem
                                   onClick={() => handleSetStatus(lead, 'novo')}
@@ -609,13 +763,25 @@ export default function AdminLeads() {
                                   <span>Reativar (voltar a Novo)</span>
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem
-                                  onClick={() => handleSetStatus(lead, 'teste')}
-                                  className="gap-2 cursor-pointer text-[#FFB84D] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#FFB84D]"
-                                >
-                                  <FlaskConical className="w-3.5 h-3.5 text-[#FFB84D]" />
-                                  <span>Marcar como teste</span>
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleSetStatus(lead, 'teste')}
+                                    className="gap-2 cursor-pointer text-[#8B98B4] hover:text-[#FFB84D] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#FFB84D]"
+                                  >
+                                    <FlaskConical className="w-3.5 h-3.5 text-[#FFB84D]" />
+                                    <span>Marcar como teste</span>
+                                  </DropdownMenuItem>
+
+                                  {(lead.status || '').toLowerCase() !== 'lista_espera' && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleSetStatus(lead, 'lista_espera')}
+                                      className="gap-2 cursor-pointer text-[#8B98B4] hover:text-[#FFB84D] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#FFB84D]"
+                                    >
+                                      <Clock className="w-3.5 h-3.5 text-[#FF9900]" />
+                                      <span>Mover para Lista de Prioridade</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>

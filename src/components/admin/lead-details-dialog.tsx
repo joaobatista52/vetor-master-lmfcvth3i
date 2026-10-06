@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   ListOrdered,
   Loader2,
+  Clock,
+  Sparkles,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
@@ -1016,15 +1018,23 @@ export function LeadDetailsDialog({
                   >
                     <span>Teste</span>
                   </Badge>
-                ) : (
+                ) : (lead.status || '').toLowerCase() === 'novo' ? (
                   <Badge
                     variant="outline"
-                    className={
-                      (lead.status || '').toLowerCase() === 'novo'
-                        ? 'border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-xs'
-                        : 'border-[#8B98B4] text-[#C7D0E0] text-xs'
-                    }
+                    className="border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-xs font-semibold"
                   >
+                    Novo
+                  </Badge>
+                ) : (lead.status || '').toLowerCase() === 'lista_espera' ? (
+                  <Badge
+                    variant="outline"
+                    className="border-[#FF9900]/60 text-[#FFB84D] bg-[#FF9900]/15 text-xs font-semibold gap-1"
+                  >
+                    <Clock className="w-3 h-3 text-[#FF9900]" />
+                    <span>Lista de Prioridade</span>
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-[#8B98B4] text-[#C7D0E0] text-xs">
                     {lead.status}
                   </Badge>
                 )}

@@ -261,15 +261,58 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       const rec = isNew ? new Record(leadsCol) : localRecord
 
       const cad = item.cadastro || (item.dados_completos && item.dados_completos.cadastro) || {}
+      const itemOrigem = (item.origem || '').toString()
+      const itemOrigemTipo = (item.origem_tipo || item.origemTipo || '').toString()
+      const dadosCompletosOrigem = (item.dados_completos && item.dados_completos.origem) || ''
+      const itemRespostas =
+        item.respostas || (item.dados_completos && item.dados_completos.respostas) || null
+      const respostasOrigem = (itemRespostas && itemRespostas.origem) || ''
+
+      const isListaPrioridade =
+        itemOrigem.toLowerCase().includes('prioridade') ||
+        itemOrigemTipo.toLowerCase().includes('prioridade') ||
+        dadosCompletosOrigem.toLowerCase().includes('prioridade') ||
+        respostasOrigem.toLowerCase().includes('prioridade')
+
+      // Verificar se possui respostas reais do questionário (mais do que apenas campos de inscrição da lista de prioridade)
+      let temRespostasQuestionario = false
+      if (itemRespostas && typeof itemRespostas === 'object') {
+        const rKeys = Object.keys(itemRespostas).filter((k) => {
+          return (
+            k !== 'origem' &&
+            k !== 'plano_escolhido' &&
+            k !== 'acesso_antecipado_solicitado' &&
+            k !== 'condicao_fundador_solicitada' &&
+            k !== 'faturamento_anual' &&
+            k !== 'data_cadastro'
+          )
+        })
+        if (rKeys.length > 0) {
+          temRespostasQuestionario = true
+        }
+      }
 
       rec.set('protocolo', protocolo)
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
-      // Se já for lead existente marcado como 'teste', preservar o status 'teste'
+
+      // Regras de Status:
+      // 1. Preservar sempre status 'teste'
+      // 2. Se for lead 'lista_espera' (ou se Origem for Lista de Prioridade SaaS, ou sem respostas):
+      //    REGRA DE PROMOÇÃO: NUNCA promover automaticamente para 'novo'. Se já era lista_espera ou é da lista de prioridade,
+      //    mantém lista_espera. Promoção a 'novo' requer aprovação manual pelo Admin.
       if (isTest) {
         rec.set('status', 'teste')
       } else {
-        rec.set('status', item.status || 'novo')
+        const localStatusAtual = (rec.getString('status') || '').toLowerCase()
+        if (localStatusAtual === 'lista_espera') {
+          // Mantém lista_espera mesmo se chegarem respostas do site
+          rec.set('status', 'lista_espera')
+        } else if (isListaPrioridade || !temRespostasQuestionario) {
+          rec.set('status', 'lista_espera')
+        } else {
+          rec.set('status', item.status || 'novo')
+        }
       }
       rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
       rec.set('formato_interesse', item.formato_interesse || '')
@@ -680,15 +723,51 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     const rec = isNew ? new Record(leadsCol) : localRecord
 
     const cad = item.cadastro || (item.dados_completos && item.dados_completos.cadastro) || {}
+    const itemOrigem = (item.origem || '').toString()
+    const itemOrigemTipo = (item.origem_tipo || item.origemTipo || '').toString()
+    const dadosCompletosOrigem = (item.dados_completos && item.dados_completos.origem) || ''
+    const itemRespostas =
+      item.respostas || (item.dados_completos && item.dados_completos.respostas) || null
+    const respostasOrigem = (itemRespostas && itemRespostas.origem) || ''
+
+    const isListaPrioridade =
+      itemOrigem.toLowerCase().includes('prioridade') ||
+      itemOrigemTipo.toLowerCase().includes('prioridade') ||
+      dadosCompletosOrigem.toLowerCase().includes('prioridade') ||
+      respostasOrigem.toLowerCase().includes('prioridade')
+
+    let temRespostasQuestionario = false
+    if (itemRespostas && typeof itemRespostas === 'object') {
+      const rKeys = Object.keys(itemRespostas).filter((k) => {
+        return (
+          k !== 'origem' &&
+          k !== 'plano_escolhido' &&
+          k !== 'acesso_antecipado_solicitado' &&
+          k !== 'condicao_fundador_solicitada' &&
+          k !== 'faturamento_anual' &&
+          k !== 'data_cadastro'
+        )
+      })
+      if (rKeys.length > 0) {
+        temRespostasQuestionario = true
+      }
+    }
 
     rec.set('protocolo', protocolo)
     rec.set('origem', item.origem || 'Site Institucional')
     rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
-    // Se já for lead existente marcado como 'teste', preservar o status 'teste'
+
     if (isTest) {
       rec.set('status', 'teste')
     } else {
-      rec.set('status', item.status || 'novo')
+      const localStatusAtual = (rec.getString('status') || '').toLowerCase()
+      if (localStatusAtual === 'lista_espera') {
+        rec.set('status', 'lista_espera')
+      } else if (isListaPrioridade || !temRespostasQuestionario) {
+        rec.set('status', 'lista_espera')
+      } else {
+        rec.set('status', item.status || 'novo')
+      }
     }
     rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
     rec.set('formato_interesse', item.formato_interesse || '')
@@ -1064,13 +1143,51 @@ routerAdd(
       const isNew = !localRecord
       const rec = isNew ? new Record(leadsCol) : localRecord
 
+      const itemOrigem = (item.origem || '').toString()
+      const itemOrigemTipo = (item.origem_tipo || item.origemTipo || '').toString()
+      const dadosCompletosOrigem = (item.dados_completos && item.dados_completos.origem) || ''
+      const itemRespostas =
+        item.respostas || (item.dados_completos && item.dados_completos.respostas) || null
+      const respostasOrigem = (itemRespostas && itemRespostas.origem) || ''
+
+      const isListaPrioridade =
+        itemOrigem.toLowerCase().includes('prioridade') ||
+        itemOrigemTipo.toLowerCase().includes('prioridade') ||
+        dadosCompletosOrigem.toLowerCase().includes('prioridade') ||
+        respostasOrigem.toLowerCase().includes('prioridade')
+
+      let temRespostasQuestionario = false
+      if (itemRespostas && typeof itemRespostas === 'object') {
+        const rKeys = Object.keys(itemRespostas).filter((k) => {
+          return (
+            k !== 'origem' &&
+            k !== 'plano_escolhido' &&
+            k !== 'acesso_antecipado_solicitado' &&
+            k !== 'condicao_fundador_solicitada' &&
+            k !== 'faturamento_anual' &&
+            k !== 'data_cadastro'
+          )
+        })
+        if (rKeys.length > 0) {
+          temRespostasQuestionario = true
+        }
+      }
+
       rec.set('protocolo', protocolo)
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
+
       if (isTest) {
         rec.set('status', 'teste')
       } else {
-        rec.set('status', item.status || 'novo')
+        const localStatusAtual = (rec.getString('status') || '').toLowerCase()
+        if (localStatusAtual === 'lista_espera') {
+          rec.set('status', 'lista_espera')
+        } else if (isListaPrioridade || !temRespostasQuestionario) {
+          rec.set('status', 'lista_espera')
+        } else {
+          rec.set('status', item.status || 'novo')
+        }
       }
       rec.set('autorizacao_devolutiva', item.autorizacao_devolutiva || '')
       rec.set('formato_interesse', item.formato_interesse || '')
