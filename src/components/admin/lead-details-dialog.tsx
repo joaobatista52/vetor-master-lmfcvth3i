@@ -241,33 +241,19 @@ function classificarChaveEtapa(chave: string): number | null {
   return null
 }
 
-// Definição canônica das 11 etapas do questionário estratégico
-const ETAPAS_QUESTIONARIO_CONFIG = [
+// Definição das seções exibidas na aba Questionário Completo
+// Os blocos 'Setor de Atuação', 'Identificação da Empresa & Lead' e 'Outras Respostas & Metadados Extras'
+// foram fundidos num único grupo 'Identificação da Empresa & Lead' (id: 'identificacao').
+// As etapas 3 a 11 do questionário canônico permanecem exatamente como estão.
+const SECOES_QUESTIONARIO_CONFIG = [
   {
-    numero: 1,
-    titulo: 'Etapa 1 — Setor de Atuação',
-    descricao: 'Setor canônico e enquadramento mercadológico da organização',
-    chaves: ['setor', 'segmento', 'setor_id', 'segmento_outro', 'modalidade_trading', 'etapa_1'],
+    id: 'identificacao',
+    titulo: 'Identificação da Empresa & Lead',
+    descricao:
+      'Dados cadastrais do executivo, da pessoa jurídica, contatos, setor de atuação e metadados complementares',
   },
   {
-    numero: 2,
-    titulo: 'Etapa 2 — Identificação da Empresa & Lead',
-    descricao: 'Dados cadastrais do executivo, da pessoa jurídica e contatos',
-    chaves: [
-      'razao_social',
-      'cnpj',
-      'data',
-      'respondente',
-      'cargo',
-      'email',
-      'whatsapp',
-      'telefone',
-      'etapa_2',
-      'cadastro',
-      'nomecompleto',
-    ],
-  },
-  {
+    id: 3,
     numero: 3,
     titulo: 'Etapa 3 — Seção 1: Perfil da Empresa e Contexto',
     descricao:
@@ -275,6 +261,7 @@ const ETAPAS_QUESTIONARIO_CONFIG = [
     chaves: ['secao1', 'perfil', 'etapa_3'],
   },
   {
+    id: 4,
     numero: 4,
     titulo: 'Etapa 4 — Seção 2: Pilar 1: Prisão do Fundador',
     descricao:
@@ -282,24 +269,28 @@ const ETAPAS_QUESTIONARIO_CONFIG = [
     chaves: ['secao2', 'pilar1', 'pilar_1', 'pilar_1_prisao_fundador', 'etapa_4'],
   },
   {
+    id: 5,
     numero: 5,
     titulo: 'Etapa 5 — Seção 3: Pilar 2: Ineficiência Invisível',
     descricao: 'Gargalos operacionais, retrabalho e vazamento de margem (perguntas 3.1 a 3.6)',
     chaves: ['secao3', 'pilar2', 'pilar_2', 'pilar_2_ineficiencia_invisivel', 'etapa_5'],
   },
   {
+    id: 6,
     numero: 6,
     titulo: 'Etapa 6 — Seção 4: Pilar 3: Abismo Estratégia vs. Execução',
     descricao: 'Alinhamento tático, governança, metas e desdobramento (perguntas 4.1 a 4.6)',
     chaves: ['secao4', 'pilar3', 'pilar_3', 'pilar_3_abismo_estrategia_execucao', 'etapa_6'],
   },
   {
+    id: 7,
     numero: 7,
     titulo: 'Etapa 7 — Seção 5: Capacidade e Design Organizacional (Hackman)',
     descricao: 'As 5 condições determinísticas para eficácia de equipes (perguntas 5.1 a 5.6)',
     chaves: ['secao5', 'hackman', 'etapa_7'],
   },
   {
+    id: 8,
     numero: 8,
     titulo: 'Etapa 8 — Seção 6: Saúde Econômico-Financeira (Buffett)',
     descricao:
@@ -307,18 +298,21 @@ const ETAPAS_QUESTIONARIO_CONFIG = [
     chaves: ['secao6', 'buffett', 'etapa_8'],
   },
   {
+    id: 9,
     numero: 9,
     titulo: 'Etapa 9 — Seção 7: Expectativas e Ambição',
     descricao: 'Objetivos prioritários de crescimento e consolidação (perguntas 7.1 a 7.5)',
     chaves: ['secao7', 'expectativas', 'etapa_9'],
   },
   {
+    id: 10,
     numero: 10,
     titulo: 'Etapa 10 — Seção 8: Inovação e Tecnologia',
     descricao: 'Maturidade digital, automações e barreiras tecnológicas (perguntas 8.1 a 8.4)',
     chaves: ['secao8', 'inovacao', 'tecnologia', 'etapa_10'],
   },
   {
+    id: 11,
     numero: 11,
     titulo: 'Etapa 11 — Seção 9: Próximos Passos',
     descricao:
@@ -336,7 +330,6 @@ const ETAPAS_QUESTIONARIO_CONFIG = [
     ],
   },
 ]
-
 function extrairListaArquivos(valor: string[] | string | undefined | null): string[] {
   if (!valor) return []
   if (Array.isArray(valor)) return valor.filter((f) => typeof f === 'string' && f.trim() !== '')
@@ -510,16 +503,48 @@ export function LeadDetailsDialog({
       if (!itens.some((i) => i.chave.toLowerCase().includes('setor'))) {
         itens.push({ chave: 'Setor de Atuação', resposta: lead.setor || '—' })
       }
-      if (!itens.some((i) => i.chave.toLowerCase().includes('segmento'))) {
-        itens.push({ chave: 'Segmento Específico', resposta: lead.segmento || '—' })
+      if (lead.segmento && !itens.some((i) => i.chave.toLowerCase().includes('segmento'))) {
+        itens.push({ chave: 'Segmento Específico', resposta: lead.segmento })
       }
     } else if (etapaNum === 2) {
-      if (itens.length === 0) {
+      if (
+        !itens.some(
+          (i) =>
+            i.chave.toLowerCase().includes('razão social') ||
+            i.chave.toLowerCase().includes('empresa'),
+        )
+      ) {
         itens.push({ chave: 'Razão Social', resposta: lead.razao_social || '—' })
-        itens.push({ chave: 'CNPJ', resposta: lead.cnpj || '—' })
+      }
+      if (lead.cnpj && !itens.some((i) => i.chave.toLowerCase().includes('cnpj'))) {
+        itens.push({ chave: 'CNPJ', resposta: lead.cnpj })
+      }
+      if (
+        !itens.some(
+          (i) =>
+            i.chave.toLowerCase().includes('respondente') || i.chave.toLowerCase().includes('nome'),
+        )
+      ) {
         itens.push({ chave: 'Respondente', resposta: lead.nome_completo || '—' })
-        itens.push({ chave: 'Cargo / Função', resposta: lead.cargo || '—' })
+      }
+      if (lead.cargo && !itens.some((i) => i.chave.toLowerCase().includes('cargo'))) {
+        itens.push({ chave: 'Cargo / Função', resposta: lead.cargo })
+      }
+      if (
+        !itens.some(
+          (i) =>
+            i.chave.toLowerCase().includes('e-mail') || i.chave.toLowerCase().includes('email'),
+        )
+      ) {
         itens.push({ chave: 'E-mail Corporativo', resposta: lead.email || '—' })
+      }
+      if (
+        !itens.some(
+          (i) =>
+            i.chave.toLowerCase().includes('whatsapp') ||
+            i.chave.toLowerCase().includes('telefone'),
+        )
+      ) {
         itens.push({ chave: 'WhatsApp / Telefone', resposta: lead.whatsapp || '—' })
       }
     } else if (etapaNum === 3) {
@@ -652,6 +677,36 @@ export function LeadDetailsDialog({
     )
 
     return itens
+  }
+
+  // Extração unificada do grupo fundido "Identificação da Empresa & Lead"
+  // Reúne:
+  // 1) Setor de Atuação (etapa 1)
+  // 2) Identificação da Empresa & Lead (etapa 2)
+  // 3) Outras Respostas & Metadados Extras (chaves não padronizadas)
+  const extrairRespostasIdentificacaoUnificada = () => {
+    const respostasEtapa1 = extrairRespostasEtapa(1)
+    const respostasEtapa2 = extrairRespostasEtapa(2)
+    const respostasExtras = [...outrasRespostas]
+
+    const todos: { chave: string; resposta: any; nota?: string }[] = [
+      ...respostasEtapa1,
+      ...respostasEtapa2,
+      ...respostasExtras,
+    ]
+
+    // Deduplica por chave exata caso coincida
+    const vistos = new Set<string>()
+    const deduplicados: { chave: string; resposta: any; nota?: string }[] = []
+    for (const item of todos) {
+      const normalizada = item.chave.trim().toLowerCase()
+      if (!vistos.has(normalizada)) {
+        vistos.add(normalizada)
+        deduplicados.push(item)
+      }
+    }
+
+    return deduplicados
   }
 
   return (
@@ -843,34 +898,37 @@ export function LeadDetailsDialog({
                   </Badge>
                 </div>
                 <div className="space-y-4">
-                  {ETAPAS_QUESTIONARIO_CONFIG.map((etapa) => {
-                    const respostasEtapa = extrairRespostasEtapa(etapa.numero)
+                  {SECOES_QUESTIONARIO_CONFIG.map((secao) => {
+                    const respostasSecao =
+                      secao.id === 'identificacao'
+                        ? extrairRespostasIdentificacaoUnificada()
+                        : extrairRespostasEtapa(secao.numero!)
                     return (
-                      <Card key={etapa.numero} className="bg-[#16213A] border-[#24334F]">
+                      <Card key={secao.id} className="bg-[#16213A] border-[#24334F]">
                         <CardHeader className="py-3 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/70">
                           <div className="flex items-center justify-between">
                             <div>
                               <CardTitle className="text-xs sm:text-sm font-bold text-[#F8FAFC]">
-                                {etapa.titulo}
+                                {secao.titulo}
                               </CardTitle>
-                              <p className="text-[11px] text-[#8B98B4] mt-0.5">{etapa.descricao}</p>
+                              <p className="text-[11px] text-[#8B98B4] mt-0.5">{secao.descricao}</p>
                             </div>
                             <Badge
                               variant="outline"
                               className={
-                                respostasEtapa.length > 0
+                                respostasSecao.length > 0
                                   ? 'border-[#3DDC74]/50 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px]'
                                   : 'border-[#8B98B4]/40 text-[#8B98B4] text-[10px]'
                               }
                             >
-                              {respostasEtapa.length}{' '}
-                              {respostasEtapa.length === 1 ? 'resposta' : 'respostas'}
+                              {respostasSecao.length}{' '}
+                              {respostasSecao.length === 1 ? 'resposta' : 'respostas'}
                             </Badge>
                           </div>
                         </CardHeader>
                         <CardContent className="p-4 space-y-2.5 text-xs">
-                          {respostasEtapa.length > 0 ? (
-                            respostasEtapa.map((item, idx) => (
+                          {respostasSecao.length > 0 ? (
+                            respostasSecao.map((item, idx) => (
                               <div
                                 key={idx}
                                 className="border-b border-[#24334F]/40 pb-2.5 last:border-0 last:pb-0"
@@ -911,74 +969,13 @@ export function LeadDetailsDialog({
                             ))
                           ) : (
                             <div className="text-[#8B98B4] italic py-1">
-                              Sem respostas registradas para esta etapa neste envio.
+                              Sem respostas registradas para esta seção neste envio.
                             </div>
                           )}
                         </CardContent>
                       </Card>
                     )
                   })}
-
-                  {/* Seção adicional para respostas não-padronizadas */}
-                  {outrasRespostas.length > 0 && (
-                    <Card className="bg-[#16213A] border-[#FFB84D]/40">
-                      <CardHeader className="py-3 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/70">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="text-xs sm:text-sm font-bold text-[#FFB84D]">
-                              Outras Respostas & Metadados Extras
-                            </CardTitle>
-                            <p className="text-[11px] text-[#8B98B4] mt-0.5">
-                              Chaves enviadas no campo &apos;respostas&apos; sem correlação direta
-                              com as etapas 1 a 11
-                            </p>
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className="border-[#FFB84D]/50 text-[#FFB84D] bg-[#FFB84D]/10 text-[10px]"
-                          >
-                            {outrasRespostas.length}{' '}
-                            {outrasRespostas.length === 1 ? 'item' : 'itens'}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4 space-y-2.5 text-xs">
-                        {outrasRespostas.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="border-b border-[#24334F]/40 pb-2.5 last:border-0 last:pb-0"
-                          >
-                            <div className="text-[11px] font-semibold text-[#FFB84D] uppercase tracking-wide">
-                              {item.chave}
-                            </div>
-                            <div className="text-[#F8FAFC] font-medium mt-1">
-                              {Array.isArray(item.resposta) ? (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {item.resposta.map((r: any, rIdx: number) => (
-                                    <Badge
-                                      key={rIdx}
-                                      variant="secondary"
-                                      className="bg-[#111A2E] text-[#5B9DFF] border border-[#24334F] text-[11px]"
-                                    >
-                                      {String(r)}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : typeof item.resposta === 'object' && item.resposta !== null ? (
-                                <pre className="text-[10px] font-mono bg-[#111A2E] p-2 rounded text-[#3DDC74] overflow-x-auto mt-1">
-                                  {JSON.stringify(item.resposta, null, 2)}
-                                </pre>
-                              ) : (
-                                <span className="text-[#3DDC74]">
-                                  {String(item.resposta ?? '—')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )}
                 </div>{' '}
               </TabsContent>
 
