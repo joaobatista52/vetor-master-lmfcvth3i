@@ -27,6 +27,7 @@ import {
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
 import { getLeadById } from '@/services/site-leads-sync'
+import { setores, type Setor, type PerguntaItemLiteral } from '@/data/setores-questionario'
 
 interface LeadDetailsDialogProps {
   lead: LeadRecord | null
@@ -51,6 +52,217 @@ const SETOR_PREFIXES = [
   'agronegocio',
   'academias',
 ]
+
+/**
+ * Normaliza uma string para comparação (sem acentos, minúsculas, pontuação simplificada).
+ */
+function normalizarTexto(txt: string): string {
+  return txt
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+/**
+ * Mapeia o nome ou identificador do setor do lead para o objeto Setor literal canônico (V7.2).
+ */
+function encontrarSetorDoLead(setorNomeOuId?: string | null): Setor | undefined {
+  if (!setorNomeOuId) return undefined
+  const norm = normalizarTexto(setorNomeOuId)
+
+  // 1. Match direto por id ou slug
+  const matchId = setores.find((s) => s.id === norm || s.slug === norm)
+  if (matchId) return matchId
+
+  // 2. Match por nome exato normalizado
+  const matchNome = setores.find((s) => normalizarTexto(s.nome) === norm)
+  if (matchNome) return matchNome
+
+  // 3. Match por inclusão / prefixos conhecidos
+  if (norm.includes('saude')) return setores.find((s) => s.id === 'saude')
+  if (norm.includes('varejo')) return setores.find((s) => s.id === 'varejo')
+  if (norm.includes('servico')) return setores.find((s) => s.id === 'servicos')
+  if (norm.includes('trad') || norm.includes('comercio internacional'))
+    return setores.find((s) => s.id === 'trading')
+  if (norm.includes('facilit')) return setores.find((s) => s.id === 'facilities')
+  if (norm.includes('industr')) return setores.find((s) => s.id === 'industria')
+  if (norm.includes('tec') || norm.includes('startup'))
+    return setores.find((s) => s.id === 'tecnologia')
+  if (norm.includes('construc')) return setores.find((s) => s.id === 'construcao')
+  if (norm.includes('transp') || norm.includes('logistic'))
+    return setores.find((s) => s.id === 'transporte')
+  if (norm.includes('educac')) return setores.find((s) => s.id === 'educacao')
+  if (norm.includes('agro')) return setores.find((s) => s.id === 'agronegocio')
+  if (norm.includes('academia') || norm.includes('fitness'))
+    return setores.find((s) => s.id === 'academias')
+
+  return undefined
+}
+
+/**
+ * Formata amigavelmente uma chave sem enunciado correspondente (ex: 'data_fundacao' -> 'Data Fundacao').
+ */
+function formatarChaveAmigavel(chave: string): string {
+  const limpa = chave.replace(/[_-]+/g, ' ').trim()
+  return limpa
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .split(' ')
+    .filter(Boolean)
+    .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+    .join(' ')
+}
+
+/**
+ * Mapeamentos canônicos seguros para chaves conhecidas sem prefixo setorial (ex: lead 'fasd').
+ * Regra 2 do usuário: quando identificável com segurança, mapear pelo significado;
+ * quando não houver correspondência segura, não inventar pergunta.
+ */
+const MAPEAMENTOS_CANONICOS_SEGUROS: Record<string, string> = {
+  anosoperacao: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+  anos_operacao: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+  tempo_empresa: 'Há quantos anos a empresa opera e qual o crescimento nos últimos 3 anos?',
+  faturamento: 'Qual o faturamento anual aproximado da empresa?',
+  faturamento_anual: 'Qual o faturamento anual aproximado da empresa?',
+  faturamento_mensal: 'Qual o faturamento anual aproximado da empresa?',
+  colaboradores: 'Quantos colaboradores ao todo?',
+  numero_colaboradores: 'Quantos colaboradores ao todo?',
+  unidades: 'Quantas unidades/sedes a empresa possui?',
+  sedes: 'Quantas unidades/sedes a empresa possui?',
+  regime_tributario: 'Regime tributário:',
+  estrutura_propriedade: 'Estrutura de propriedade:',
+  fontes_receita: 'Principais fontes de receita?',
+  certificacoes: 'Possui certificações ou reconhecimentos de mercado?',
+  // Perguntas dos Pilares por ordem canônica (cap1 a cap6)
+  cap1: 'Pilar 1 — Pergunta 1: Centralização Decisória / Operação sem o Fundador',
+  cap2: 'Pilar 1 — Pergunta 2: Autonomia da Equipe e Alçadas',
+  cap3: 'Pilar 2 — Pergunta 1: Retrabalho, Falhas de Processo e Perda Operacional',
+  cap4: 'Pilar 2 — Pergunta 2: Ineficiência de Custos e Gargalos Invisíveis',
+  cap5: 'Pilar 3 — Pergunta 1: Descompasso entre Metas Estratégicas e Execução',
+  cap6: 'Pilar 3 — Pergunta 2: Alinhamento de Indicadores, Comitê e SLAs',
+  // Etapa 11 / Próximos Passos
+  autorizacao_devolutiva: 'Autoriza sessão de devolutiva de 45 min?',
+  formato_interesse: 'Formato de interesse:',
+  plano_interesse: 'Formato de interesse:',
+  plano_escolhido: 'Plano / Formato escolhido:',
+  responsavel_documentos: 'Responsável pelos documentos:',
+  responsavel_envio: 'Responsável pelos documentos / envio:',
+  // Identificação e Cadastro
+  razao_social: 'Razão Social:',
+  empresa: 'Razão Social / Empresa:',
+  cnpj: 'CNPJ:',
+  nome_completo: 'Respondente:',
+  nomecompleto: 'Respondente:',
+  respondente: 'Respondente:',
+  cargo: 'Cargo:',
+  email: 'E-mail Corporativo:',
+  whatsapp: 'WhatsApp / Telefone:',
+  telefone: 'WhatsApp / Telefone:',
+  setor: 'Setor de Atuação:',
+  segmento: 'Segmento Específico:',
+}
+
+/**
+ * Resolve o ENUNCIADO literal e o identificador/título da pergunta para qualquer chave de resposta.
+ *
+ * Regras do usuário:
+ * 1) Chave no padrão setor_seção_questão (ex.: 'varejo_1_1' -> setor Varejo, Seção 1, pergunta 1.1)
+ *    -> exibir o enunciado literal da pergunta do setor do lead.
+ * 2) Chaves sem padrão de setor (ex.: 'cap1', 'anosOperacao', 'faturamento' - presentes no lead 'fasd')
+ *    -> mapear pelo significado para a pergunta canônica correspondente quando identificável com segurança;
+ *    -> quando NÃO houver correspondência segura, exibir apenas a chave formatada sem inventar pergunta.
+ */
+function resolverEnunciadoPergunta(
+  chave: string,
+  setorDoLead?: Setor,
+): { enunciado: string | null; tituloChave: string } {
+  const chaveLimpa = chave.trim()
+  const k = chaveLimpa.toLowerCase()
+
+  // 1. Padrão Setor + Seção + Pergunta (ex: varejo_1_1, saude_2_3, trade_1_14)
+  for (const prefix of SETOR_PREFIXES) {
+    if (k.startsWith(`${prefix}_`)) {
+      const rest = k.slice(prefix.length + 1)
+      const match = rest.match(/^(\d+)_(\d+)$/)
+      if (match) {
+        const secaoNum = parseInt(match[1], 10)
+        const questaoNum = parseInt(match[2], 10)
+        const numeroBuscado = `${secaoNum}.${questaoNum}` // ex: "1.1", "2.1", "3.6"
+
+        // Localizar a pergunta no questionário do setor do lead (ou no setor apontado pelo prefixo)
+        const setorAlvo =
+          setorDoLead ||
+          setores.find((s) => s.id === prefix || s.slug.startsWith(prefix)) ||
+          setores.find((s) => s.id === 'saude')
+
+        if (setorAlvo) {
+          const secao = setorAlvo.secoes.find((s) => s.numero === secaoNum)
+          const pergunta = secao?.perguntas.find((p) => p.numero === numeroBuscado)
+          if (pergunta && pergunta.enunciado) {
+            return {
+              enunciado: pergunta.enunciado,
+              tituloChave: `${chaveLimpa} (${numeroBuscado})`,
+            }
+          }
+        }
+
+        // Seção identificada mas sem pergunta literal exata encontrada
+        return {
+          enunciado: `Pergunta ${numeroBuscado}`,
+          tituloChave: `${chaveLimpa} (${numeroBuscado})`,
+        }
+      }
+
+      // Prefixo setorial seguido de nome semântico (ex: trade_anosOperacao, trade_cap1, etc.)
+      const sufixoSemPrefixo = rest
+      const sufixoNorm = sufixoSemPrefixo.toLowerCase().replace(/[_-]/g, '')
+      if (MAPEAMENTOS_CANONICOS_SEGUROS[sufixoNorm]) {
+        return {
+          enunciado: MAPEAMENTOS_CANONICOS_SEGUROS[sufixoNorm],
+          tituloChave: chaveLimpa,
+        }
+      }
+    }
+  }
+
+  // 2. Chaves com prefixo secaoX_Y (ex: secao1_1, secao_2_1)
+  const secaoMatch = k.match(/^(?:secao|seção)[_-]?(\d+)[_-](\d+)$/)
+  if (secaoMatch) {
+    const secaoNum = parseInt(secaoMatch[1], 10)
+    const questaoNum = parseInt(secaoMatch[2], 10)
+    const numeroBuscado = `${secaoNum}.${questaoNum}`
+    const setorAlvo = setorDoLead || setores[0]
+    const secao = setorAlvo?.secoes.find((s) => s.numero === secaoNum)
+    const pergunta = secao?.perguntas.find((p) => p.numero === numeroBuscado)
+    if (pergunta && pergunta.enunciado) {
+      return {
+        enunciado: pergunta.enunciado,
+        tituloChave: `${chaveLimpa} (${numeroBuscado})`,
+      }
+    }
+  }
+
+  // 3. Mapeamento semântico canônico seguro (ex: anosOperacao, cap1..cap6, faturamento, etc.)
+  const kNorm = k.replace(/[_-]/g, '')
+  if (MAPEAMENTOS_CANONICOS_SEGUROS[k]) {
+    return {
+      enunciado: MAPEAMENTOS_CANONICOS_SEGUROS[k],
+      tituloChave: chaveLimpa,
+    }
+  }
+  if (MAPEAMENTOS_CANONICOS_SEGUROS[kNorm]) {
+    return {
+      enunciado: MAPEAMENTOS_CANONICOS_SEGUROS[kNorm],
+      tituloChave: chaveLimpa,
+    }
+  }
+
+  // 4. Sem correspondência segura -> exibir apenas a chave formatada amigavelmente, sem inventar pergunta
+  return {
+    enunciado: null,
+    tituloChave: chaveLimpa.includes('_') ? chaveLimpa : formatarChaveAmigavel(chaveLimpa),
+  }
+}
 
 /**
  * Identifica a qual etapa (1 a 11) uma chave do campo `respostas` pertence.
@@ -440,9 +652,19 @@ export function LeadDetailsDialog({
       return token ? `${base}?token=${encodeURIComponent(token)}` : base
     }
   }
+  // Identifica o setor do lead para resolução dos questionários literais
+  const setorDoLead = encontrarSetorDoLead(lead.setor)
+
   // Mapa de todas as chaves de respostas classificadas por etapa (1..11)
   // e as chaves não padronizadas ("Outras Respostas")
-  const respostasPorEtapa: Record<number, { chave: string; resposta: any; nota?: string }[]> = {
+  interface RespostaExibicao {
+    chave: string
+    enunciado?: string | null
+    resposta: any
+    nota?: string
+  }
+
+  const respostasPorEtapa: Record<number, RespostaExibicao[]> = {
     1: [],
     2: [],
     3: [],
@@ -455,24 +677,28 @@ export function LeadDetailsDialog({
     10: [],
     11: [],
   }
-  const outrasRespostas: { chave: string; resposta: any }[] = []
+  const outrasRespostas: RespostaExibicao[] = []
 
   // Preencher a partir de `respostasObj` (fonte primária do questionário gravado no banco)
   Object.keys(respostasObj).forEach((k) => {
     const val = respostasObj[k]
     const etapaAlvo = classificarChaveEtapa(k)
+    const resolucao = resolverEnunciadoPergunta(k, setorDoLead)
 
     if (etapaAlvo !== null && etapaAlvo >= 1 && etapaAlvo <= 11) {
       if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
         Object.keys(val).forEach((subK) => {
+          const subResolucao = resolverEnunciadoPergunta(`${k}_${subK}`, setorDoLead)
           respostasPorEtapa[etapaAlvo].push({
-            chave: `${k} - ${subK}`,
+            chave: `${resolucao.tituloChave} - ${subK}`,
+            enunciado: subResolucao.enunciado || resolucao.enunciado,
             resposta: val[subK],
           })
         })
       } else {
         respostasPorEtapa[etapaAlvo].push({
-          chave: k,
+          chave: resolucao.tituloChave,
+          enunciado: resolucao.enunciado,
           resposta: val,
         })
       }
@@ -481,13 +707,15 @@ export function LeadDetailsDialog({
       if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
         Object.keys(val).forEach((subK) => {
           outrasRespostas.push({
-            chave: `${k} - ${subK}`,
+            chave: `${resolucao.tituloChave} - ${subK}`,
+            enunciado: resolucao.enunciado,
             resposta: val[subK],
           })
         })
       } else {
         outrasRespostas.push({
-          chave: k,
+          chave: resolucao.tituloChave,
+          enunciado: resolucao.enunciado,
           resposta: val,
         })
       }
@@ -495,16 +723,24 @@ export function LeadDetailsDialog({
   })
 
   // Agrupamento de respostas por etapa 1 a 11 com fallbacks contextuais
-  const extrairRespostasEtapa = (etapaNum: number) => {
+  const extrairRespostasEtapa = (etapaNum: number): RespostaExibicao[] => {
     const itens = [...(respostasPorEtapa[etapaNum] || [])]
 
     // Fallbacks dos dados estruturados da base para complementar campos em branco
     if (etapaNum === 1) {
       if (!itens.some((i) => i.chave.toLowerCase().includes('setor'))) {
-        itens.push({ chave: 'Setor de Atuação', resposta: lead.setor || '—' })
+        itens.push({
+          chave: 'Setor de Atuação',
+          enunciado: 'Qual o setor de atuação da empresa?',
+          resposta: lead.setor || '—',
+        })
       }
       if (lead.segmento && !itens.some((i) => i.chave.toLowerCase().includes('segmento'))) {
-        itens.push({ chave: 'Segmento Específico', resposta: lead.segmento })
+        itens.push({
+          chave: 'Segmento Específico',
+          enunciado: 'Segmento ou nicho de atuação:',
+          resposta: lead.segmento,
+        })
       }
     } else if (etapaNum === 2) {
       if (
@@ -514,10 +750,18 @@ export function LeadDetailsDialog({
             i.chave.toLowerCase().includes('empresa'),
         )
       ) {
-        itens.push({ chave: 'Razão Social', resposta: lead.razao_social || '—' })
+        itens.push({
+          chave: 'Razão Social',
+          enunciado: 'Razão Social / Nome da Empresa:',
+          resposta: lead.razao_social || '—',
+        })
       }
       if (lead.cnpj && !itens.some((i) => i.chave.toLowerCase().includes('cnpj'))) {
-        itens.push({ chave: 'CNPJ', resposta: lead.cnpj })
+        itens.push({
+          chave: 'CNPJ',
+          enunciado: 'CNPJ da empresa:',
+          resposta: lead.cnpj,
+        })
       }
       if (
         !itens.some(
@@ -525,10 +769,18 @@ export function LeadDetailsDialog({
             i.chave.toLowerCase().includes('respondente') || i.chave.toLowerCase().includes('nome'),
         )
       ) {
-        itens.push({ chave: 'Respondente', resposta: lead.nome_completo || '—' })
+        itens.push({
+          chave: 'Respondente',
+          enunciado: 'Nome do respondente:',
+          resposta: lead.nome_completo || '—',
+        })
       }
       if (lead.cargo && !itens.some((i) => i.chave.toLowerCase().includes('cargo'))) {
-        itens.push({ chave: 'Cargo / Função', resposta: lead.cargo })
+        itens.push({
+          chave: 'Cargo / Função',
+          enunciado: 'Cargo do respondente:',
+          resposta: lead.cargo,
+        })
       }
       if (
         !itens.some(
@@ -536,7 +788,11 @@ export function LeadDetailsDialog({
             i.chave.toLowerCase().includes('e-mail') || i.chave.toLowerCase().includes('email'),
         )
       ) {
-        itens.push({ chave: 'E-mail Corporativo', resposta: lead.email || '—' })
+        itens.push({
+          chave: 'E-mail Corporativo',
+          enunciado: 'E-mail corporativo:',
+          resposta: lead.email || '—',
+        })
       }
       if (
         !itens.some(
@@ -545,13 +801,18 @@ export function LeadDetailsDialog({
             i.chave.toLowerCase().includes('telefone'),
         )
       ) {
-        itens.push({ chave: 'WhatsApp / Telefone', resposta: lead.whatsapp || '—' })
+        itens.push({
+          chave: 'WhatsApp / Telefone',
+          enunciado: 'WhatsApp / Telefone para contato:',
+          resposta: lead.whatsapp || '—',
+        })
       }
     } else if (etapaNum === 3) {
       if (itens.length === 0 && perfil.respostas && Array.isArray(perfil.respostas)) {
         perfil.respostas.forEach((r: any, idx: number) => {
           itens.push({
-            chave: r.enunciado || `Pergunta 1.${idx + 1}`,
+            chave: `Pergunta 1.${idx + 1}`,
+            enunciado: r.enunciado || null,
             resposta: r.resposta,
           })
         })
@@ -560,13 +821,21 @@ export function LeadDetailsDialog({
         perfil.faturamento_anual &&
         !itens.some((i) => i.chave.toLowerCase().includes('faturamento'))
       ) {
-        itens.push({ chave: 'Faturamento Anual', resposta: perfil.faturamento_anual })
+        itens.push({
+          chave: 'Faturamento Anual',
+          enunciado: 'Qual o faturamento anual aproximado da empresa?',
+          resposta: perfil.faturamento_anual,
+        })
       }
       if (
         perfil.colaboradores &&
         !itens.some((i) => i.chave.toLowerCase().includes('colaborador'))
       ) {
-        itens.push({ chave: 'Número de Colaboradores', resposta: perfil.colaboradores })
+        itens.push({
+          chave: 'Número de Colaboradores',
+          enunciado: 'Quantos colaboradores ao todo?',
+          resposta: perfil.colaboradores,
+        })
       }
     } else if (etapaNum === 4) {
       if (
@@ -576,7 +845,8 @@ export function LeadDetailsDialog({
       ) {
         pilares.pilar_1_prisao_fundador.forEach((p: any, idx: number) => {
           itens.push({
-            chave: p.pergunta || p.item || `Pergunta 2.${idx + 1}`,
+            chave: `Pergunta 2.${idx + 1}`,
+            enunciado: p.pergunta || p.item || null,
             resposta: p.resposta || p.valor,
             nota: p.nota,
           })
@@ -590,7 +860,8 @@ export function LeadDetailsDialog({
       ) {
         pilares.pilar_2_ineficiencia_invisivel.forEach((p: any, idx: number) => {
           itens.push({
-            chave: p.pergunta || p.item || `Pergunta 3.${idx + 1}`,
+            chave: `Pergunta 3.${idx + 1}`,
+            enunciado: p.pergunta || p.item || null,
             resposta: p.resposta || p.valor,
             nota: p.nota,
           })
@@ -604,7 +875,8 @@ export function LeadDetailsDialog({
       ) {
         pilares.pilar_3_abismo_estrategia_execucao.forEach((p: any, idx: number) => {
           itens.push({
-            chave: p.pergunta || p.item || `Pergunta 4.${idx + 1}`,
+            chave: `Pergunta 4.${idx + 1}`,
+            enunciado: p.pergunta || p.item || null,
             resposta: p.resposta || p.valor,
             nota: p.nota,
           })
@@ -614,7 +886,8 @@ export function LeadDetailsDialog({
       if (itens.length === 0 && dadosCompletos.hackman && Array.isArray(dadosCompletos.hackman)) {
         dadosCompletos.hackman.forEach((h: any, idx: number) => {
           itens.push({
-            chave: h.dimensao || h.pergunta || `Hackman ${idx + 1}`,
+            chave: `Hackman ${idx + 1}`,
+            enunciado: h.dimensao || h.pergunta || null,
             resposta: h.nota !== undefined ? `Nota ${h.nota}` : h.resposta,
           })
         })
@@ -623,7 +896,8 @@ export function LeadDetailsDialog({
       if (itens.length === 0 && dadosCompletos.buffett && Array.isArray(dadosCompletos.buffett)) {
         dadosCompletos.buffett.forEach((b: any, idx: number) => {
           itens.push({
-            chave: b.dimensao || b.pergunta || `Buffett ${idx + 1}`,
+            chave: `Buffett ${idx + 1}`,
+            enunciado: b.dimensao || b.pergunta || null,
             resposta: b.nota !== undefined ? `Nota ${b.nota}` : b.resposta,
           })
         })
@@ -636,7 +910,8 @@ export function LeadDetailsDialog({
       ) {
         dadosCompletos.expectativas.forEach((e: any, idx: number) => {
           itens.push({
-            chave: e.enunciado || e.pergunta || `Expectativa ${idx + 1}`,
+            chave: `Expectativa ${idx + 1}`,
+            enunciado: e.enunciado || e.pergunta || null,
             resposta: e.resposta,
           })
         })
@@ -645,7 +920,8 @@ export function LeadDetailsDialog({
       if (itens.length === 0 && dadosCompletos.inovacao && Array.isArray(dadosCompletos.inovacao)) {
         dadosCompletos.inovacao.forEach((i: any, idx: number) => {
           itens.push({
-            chave: i.enunciado || i.pergunta || `Inovação ${idx + 1}`,
+            chave: `Inovação ${idx + 1}`,
+            enunciado: i.enunciado || i.pergunta || null,
             resposta: i.resposta,
           })
         })
@@ -654,18 +930,22 @@ export function LeadDetailsDialog({
       if (itens.length === 0) {
         itens.push({
           chave: '9.1 Devolutiva Estratégica Determinística',
+          enunciado: 'Agendamento e formato da Devolutiva Estratégica:',
           resposta: 'Diagnóstico Executivo com SLA de 72h garantido',
         })
         itens.push({
           chave: '9.2 Autorização Sessão de 45 Minutos',
+          enunciado: 'Autoriza sessão de devolutiva de 45 min?',
           resposta: lead.autorizacao_devolutiva || 'Sim',
         })
         itens.push({
           chave: '9.3 Formato de Interesse',
+          enunciado: 'Formato de interesse:',
           resposta: lead.formato_interesse || lead.plano_interesse || 'Não informado',
         })
         itens.push({
           chave: '9.4 Responsável pelos Documentos',
+          enunciado: 'Responsável pelos documentos:',
           resposta: lead.responsavel_envio || doc.responsavel_envio || lead.nome_completo || '—',
         })
       }
@@ -684,20 +964,16 @@ export function LeadDetailsDialog({
   // 1) Setor de Atuação (etapa 1)
   // 2) Identificação da Empresa & Lead (etapa 2)
   // 3) Outras Respostas & Metadados Extras (chaves não padronizadas)
-  const extrairRespostasIdentificacaoUnificada = () => {
+  const extrairRespostasIdentificacaoUnificada = (): RespostaExibicao[] => {
     const respostasEtapa1 = extrairRespostasEtapa(1)
     const respostasEtapa2 = extrairRespostasEtapa(2)
     const respostasExtras = [...outrasRespostas]
 
-    const todos: { chave: string; resposta: any; nota?: string }[] = [
-      ...respostasEtapa1,
-      ...respostasEtapa2,
-      ...respostasExtras,
-    ]
+    const todos: RespostaExibicao[] = [...respostasEtapa1, ...respostasEtapa2, ...respostasExtras]
 
     // Deduplica por chave exata caso coincida
     const vistos = new Set<string>()
-    const deduplicados: { chave: string; resposta: any; nota?: string }[] = []
+    const deduplicados: RespostaExibicao[] = []
     for (const item of todos) {
       const normalizada = item.chave.trim().toLowerCase()
       if (!vistos.has(normalizada)) {
@@ -933,35 +1209,47 @@ export function LeadDetailsDialog({
                                 key={idx}
                                 className="border-b border-[#24334F]/40 pb-2.5 last:border-0 last:pb-0"
                               >
-                                <div className="text-[11px] font-semibold text-[#8B98B4] uppercase tracking-wide">
-                                  {item.chave}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[10px] font-mono font-semibold text-[#8B98B4] uppercase tracking-wide bg-[#111A2E] px-1.5 py-0.5 rounded border border-[#24334F]/60">
+                                    {item.chave}
+                                  </span>
                                 </div>
-                                <div className="text-[#F8FAFC] font-medium mt-1">
-                                  {Array.isArray(item.resposta) ? (
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {item.resposta.map((r: any, rIdx: number) => (
-                                        <Badge
-                                          key={rIdx}
-                                          variant="secondary"
-                                          className="bg-[#111A2E] text-[#5B9DFF] border border-[#24334F] text-[11px]"
-                                        >
-                                          {String(r)}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  ) : typeof item.resposta === 'object' &&
-                                    item.resposta !== null ? (
-                                    <pre className="text-[10px] font-mono bg-[#111A2E] p-2 rounded text-[#3DDC74] overflow-x-auto mt-1">
-                                      {JSON.stringify(item.resposta, null, 2)}
-                                    </pre>
-                                  ) : (
-                                    <span className="text-[#3DDC74]">
-                                      {String(item.resposta ?? '—')}
-                                    </span>
-                                  )}
+                                {item.enunciado && (
+                                  <p className="text-xs font-semibold text-[#F8FAFC] mt-1.5 leading-snug">
+                                    {item.enunciado}
+                                  </p>
+                                )}
+                                <div className="mt-1.5 pl-3 border-l-2 border-[#5B9DFF]/40 bg-[#111A2E]/50 py-1.5 pr-2.5 rounded-r">
+                                  <span className="text-[10px] uppercase tracking-wider text-[#8B98B4] font-medium block mb-0.5">
+                                    Resposta registrada:
+                                  </span>
+                                  <div className="text-[#3DDC74] font-medium">
+                                    {Array.isArray(item.resposta) ? (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {item.resposta.map((r: any, rIdx: number) => (
+                                          <Badge
+                                            key={rIdx}
+                                            variant="secondary"
+                                            className="bg-[#16213A] text-[#3DDC74] border border-[#3DDC74]/30 text-[11px] font-normal"
+                                          >
+                                            {String(r)}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    ) : typeof item.resposta === 'object' &&
+                                      item.resposta !== null ? (
+                                      <pre className="text-[10px] font-mono bg-[#0B1120] p-2 rounded text-[#3DDC74] overflow-x-auto mt-1 border border-[#24334F]/60">
+                                        {JSON.stringify(item.resposta, null, 2)}
+                                      </pre>
+                                    ) : (
+                                      <span className="text-xs text-[#3DDC74] font-semibold break-words">
+                                        {String(item.resposta ?? '—')}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                                 {item.nota && (
-                                  <div className="text-[11px] text-[#8B98B4] mt-0.5 italic">
+                                  <div className="text-[11px] text-[#8B98B4] mt-1 italic">
                                     Nota: {item.nota}
                                   </div>
                                 )}
