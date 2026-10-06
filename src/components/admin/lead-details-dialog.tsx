@@ -966,10 +966,16 @@ export function LeadDetailsDialog({
   // 3) Outras Respostas & Metadados Extras (chaves não padronizadas)
   const extrairRespostasIdentificacaoUnificada = (): RespostaExibicao[] => {
     const respostasEtapa1 = extrairRespostasEtapa(1)
-    // Filtra de respostasEtapa2 chaves com prefixo de setor seguido de "_" e contendo razao, empresa ou social
-    // (ex.: "varejo_razao_social", "trade_razao_social", "saude_razao_social", "varejo_empresa"),
-    // mantendo apenas o item canônico de fallback "Razão Social / Nome da Empresa" (lead.razao_social).
-    const respostasEtapa2 = extrairRespostasEtapa(2).filter((item) => {
+    const respostasEtapa2 = extrairRespostasEtapa(2)
+    const respostasExtras = [...outrasRespostas]
+
+    const todos: RespostaExibicao[] = [...respostasEtapa1, ...respostasEtapa2, ...respostasExtras]
+
+    // Filtra de TODOS os itens mesclados na lista unificada chaves que iniciam com prefixo setorial
+    // seguido de "_" e contêm 'razao', 'empresa' ou 'social' (ex.: "varejo_razao_social",
+    // "trade_razao_social", "varejo_empresa", "trade_empresa"), mantendo apenas o item canônico
+    // "Razão Social" / "Razão Social / Nome da Empresa" (lead.razao_social).
+    const filtrados = todos.filter((item) => {
       const k = item.chave.trim().toLowerCase()
       const ehRazaoSetorial = SETOR_PREFIXES.some(
         (prefix) =>
@@ -978,14 +984,11 @@ export function LeadDetailsDialog({
       )
       return !ehRazaoSetorial
     })
-    const respostasExtras = [...outrasRespostas]
-
-    const todos: RespostaExibicao[] = [...respostasEtapa1, ...respostasEtapa2, ...respostasExtras]
 
     // Deduplica por chave exata caso coincida
     const vistos = new Set<string>()
     const deduplicados: RespostaExibicao[] = []
-    for (const item of todos) {
+    for (const item of filtrados) {
       const normalizada = item.chave.trim().toLowerCase()
       if (!vistos.has(normalizada)) {
         vistos.add(normalizada)
