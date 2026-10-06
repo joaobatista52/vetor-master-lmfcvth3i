@@ -379,9 +379,7 @@ export function LeadDetailsDialog({
   open,
   onOpenChange,
 }: LeadDetailsDialogProps) {
-  const [activeTab, setActiveTab] = useState<
-    'geral' | 'questionario' | 'anexos' | 'pilares' | 'bruto'
-  >('geral')
+  const [activeTab, setActiveTab] = useState<'questionario' | 'anexos' | 'bruto'>('questionario')
   const [currentLead, setCurrentLead] = useState<LeadRecord | null>(initialLead)
   const [loadingFresh, setLoadingFresh] = useState<boolean>(false)
 
