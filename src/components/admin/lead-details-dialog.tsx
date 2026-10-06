@@ -16,15 +16,12 @@ import {
   Mail,
   Phone,
   User,
-  Layers,
   FileCheck2,
-  Sparkles,
   Download,
   FileSpreadsheet,
   FileText,
   Paperclip,
   CheckCircle2,
-  Clock,
   ListOrdered,
   Loader2,
 } from 'lucide-react'
@@ -661,10 +658,10 @@ export function LeadDetailsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] bg-[#111A2E] text-[#F8FAFC] border-[#24334F] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="p-6 pb-4 border-b border-[#24334F] bg-[#0B1120]">
+        <DialogHeader className="p-6 pb-4 border-b border-[#24334F] bg-[#0B1120] space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border border-[#5B9DFF]/40 font-mono text-xs">
                   {lead.protocolo}
                 </Badge>
@@ -705,8 +702,11 @@ export function LeadDetailsDialog({
                 {loadingFresh && <Loader2 className="w-4 h-4 text-[#5B9DFF] animate-spin" />}
               </div>
               <DialogDescription className="text-xs text-[#8B98B4] mt-0.5">
-                Respondente: <span className="text-[#C7D0E0]">{lead.nome_completo || '—'}</span> (
-                {lead.cargo || 'Cargo não informado'})
+                Setor:{' '}
+                <span className="text-[#C7D0E0] font-medium">
+                  {lead.setor || 'Não especificado'}
+                </span>
+                {lead.segmento ? ` (${lead.segmento})` : ''}
               </DialogDescription>
             </div>
             <div className="text-right text-xs text-[#8B98B4]">
@@ -720,6 +720,84 @@ export function LeadDetailsDialog({
               </div>
             </div>
           </div>
+
+          {/* Dados de contato essenciais no cabeçalho acima das abas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-[#24334F]/60 text-xs">
+            <div className="flex items-center gap-2 bg-[#16213A]/60 px-2.5 py-1.5 rounded border border-[#24334F]/50">
+              <Building2 className="w-4 h-4 text-[#5B9DFF] shrink-0" />
+              <div className="overflow-hidden min-w-0">
+                <span className="text-[10px] text-[#8B98B4] block uppercase leading-tight font-medium">
+                  Empresa
+                </span>
+                <span
+                  className="font-semibold text-[#F8FAFC] truncate block text-[11px]"
+                  title={lead.razao_social || '—'}
+                >
+                  {lead.razao_social || '—'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-[#16213A]/60 px-2.5 py-1.5 rounded border border-[#24334F]/50">
+              <User className="w-4 h-4 text-[#3DDC74] shrink-0" />
+              <div className="overflow-hidden min-w-0">
+                <span className="text-[10px] text-[#8B98B4] block uppercase leading-tight font-medium">
+                  Responsável
+                </span>
+                <span
+                  className="font-semibold text-[#F8FAFC] truncate block text-[11px]"
+                  title={`${lead.nome_completo || '—'}${lead.cargo ? ` (${lead.cargo})` : ''}`}
+                >
+                  {lead.nome_completo || '—'}
+                  {lead.cargo ? (
+                    <span className="font-normal text-[#8B98B4] ml-1">({lead.cargo})</span>
+                  ) : null}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-[#16213A]/60 px-2.5 py-1.5 rounded border border-[#24334F]/50">
+              <Mail className="w-4 h-4 text-[#FFB84D] shrink-0" />
+              <div className="overflow-hidden min-w-0">
+                <span className="text-[10px] text-[#8B98B4] block uppercase leading-tight font-medium">
+                  E-mail
+                </span>
+                {lead.email ? (
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="font-medium text-[#5B9DFF] hover:underline truncate block text-[11px]"
+                    title={lead.email}
+                  >
+                    {lead.email}
+                  </a>
+                ) : (
+                  <span className="text-[#8B98B4] block text-[11px]">—</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-[#16213A]/60 px-2.5 py-1.5 rounded border border-[#24334F]/50">
+              <Phone className="w-4 h-4 text-[#3DDC74] shrink-0" />
+              <div className="overflow-hidden min-w-0">
+                <span className="text-[10px] text-[#8B98B4] block uppercase leading-tight font-medium">
+                  WhatsApp / Tel
+                </span>
+                {lead.whatsapp ? (
+                  <a
+                    href={`https://wa.me/${lead.whatsapp.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-[#3DDC74] hover:underline truncate block text-[11px]"
+                    title={lead.whatsapp}
+                  >
+                    {lead.whatsapp}
+                  </a>
+                ) : (
+                  <span className="text-[#8B98B4] block text-[11px]">—</span>
+                )}
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="p-6 flex-1 overflow-hidden flex flex-col">
@@ -730,193 +808,29 @@ export function LeadDetailsDialog({
           >
             <TabsList className="bg-[#16213A] border border-[#24334F] text-[#8B98B4] mb-4 flex-wrap h-auto p-1 gap-1">
               <TabsTrigger
-                value="geral"
-                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs"
-              >
-                Visão Geral & Contato
-              </TabsTrigger>
-              <TabsTrigger
                 value="questionario"
                 className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
               >
                 <ListOrdered className="w-3.5 h-3.5" />
-                <span>Questionário Completo (1–11)</span>
+                <span>Questionário Completo</span>
               </TabsTrigger>
               <TabsTrigger
                 value="anexos"
                 className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
               >
                 <Paperclip className="w-3.5 h-3.5" />
-                <span>Anexos Re-hospedados ({totalAnexos})</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="pilares"
-                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs"
-              >
-                3 Pilares & Lentes
+                <span>Anexos ({totalAnexos})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="bruto"
                 className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs"
               >
-                Dados Brutos (auditoria)
+                Dados Brutos
               </TabsTrigger>
             </TabsList>
 
             <ScrollArea className="flex-1 pr-4">
-              {/* ABA 1: VISÃO GERAL */}
-              <TabsContent value="geral" className="mt-0 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="bg-[#16213A] border-[#24334F]">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-semibold text-[#8B98B4] uppercase flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-[#5B9DFF]" /> Dados Corporativos
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-xs">
-                      <div>
-                        <span className="text-[#8B98B4]">Razão Social / Nome:</span>{' '}
-                        <span className="font-medium text-[#F8FAFC]">
-                          {lead.razao_social || '—'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[#8B98B4]">CNPJ:</span>{' '}
-                        <span className="font-mono text-[#F8FAFC]">{lead.cnpj || '—'}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#8B98B4]">Setor / Segmento:</span>{' '}
-                        <span className="text-[#F8FAFC]">
-                          {lead.setor || '—'} {lead.segmento ? `(${lead.segmento})` : ''}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[#8B98B4]">Faturamento:</span>{' '}
-                        <span className="text-[#F8FAFC]">
-                          {lead.faturamento_mensal || perfil.faturamento_anual || '—'}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-[#16213A] border-[#24334F]">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-semibold text-[#8B98B4] uppercase flex items-center gap-2">
-                        <User className="w-4 h-4 text-[#3DDC74]" /> Contato do Respondente
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-xs">
-                      <div>
-                        <span className="text-[#8B98B4]">Nome:</span>{' '}
-                        <span className="font-medium text-[#F8FAFC]">
-                          {lead.nome_completo || '—'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[#8B98B4]">Cargo / Função:</span>{' '}
-                        <span className="text-[#F8FAFC]">{lead.cargo || '—'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 text-[#8B98B4]" />
-                        <span className="text-[#F8FAFC]">{lead.email || '—'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5 text-[#8B98B4]" />
-                        <span className="text-[#F8FAFC]">{lead.whatsapp || '—'}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Card className="bg-[#16213A] border-[#24334F]">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xs font-semibold text-[#8B98B4] uppercase flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-[#FFB84D]" /> Interesse & Governança Comercial
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <span className="text-[#8B98B4] block mb-1">Autorização Devolutiva:</span>
-                      <Badge className="bg-[#3DDC74]/20 text-[#3DDC74] border-[#3DDC74]/30">
-                        {lead.autorizacao_devolutiva || 'Sim'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-[#8B98B4] block mb-1">Formato de Interesse:</span>
-                      <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border-[#5B9DFF]/30">
-                        {lead.formato_interesse || lead.plano_interesse || 'Não especificado'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-[#8B98B4] block mb-1">Responsável Documentos:</span>
-                      <span className="text-[#F8FAFC] font-medium">
-                        {lead.responsavel_envio || doc.responsavel_envio || '—'}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Resumo de Anexos na Visão Geral */}
-                {totalAnexos > 0 && (
-                  <Card className="bg-[#16213A] border-[#3DDC74]/40">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xs font-semibold text-[#3DDC74] uppercase flex items-center gap-2">
-                        <FileCheck2 className="w-4 h-4" /> Anexos do Dossiê Prontos para Download (
-                        {totalAnexos})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs space-y-2">
-                      <p className="text-[#C7D0E0]">
-                        Arquivos baixados do site institucional e hospedados localmente com
-                        segurança no app SaaS:
-                      </p>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {arquivosFinanceiros.map((fn, i) => (
-                          <a
-                            key={`f-${i}`}
-                            href={getDownloadUrl('documentacao_adicional', fn)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-[#111A2E] hover:bg-[#1B2742] border border-[#24334F] text-[#F8FAFC] text-xs transition-colors"
-                          >
-                            {getFileIcon(fn)}
-                            <span>{fn}</span>
-                            <Download className="w-3 h-3 text-[#5B9DFF] ml-1" />
-                          </a>
-                        ))}
-                        {arquivosGerenciais.map((fn, i) => (
-                          <a
-                            key={`g-${i}`}
-                            href={getDownloadUrl('certificacoes', fn)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-[#111A2E] hover:bg-[#1B2742] border border-[#24334F] text-[#F8FAFC] text-xs transition-colors"
-                          >
-                            {getFileIcon(fn)}
-                            <span>{fn}</span>
-                            <Download className="w-3 h-3 text-[#5B9DFF] ml-1" />
-                          </a>
-                        ))}
-                        {arquivosSociedade.map((fn, i) => (
-                          <a
-                            key={`s-${i}`}
-                            href={getDownloadUrl('contrato_social', fn)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-[#111A2E] hover:bg-[#1B2742] border border-[#24334F] text-[#F8FAFC] text-xs transition-colors"
-                          >
-                            {getFileIcon(fn)}
-                            <span>{fn}</span>
-                            <Download className="w-3 h-3 text-[#5B9DFF] ml-1" />
-                          </a>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-
-              {/* ABA 2: QUESTIONÁRIO COMPLETO (ETAPAS 1 A 11) */}
+              {/* ABA 1: QUESTIONÁRIO COMPLETO */}
               <TabsContent value="questionario" className="mt-0 space-y-4">
                 <div className="p-3 bg-[#16213A] border border-[#5B9DFF]/40 rounded-[4px] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
@@ -1244,122 +1158,7 @@ export function LeadDetailsDialog({
                 </Card>
               </TabsContent>
 
-              {/* ABA 4: 3 PILARES & LENTES */}
-              <TabsContent value="pilares" className="mt-0 space-y-4">
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#FFB84D] flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" /> Diagnóstico dos 3 Pilares e Lentes
-                    Metodológicas
-                  </h4>
-
-                  {/* Pilar 1 */}
-                  <Card className="bg-[#16213A] border-[#24334F]">
-                    <CardHeader className="pb-2 border-b border-[#24334F]/60">
-                      <CardTitle className="text-xs font-semibold text-[#F8FAFC]">
-                        Pilar 1 — Prisão do Fundador & Centralização
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-3 text-xs space-y-2">
-                      {pilares.pilar_1_prisao_fundador &&
-                      Array.isArray(pilares.pilar_1_prisao_fundador) &&
-                      pilares.pilar_1_prisao_fundador.length > 0 ? (
-                        pilares.pilar_1_prisao_fundador.map((p: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0"
-                          >
-                            <span className="font-medium text-[#C7D0E0]">
-                              {p.pergunta || p.item || `Pergunta ${idx + 1}`}:{' '}
-                            </span>
-                            <span className="text-[#3DDC74] font-semibold">
-                              {String(p.resposta || p.valor || p.nota || '—')}
-                            </span>
-                            {p.nota && p.resposta && (
-                              <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-[#8B98B4]">
-                          Nenhuma resposta detalhada registrada neste bloco.
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Pilar 2 */}
-                  <Card className="bg-[#16213A] border-[#24334F]">
-                    <CardHeader className="pb-2 border-b border-[#24334F]/60">
-                      <CardTitle className="text-xs font-semibold text-[#F8FAFC]">
-                        Pilar 2 — Ineficiência Invisível & Processos
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-3 text-xs space-y-2">
-                      {pilares.pilar_2_ineficiencia_invisivel &&
-                      Array.isArray(pilares.pilar_2_ineficiencia_invisivel) &&
-                      pilares.pilar_2_ineficiencia_invisivel.length > 0 ? (
-                        pilares.pilar_2_ineficiencia_invisivel.map((p: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0"
-                          >
-                            <span className="font-medium text-[#C7D0E0]">
-                              {p.pergunta || p.item || `Pergunta ${idx + 1}`}:{' '}
-                            </span>
-                            <span className="text-[#3DDC74] font-semibold">
-                              {String(p.resposta || p.valor || p.nota || '—')}
-                            </span>
-                            {p.nota && p.resposta && (
-                              <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-[#8B98B4]">
-                          Nenhuma resposta detalhada registrada neste bloco.
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Pilar 3 */}
-                  <Card className="bg-[#16213A] border-[#24334F]">
-                    <CardHeader className="pb-2 border-b border-[#24334F]/60">
-                      <CardTitle className="text-xs font-semibold text-[#F8FAFC]">
-                        Pilar 3 — Abismo entre Estratégia & Execução
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-3 text-xs space-y-2">
-                      {pilares.pilar_3_abismo_estrategia_execucao &&
-                      Array.isArray(pilares.pilar_3_abismo_estrategia_execucao) &&
-                      pilares.pilar_3_abismo_estrategia_execucao.length > 0 ? (
-                        pilares.pilar_3_abismo_estrategia_execucao.map((p: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="border-b border-[#24334F]/40 pb-2 last:border-0 last:pb-0"
-                          >
-                            <span className="font-medium text-[#C7D0E0]">
-                              {p.pergunta || p.item || `Pergunta ${idx + 1}`}:{' '}
-                            </span>
-                            <span className="text-[#3DDC74] font-semibold">
-                              {String(p.resposta || p.valor || p.nota || '—')}
-                            </span>
-                            {p.nota && p.resposta && (
-                              <div className="text-[11px] text-[#8B98B4] mt-0.5">{p.nota}</div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-[#8B98B4]">
-                          Nenhuma resposta detalhada registrada neste bloco.
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              {/* ABA 5: DADOS BRUTOS (AUDITORIA) */}
+              {/* ABA 3: DADOS BRUTOS */}
               <TabsContent value="bruto" className="mt-0">
                 <Card className="bg-[#0B1120] border-[#24334F]">
                   <CardContent className="p-4">
