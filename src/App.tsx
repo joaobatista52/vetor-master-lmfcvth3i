@@ -30,6 +30,7 @@ import InstitucionalVendedora from './pages/InstitucionalVendedora'
 import Questionario from './pages/Questionario'
 import QuestionarioSucesso from './pages/QuestionarioSucesso'
 import ListaPrioridade from './pages/ListaPrioridade'
+import PrivacidadeLGPD from './pages/PrivacidadeLGPD'
 
 const App = () => (
   <BrowserRouter>
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/" element={<InstitucionalVendedora />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/privacidade" element={<PrivacidadeLGPD />} />
           {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
           <Route path="/questionario" element={<Questionario />} />
           <Route path="/questionario/:setorParam" element={<Questionario />} />

@@ -812,6 +812,9 @@ export default function InstitucionalVendedora() {
             <a href="#niveis" className="text-[#C7D0E0] hover:text-[#5B9DFF]">
               Escada de Valor
             </a>
+            <Link to="/privacidade" className="text-[#C7D0E0] hover:text-[#5B9DFF]">
+              Privacidade e LGPD
+            </Link>
             <Link to={loginOrAppPath} className="text-[#C7D0E0] hover:text-[#5B9DFF]">
               {isAuthenticated ? 'Área Logada (/app)' : 'Área do Assinante'}
             </Link>
