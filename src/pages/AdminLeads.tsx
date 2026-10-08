@@ -51,6 +51,7 @@ import {
   type E2ETestResult,
 } from '@/services/site-leads-sync'
 import { LeadDetailsDialog } from '@/components/admin/lead-details-dialog'
+import { ApoioOperador } from '@/components/admin/apoio-operador'
 
 export default function AdminLeads() {
   const [leads, setLeads] = useState<LeadRecord[]>([])
@@ -314,6 +315,8 @@ export default function AdminLeads() {
           </Button>
         </div>
       </div>
+      {/* Bloco de Apoio ao Operador (Observação A do PDF: A1, A2, A3) */}
+      <ApoioOperador />
       {/* Alerta de Feedback */}
       {feedback && (
         <div
