@@ -737,7 +737,7 @@ export default function InstitucionalVendedora() {
                   {faq.pergunta}
                 </AccordionTrigger>
                 <AccordionContent className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed pb-4">
-                  {faq.resposta}
+                  {renderRespostaFaq(faq.resposta)}
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -931,4 +931,39 @@ function FaixaContadorDores() {
       })}
     </div>
   )
+}
+
+/**
+ * Renderiza o texto da resposta de uma FAQ transformando qualquer menção ao e-mail
+ * contato.comercial@vetormaster.com.br (ou regex de e-mail) em um link mailto: clicável,
+ * preservando exatamente o texto literal da resposta.
+ */
+function renderRespostaFaq(texto: string): React.ReactNode {
+  const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g
+  const partes: React.ReactNode[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = emailRegex.exec(texto)) !== null) {
+    if (match.index > lastIndex) {
+      partes.push(texto.substring(lastIndex, match.index))
+    }
+    const email = match[1]
+    partes.push(
+      <a
+        key={match.index}
+        href={`mailto:${email}`}
+        className="text-[#5B9DFF] hover:underline font-medium inline-flex items-center gap-0.5 focus:outline-none focus:ring-1 focus:ring-[#5B9DFF] rounded-[2px]"
+      >
+        {email}
+      </a>,
+    )
+    lastIndex = match.index + match[0].length
+  }
+
+  if (lastIndex < texto.length) {
+    partes.push(texto.substring(lastIndex))
+  }
+
+  return partes.length > 0 ? partes : texto
 }

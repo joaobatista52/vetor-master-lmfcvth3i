@@ -1796,24 +1796,32 @@ export default function Questionario() {
               </Button>
             </div>
           ) : (
-            <Button
-              type="button"
-              onClick={handleFinalizar}
-              disabled={!canAvancar() || submitting}
-              className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-semibold px-8 py-5 gap-2 shadow-lg transition-all"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Consolidando Dossiê e Gerando
-                  Protocolo...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Submeter Questionário Estratégico Oficial</span>
-                </>
-              )}
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              <Button
+                type="button"
+                onClick={handleFinalizar}
+                disabled={!canAvancar() || submitting}
+                className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-semibold px-8 py-5 gap-2 shadow-lg transition-all"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Consolidando Dossiê e Gerando
+                    Protocolo...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Submeter Questionário Estratégico Oficial</span>
+                  </>
+                )}
+              </Button>
+              <p className="text-[11px] text-[#8B98B4] text-right">
+                Ao enviar você concorda com nossa{' '}
+                <Link to="/privacidade" className="text-[#5B9DFF] hover:underline font-medium">
+                  Política de Privacidade
+                </Link>
+              </p>
+            </div>
           )}
         </div>
       </div>

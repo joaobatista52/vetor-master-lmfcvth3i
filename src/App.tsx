@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/protected-route'
 import { AdminRoute } from '@/components/admin-route'
+import { ScrollToTop } from './components/ScrollToTop'
 import Layout from './components/Layout'
 import Index from './pages/Index'
 import Diagnosticos from './pages/Diagnosticos'
@@ -34,6 +35,7 @@ import PrivacidadeLGPD from './pages/PrivacidadeLGPD'
 
 const App = () => (
   <BrowserRouter>
+    <ScrollToTop />
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
