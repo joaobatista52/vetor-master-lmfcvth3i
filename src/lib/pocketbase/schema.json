@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T19:44:21.685Z",
+  "generatedAt": "2026-10-16T21:15:05.575Z",
   "collections": [
     {
       "name": "users",
@@ -760,6 +760,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "historico_versoes",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_skills_slug ON skills (slug)"]
@@ -1028,6 +1040,88 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_integracoes_site_chave ON integracoes_site (chave)"]
+    },
+    {
+      "name": "agentes_versoes",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != \"\"",
+        "update": "@request.auth.id != \"\"",
+        "delete": "@request.auth.id != \"\""
+      },
+      "fields": [
+        {
+          "name": "slug_agente",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "versao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "system_prompt",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "skills_referenciadas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "slots_contexto",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "calibracoes_aplicadas",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_documento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_agentes_versoes_slug ON agentes_versoes (slug_agente, versao)"]
     }
   ]
 }
