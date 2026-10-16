@@ -272,7 +272,12 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
         itemOrigem.toLowerCase().includes('prioridade') ||
         itemOrigemTipo.toLowerCase().includes('prioridade') ||
         dadosCompletosOrigem.toLowerCase().includes('prioridade') ||
-        respostasOrigem.toLowerCase().includes('prioridade')
+        respostasOrigem.toLowerCase().includes('prioridade') ||
+        Boolean(
+          itemRespostas &&
+          (itemRespostas.condicao_fundador_solicitada ||
+            itemRespostas.acesso_antecipado_solicitado),
+        )
 
       // Verificar se possui respostas reais do questionário (mais do que apenas campos de inscrição da lista de prioridade)
       let temRespostasQuestionario = false
@@ -296,6 +301,12 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
 
+      if (isListaPrioridade) {
+        rec.set('membro_fundador', true)
+      } else if (item.membro_fundador !== undefined) {
+        rec.set('membro_fundador', Boolean(item.membro_fundador))
+      }
+
       // Regras de Status:
       // 1. Preservar sempre status 'teste'
       // 2. Se for lead 'lista_espera' (ou se Origem for Lista de Prioridade SaaS, ou sem respostas):
@@ -308,6 +319,8 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
         if (localStatusAtual === 'lista_espera') {
           // Mantém lista_espera mesmo se chegarem respostas do site
           rec.set('status', 'lista_espera')
+        } else if (localStatusAtual === 'membro_fundador_graduado') {
+          rec.set('status', 'membro_fundador_graduado')
         } else if (isListaPrioridade || !temRespostasQuestionario) {
           rec.set('status', 'lista_espera')
         } else {
@@ -734,7 +747,11 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       itemOrigem.toLowerCase().includes('prioridade') ||
       itemOrigemTipo.toLowerCase().includes('prioridade') ||
       dadosCompletosOrigem.toLowerCase().includes('prioridade') ||
-      respostasOrigem.toLowerCase().includes('prioridade')
+      respostasOrigem.toLowerCase().includes('prioridade') ||
+      Boolean(
+        itemRespostas &&
+        (itemRespostas.condicao_fundador_solicitada || itemRespostas.acesso_antecipado_solicitado),
+      )
 
     let temRespostasQuestionario = false
     if (itemRespostas && typeof itemRespostas === 'object') {
@@ -757,12 +774,20 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     rec.set('origem', item.origem || 'Site Institucional')
     rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
 
+    if (isListaPrioridade) {
+      rec.set('membro_fundador', true)
+    } else if (item.membro_fundador !== undefined) {
+      rec.set('membro_fundador', Boolean(item.membro_fundador))
+    }
+
     if (isTest) {
       rec.set('status', 'teste')
     } else {
       const localStatusAtual = (rec.getString('status') || '').toLowerCase()
       if (localStatusAtual === 'lista_espera') {
         rec.set('status', 'lista_espera')
+      } else if (localStatusAtual === 'membro_fundador_graduado') {
+        rec.set('status', 'membro_fundador_graduado')
       } else if (isListaPrioridade || !temRespostasQuestionario) {
         rec.set('status', 'lista_espera')
       } else {
@@ -1177,12 +1202,20 @@ routerAdd(
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
 
+      if (isListaPrioridade) {
+        rec.set('membro_fundador', true)
+      } else if (item.membro_fundador !== undefined) {
+        rec.set('membro_fundador', Boolean(item.membro_fundador))
+      }
+
       if (isTest) {
         rec.set('status', 'teste')
       } else {
         const localStatusAtual = (rec.getString('status') || '').toLowerCase()
         if (localStatusAtual === 'lista_espera') {
           rec.set('status', 'lista_espera')
+        } else if (localStatusAtual === 'membro_fundador_graduado') {
+          rec.set('status', 'membro_fundador_graduado')
         } else if (isListaPrioridade || !temRespostasQuestionario) {
           rec.set('status', 'lista_espera')
         } else {
@@ -1300,7 +1333,7 @@ routerAdd(
       syncedAt: new Date().toISOString(),
     })
   },
-  $apis.requireAdminAuth(),
+  $apis.requireSuperuserAuth(),
 )
 
 // Endpoint de teste/criação ponta-a-ponta (requer admin)
@@ -1586,5 +1619,5 @@ routerAdd(
       protocolo: testLeadPayload.protocolo,
     })
   },
-  $apis.requireAdminAuth(),
+  $apis.requireSuperuserAuth(),
 )

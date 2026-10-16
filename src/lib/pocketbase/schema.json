@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T17:14:37.821Z",
+  "generatedAt": "2026-10-16T19:44:21.685Z",
   "collections": [
     {
       "name": "users",
@@ -942,6 +942,18 @@
         {
           "name": "documentacao_adicional",
           "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "membro_fundador",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "checkpoint_valido_ate",
+          "type": "date",
           "required": false,
           "system": false
         }

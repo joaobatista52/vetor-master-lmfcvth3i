@@ -621,12 +621,25 @@ export default function AdminLeads() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-0.5">
-                          <div className="text-xs font-semibold text-[#F8FAFC]">
-                            {lead.razao_social || lead.nome_completo || 'Sem identificação'}
+                          <div className="text-xs font-semibold text-[#F8FAFC] flex items-center gap-1.5 flex-wrap">
+                            <span>
+                              {lead.razao_social || lead.nome_completo || 'Sem identificação'}
+                            </span>
+                            {Boolean(lead.membro_fundador) && (
+                              <Badge className="bg-[#FF9900] text-[#0B1120] border-none font-bold text-[9px] uppercase tracking-wider px-1.5 py-0">
+                                Membro Fundador
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-[11px] text-[#8B98B4]">
                             {lead.nome_completo} {lead.cargo ? `• ${lead.cargo}` : ''}
                           </div>
+                          {lead.checkpoint_valido_ate && (
+                            <div className="text-[10px] text-[#3DDC74] font-medium">
+                              Checkpoint até:{' '}
+                              {new Date(lead.checkpoint_valido_ate).toLocaleDateString('pt-BR')}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -645,7 +658,14 @@ export default function AdminLeads() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          {(lead.status || '').toLowerCase() === 'teste' ? (
+                          {(lead.status || '').toLowerCase() === 'membro_fundador_graduado' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#5B9DFF]/60 text-[#5B9DFF] bg-[#0066CC]/15 text-[10px] font-semibold"
+                            >
+                              Fundador Graduado
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'teste' ? (
                             <Badge
                               variant="outline"
                               className="border-slate-500/60 text-slate-300 bg-slate-700/40 text-[10px] font-semibold gap-1"
@@ -757,6 +777,48 @@ export default function AdminLeads() {
                                 </DropdownMenuItem>
                               )}
 
+                              {/* Ação Aprovar/Assinar Membro Fundador com validade de 12 meses */}
+                              {Boolean(lead.membro_fundador) &&
+                                (!lead.checkpoint_valido_ate ||
+                                  (lead.status || '').toLowerCase() === 'lista_espera') && (
+                                  <DropdownMenuItem
+                                    onClick={async () => {
+                                      setActionLoadingId(lead.id)
+                                      try {
+                                        const dataAssinatura = new Date()
+                                        const dataValidade = new Date(dataAssinatura)
+                                        dataValidade.setFullYear(dataValidade.getFullYear() + 1)
+                                        const dataValidadeISO = dataValidade.toISOString()
+                                        const dataFormatada =
+                                          dataValidade.toLocaleDateString('pt-BR')
+
+                                        await updateLeadStatus(lead.id, 'novo', {
+                                          membro_fundador: true,
+                                          checkpoint_valido_ate: dataValidadeISO,
+                                        })
+                                        setFeedback({
+                                          type: 'success',
+                                          message: `Bem-vindo, Membro Fundador. Seu checkpoint mensal está agendado e válido até ${dataFormatada}. Sua trava de preço é vitalícia enquanto a assinatura estiver ativa.`,
+                                        })
+                                        await loadLeads()
+                                      } catch (err: any) {
+                                        setFeedback({
+                                          type: 'error',
+                                          message:
+                                            err?.message ||
+                                            'Falha ao confirmar assinatura do Membro Fundador.',
+                                        })
+                                      } finally {
+                                        setActionLoadingId(null)
+                                      }
+                                    }}
+                                    className="gap-2 cursor-pointer text-[#FF9900] hover:bg-[#16213A] focus:bg-[#16213A] focus:text-[#FF9900] font-semibold"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5 text-[#FF9900]" />
+                                    <span>Confirmar Assinatura Membro Fundador (L7)</span>
+                                  </DropdownMenuItem>
+                                )}
+
                               {(lead.status || '').toLowerCase() === 'teste' ? (
                                 <DropdownMenuItem
                                   onClick={() => handleSetStatus(lead, 'novo')}
@@ -806,6 +868,9 @@ export default function AdminLeads() {
         onOpenChange={(open) => {
           setDialogOpen(open)
           if (!open) setSelectedLead(null)
+        }}
+        onLeadUpdated={() => {
+          loadLeads()
         }}
       />{' '}
     </div>

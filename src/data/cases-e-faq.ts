@@ -153,6 +153,13 @@ export const FAQ_OFICIAL_V13: FAQItem[] = [
     origem: 'home',
   },
   {
+    numero: '6A.1',
+    pergunta: 'O que é a condição de Membro Fundador?',
+    resposta:
+      'É o pacote de benefícios reservado a quem entra pela Lista de Prioridade durante a fase fundadora: trava de preço vitalícia (enquanto a assinatura estiver ativa e contínua), checkpoint mensal de acompanhamento por 12 meses, prioridade na fila de diagnóstico por 12 meses e acesso antecipado a novos módulos. O checkpoint mensal é sessão de acompanhamento de sucesso do cliente — não consultoria estratégica. Em caso de upgrade de plano, o checkpoint é substituído pelas sessões do plano contratado. Condições completas no contrato de adesão.',
+    origem: 'home',
+  },
+  {
     numero: '6B',
     pergunta: 'Preciso de fidelidade? Posso cancelar?',
     resposta:

@@ -279,6 +279,7 @@ export async function enviarListaPrioridade(
       origem: 'Lista de Prioridade SaaS',
       origem_tipo: 'saas_prioridade',
       status: 'lista_espera',
+      membro_fundador: true,
       nome_completo: payloadCompleto.nome_completo,
       email: payloadCompleto.email_corporativo,
       whatsapp: payloadCompleto.whatsapp,

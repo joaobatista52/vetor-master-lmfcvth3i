@@ -117,6 +117,15 @@ export default function InstitucionalVendedora() {
               </span>
             </h1>
 
+            {/* L1 — Selo sob o headline (Seção 8.6 / 8.7) */}
+            <div className="mt-4 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-[4px] bg-[#16213A] border border-[#FF9900]/40 text-[#FFB84D] text-xs sm:text-sm font-medium">
+              <Sparkles className="w-4 h-4 text-[#FF9900] shrink-0" />
+              <span>
+                Fase fundadora em curso — condição de Membro Fundador disponível pela Lista de
+                Prioridade.
+              </span>
+            </div>
+
             <p className="mt-6 text-base sm:text-lg text-[#C7D0E0] max-w-3xl mx-auto leading-relaxed">
               C-Level as a Service & Mentorship as a Software. Mais de 40 anos de liderança
               executiva traduzidos em algoritmos determinísticos proprietários que libertam o
@@ -685,7 +694,7 @@ export default function InstitucionalVendedora() {
                   </ul>
                 </CardContent>
 
-                <div className="p-6 pt-2">
+                <div className="p-6 pt-2 space-y-2">
                   <Button
                     asChild
                     className={`w-full rounded-[4px] font-semibold text-xs py-5 ${
@@ -704,9 +713,133 @@ export default function InstitucionalVendedora() {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </Button>
+
+                  {/* L3 — microcopy sob o botão da Lista de Prioridade (Seção 8.6 / 8.7) */}
+                  {plano.id === 'saas-puro' && (
+                    <p className="text-[11px] text-[#8B98B4] leading-relaxed text-center px-1 pt-1">
+                      Quem entra pela Lista garante a condição de Membro Fundador: trava de preço
+                      vitalícia, checkpoint mensal por 12 meses e acesso antecipado a novos módulos.
+                    </p>
+                  )}
                 </div>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* L4 — SEÇÃO NOVA: Condição de Membro Fundador (Seção 8.6 / 8.7 / 8.8) */}
+      <section
+        id="membro-fundador"
+        className="py-20 md:py-24 bg-[#111A2E]/80 border-b border-[#24334F] relative"
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <Badge className="bg-[#FF9900]/15 text-[#FFB84D] border-[#FF9900]/30 text-xs uppercase tracking-wider font-bold px-3 py-1">
+              FASE FUNDADORA
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#F8FAFC] font-heading">
+              Condição de Membro Fundador
+            </h2>
+            <p className="text-base sm:text-lg text-[#C7D0E0] leading-relaxed">
+              Quem entra pela Lista de Prioridade garante a condição de Membro Fundador — o pacote
+              de acompanhamento reservado aos primeiros assinantes da Vetor Master.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Benefício 1 */}
+            <Card className="bg-[#16213A] border-[#24334F] p-6 rounded-[4px] space-y-3 hover:border-[#5B9DFF]/40 transition-all">
+              <div className="flex items-center justify-between gap-2 border-b border-[#24334F] pb-3">
+                <span className="font-mono text-sm font-bold text-[#5B9DFF]">01</span>
+                <Badge className="bg-[#5B9DFF]/15 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px] font-bold uppercase tracking-wider">
+                  Vitalício
+                </Badge>
+              </div>
+              <h3 className="text-base font-bold text-[#F8FAFC]">1. Trava de preço vitalícia</h3>
+              <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                o valor da sua assinatura não sobe enquanto ela permanecer ativa e contínua.
+              </p>
+            </Card>
+
+            {/* Benefício 2 */}
+            <Card className="bg-[#16213A] border-[#24334F] p-6 rounded-[4px] space-y-3 hover:border-[#3DDC74]/40 transition-all">
+              <div className="flex items-center justify-between gap-2 border-b border-[#24334F] pb-3">
+                <span className="font-mono text-sm font-bold text-[#3DDC74]">02</span>
+                <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px] font-bold uppercase tracking-wider">
+                  12 meses
+                </Badge>
+              </div>
+              <h3 className="text-base font-bold text-[#F8FAFC]">
+                2. Checkpoint mensal de acompanhamento — 12 meses
+              </h3>
+              <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                sessão mensal de 20 a 30 minutos com o time de Customer Success para revisar o
+                progresso do seu plano de ação e destravar o próximo passo.
+              </p>
+            </Card>
+
+            {/* Benefício 3 */}
+            <Card className="bg-[#16213A] border-[#24334F] p-6 rounded-[4px] space-y-3 hover:border-[#FFB84D]/40 transition-all">
+              <div className="flex items-center justify-between gap-2 border-b border-[#24334F] pb-3">
+                <span className="font-mono text-sm font-bold text-[#FFB84D]">03</span>
+                <Badge className="bg-[#FF9900]/15 text-[#FFB84D] border-[#FF9900]/30 text-[10px] font-bold uppercase tracking-wider">
+                  12 meses
+                </Badge>
+              </div>
+              <h3 className="text-base font-bold text-[#F8FAFC]">
+                3. Prioridade na fila de diagnóstico — 12 meses
+              </h3>
+              <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                seu diagnóstico entra na frente da fila enquanto durar a fase fundadora.
+              </p>
+            </Card>
+
+            {/* Benefício 4 */}
+            <Card className="bg-[#16213A] border-[#24334F] p-6 rounded-[4px] space-y-3 hover:border-[#5B9DFF]/40 transition-all">
+              <div className="flex items-center justify-between gap-2 border-b border-[#24334F] pb-3">
+                <span className="font-mono text-sm font-bold text-[#5B9DFF]">04</span>
+                <Badge className="bg-[#5B9DFF]/15 text-[#5B9DFF] border-[#5B9DFF]/30 text-[10px] font-bold uppercase tracking-wider">
+                  Vitalício
+                </Badge>
+              </div>
+              <h3 className="text-base font-bold text-[#F8FAFC]">
+                4. Acesso antecipado a novos módulos — vitalício
+              </h3>
+              <p className="text-xs sm:text-sm text-[#C7D0E0] leading-relaxed">
+                você conhece e testa cada novo módulo antes do lançamento para todos.
+              </p>
+            </Card>
+          </div>
+
+          <div className="text-center space-y-3 pt-2">
+            <Button
+              size="lg"
+              asChild
+              className="bg-[#0066CC] hover:bg-[#22B14C] text-white font-semibold rounded-[4px] px-8 py-6 shadow-xl shadow-[#0066CC]/20"
+            >
+              <Link to="/lista-prioridade" className="flex items-center justify-center gap-2">
+                <span>Garantir minha condição de Membro Fundador</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </Button>
+            <p className="text-xs text-[#8B98B4] max-w-xl mx-auto">
+              Vagas limitadas à fase fundadora. Entrar na lista não gera compromisso — a condição é
+              confirmada na assinatura.
+            </p>
+          </div>
+
+          {/* Nota legal integral de 8.8 */}
+          <div className="p-4 sm:p-5 rounded-[4px] bg-[#0B1120] border border-[#24334F] text-[11px] sm:text-xs text-[#8B98B4] leading-relaxed">
+            <span className="font-semibold text-[#C7D0E0] block mb-1">Nota Legal:</span>
+            Condição de Membro Fundador exclusiva para adesões à Lista de Prioridade durante a fase
+            fundadora. Checkpoint mensal e prioridade na fila: válidos por 12 meses contados da
+            assinatura (prioridade: ou enquanto durar a fase fundadora, o que ocorrer primeiro).
+            Trava de preço e acesso antecipado: válidos enquanto a assinatura estiver ativa e
+            contínua. Em caso de upgrade de plano, o checkpoint mensal é substituído pelas sessões
+            consultivas do plano contratado. O checkpoint é sessão de acompanhamento de sucesso do
+            cliente e não constitui consultoria estratégica. Condições completas no contrato de
+            adesão.
           </div>
         </div>
       </section>
@@ -821,6 +954,11 @@ export default function InstitucionalVendedora() {
           </div>
           <div className="text-xs text-center md:text-right">
             <div>© 2026 VETOR MASTER. Todos os direitos reservados.</div>
+            {/* L6 — nota no rodapé referindo às condições completas no contrato de adesão */}
+            <p className="text-[11px] text-[#8B98B4] mt-1 max-w-md">
+              Condições da fase fundadora e benefícios de Membro Fundador: condições completas no
+              contrato de adesão.
+            </p>
             <div className="font-mono text-[10px] text-[#3DDC74] mt-0.5">
               JBP Gestão Master V7.2 • Alinhamento V1.3
             </div>

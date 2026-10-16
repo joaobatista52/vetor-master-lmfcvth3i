@@ -36,6 +36,8 @@ export interface LeadRecord {
   certificacoes?: string[] | string
   documentacao_adicional?: string[] | string
   site_lead_id: string
+  membro_fundador?: boolean
+  checkpoint_valido_ate?: string
   site_created: string
   site_updated: string
   synced_at: string
@@ -84,9 +86,17 @@ export async function getLeadById(id: string): Promise<LeadRecord | null> {
   }
 }
 
-export async function updateLeadStatus(id: string, status: string): Promise<LeadRecord | null> {
+export async function updateLeadStatus(
+  id: string,
+  status: string,
+  extraFields?: {
+    membro_fundador?: boolean
+    checkpoint_valido_ate?: string | null
+  },
+): Promise<LeadRecord | null> {
   try {
-    const updated = await pb.collection('leads').update<LeadRecord>(id, { status })
+    const data: Record<string, any> = { status, ...(extraFields || {}) }
+    const updated = await pb.collection('leads').update<LeadRecord>(id, data)
     return updated
   } catch (err) {
     console.error('Falha ao atualizar status do lead:', err)

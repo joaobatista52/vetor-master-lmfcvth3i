@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
-import { getLeadById } from '@/services/site-leads-sync'
+import { getLeadById, updateLeadStatus } from '@/services/site-leads-sync'
 import { setores, type Setor, type PerguntaItemLiteral } from '@/data/setores-questionario'
 
 interface LeadDetailsDialogProps {
@@ -36,6 +36,7 @@ interface LeadDetailsDialogProps {
   leadId?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onLeadUpdated?: () => void
 }
 
 // Prefixos de setores canônicos utilizados nos questionários do site institucional
@@ -581,10 +582,16 @@ export function LeadDetailsDialog({
   leadId,
   open,
   onOpenChange,
+  onLeadUpdated,
 }: LeadDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState<'questionario' | 'anexos' | 'bruto'>('questionario')
   const [currentLead, setCurrentLead] = useState<LeadRecord | null>(initialLead)
   const [loadingFresh, setLoadingFresh] = useState<boolean>(false)
+  const [savingStatus, setSavingStatus] = useState<boolean>(false)
+  const [feedbackMsg, setFeedbackMsg] = useState<{
+    type: 'success' | 'error'
+    text: string
+  } | null>(null)
 
   // Sempre que o modal abre ou o lead/leadId muda, buscar o registro fresco do banco por ID
   useEffect(() => {
@@ -1001,6 +1008,65 @@ export function LeadDetailsDialog({
     return deduplicados
   }
 
+  // Ação de aprovação/assinatura (Fluxo L7 - Seção 8.5 / 8.7)
+  const handleAprovarAssinatura = async () => {
+    if (!lead) return
+    setSavingStatus(true)
+    setFeedbackMsg(null)
+    try {
+      const dataAssinatura = new Date()
+      const dataValidade = new Date(dataAssinatura)
+      dataValidade.setFullYear(dataValidade.getFullYear() + 1)
+      const dataValidadeISO = dataValidade.toISOString()
+      const dataFormatada = dataValidade.toLocaleDateString('pt-BR')
+
+      const updated = await updateLeadStatus(lead.id, 'novo', {
+        membro_fundador: true,
+        checkpoint_valido_ate: dataValidadeISO,
+      })
+      if (updated) setCurrentLead(updated)
+
+      setFeedbackMsg({
+        type: 'success',
+        text: `Bem-vindo, Membro Fundador. Seu checkpoint mensal está agendado e válido até ${dataFormatada}. Sua trava de preço é vitalícia enquanto a assinatura estiver ativa.`,
+      })
+      if (onLeadUpdated) onLeadUpdated()
+    } catch (err: any) {
+      setFeedbackMsg({
+        type: 'error',
+        text: err?.message || 'Falha ao confirmar assinatura e registrar checkpoint.',
+      })
+    } finally {
+      setSavingStatus(false)
+    }
+  }
+
+  // Transição pós-validade para Membro Fundador Graduado (Seção 8.5 / 8.9)
+  const handleGraduarFundador = async () => {
+    if (!lead) return
+    setSavingStatus(true)
+    setFeedbackMsg(null)
+    try {
+      const updated = await updateLeadStatus(lead.id, 'membro_fundador_graduado', {
+        membro_fundador: true,
+      })
+      if (updated) setCurrentLead(updated)
+
+      setFeedbackMsg({
+        type: 'success',
+        text: 'Seu ciclo de Membro Fundador foi concluído. Sua trava de preço e o acesso antecipado permanecem vitalícios. O acompanhamento segue: em cadência trimestral [SaaS Puro] / pelas sessões consultivas do seu plano [MaaS Híbrido e Bespoke CaaS].',
+      })
+      if (onLeadUpdated) onLeadUpdated()
+    } catch (err: any) {
+      setFeedbackMsg({
+        type: 'error',
+        text: err?.message || 'Falha ao registrar transição pós-validade.',
+      })
+    } finally {
+      setSavingStatus(false)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] bg-[#111A2E] text-[#F8FAFC] border-[#24334F] p-0 overflow-hidden flex flex-col">
@@ -1011,7 +1077,21 @@ export function LeadDetailsDialog({
                 <Badge className="bg-[#0066CC]/20 text-[#5B9DFF] border border-[#5B9DFF]/40 font-mono text-xs">
                   {lead.protocolo}
                 </Badge>
-                {(lead.status || '').toLowerCase() === 'teste' ? (
+                {/* Badge Membro Fundador */}
+                {Boolean(lead.membro_fundador) && (
+                  <Badge className="bg-[#FF9900] text-[#0B1120] border-none font-bold text-xs uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-[#0B1120]" />
+                    <span>Membro Fundador</span>
+                  </Badge>
+                )}
+                {(lead.status || '').toLowerCase() === 'membro_fundador_graduado' ? (
+                  <Badge
+                    variant="outline"
+                    className="border-[#5B9DFF]/60 text-[#5B9DFF] bg-[#0066CC]/15 text-xs font-semibold gap-1"
+                  >
+                    <span>Membro Fundador Graduado</span>
+                  </Badge>
+                ) : (lead.status || '').toLowerCase() === 'teste' ? (
                   <Badge
                     variant="outline"
                     className="border-slate-500/60 text-slate-300 bg-slate-700/40 text-xs font-semibold gap-1"
@@ -1039,7 +1119,7 @@ export function LeadDetailsDialog({
                   </Badge>
                 )}
                 {lead.origem && (
-                  <Badge className="bg-[#FF9900]/20 text-[#FFB84D] border border-[#FF9900]/40 text-xs">
+                  <Badge className="bg-[#16213A] text-[#C7D0E0] border border-[#24334F] text-xs">
                     {lead.origem}
                   </Badge>
                 )}
@@ -1074,6 +1154,81 @@ export function LeadDetailsDialog({
               </div>
             </div>
           </div>
+
+          {/* Alerta de Feedback L7 / Operações */}
+          {feedbackMsg && (
+            <div
+              className={`p-3 rounded-[4px] border text-xs flex items-start gap-2.5 animate-fade-in ${
+                feedbackMsg.type === 'success'
+                  ? 'bg-[#3DDC74]/15 border-[#3DDC74]/50 text-[#3DDC74]'
+                  : 'bg-red-500/10 border-red-500/40 text-red-400'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex-1 font-medium leading-relaxed">{feedbackMsg.text}</div>
+            </div>
+          )}
+
+          {/* Banner de Membro Fundador / Informações de Validade */}
+          {Boolean(lead.membro_fundador) && (
+            <div className="p-3 rounded-[4px] bg-[#FF9900]/10 border border-[#FF9900]/30 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="font-bold text-[#FFB84D] flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF9900]" />
+                  <span>Condição de Membro Fundador Ativa</span>
+                </div>
+                <p className="text-[11px] text-[#C7D0E0]">
+                  Trava de preço: <strong className="text-[#3DDC74]">Vitalícia</strong> • Checkpoint
+                  mensal:{' '}
+                  {lead.checkpoint_valido_ate ? (
+                    <span>
+                      válido até{' '}
+                      <strong className="text-[#FFB84D]">
+                        {new Date(lead.checkpoint_valido_ate).toLocaleDateString('pt-BR')}
+                      </strong>
+                    </span>
+                  ) : (
+                    <span className="italic text-[#8B98B4]">
+                      a definir na assinatura (12 meses)
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {(!lead.checkpoint_valido_ate ||
+                  (lead.status || '').toLowerCase() === 'lista_espera') && (
+                  <Button
+                    size="sm"
+                    onClick={handleAprovarAssinatura}
+                    disabled={savingStatus}
+                    className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs h-7 px-3 gap-1.5 font-semibold"
+                  >
+                    {savingStatus ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3 h-3" />
+                    )}
+                    <span>Confirmar Assinatura (L7)</span>
+                  </Button>
+                )}
+
+                {lead.checkpoint_valido_ate &&
+                  (lead.status || '').toLowerCase() !== 'membro_fundador_graduado' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleGraduarFundador}
+                      disabled={savingStatus}
+                      className="border-[#24334F] bg-[#16213A] text-[#5B9DFF] hover:bg-[#1f2e4d] rounded-[4px] text-xs h-7 px-2.5"
+                      title="Conclui janela de 12 meses preservando a trava de preço vitalícia (Seção 8.5)"
+                    >
+                      <span>Graduar Membro Fundador</span>
+                    </Button>
+                  )}
+              </div>
+            </div>
+          )}
 
           {/* Dados de contato essenciais no cabeçalho acima das abas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-[#24334F]/60 text-xs">
