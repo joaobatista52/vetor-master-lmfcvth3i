@@ -32,6 +32,7 @@ import Questionario from './pages/Questionario'
 import QuestionarioSucesso from './pages/QuestionarioSucesso'
 import ListaPrioridade from './pages/ListaPrioridade'
 import PrivacidadeLGPD from './pages/PrivacidadeLGPD'
+import ContactSheet from './pages/ContactSheet'
 
 const App = () => (
   <BrowserRouter>
@@ -44,6 +45,7 @@ const App = () => (
           {/* Camada 0: Institucional/Vendedora como 1ª tela para todos */}
           <Route path="/" element={<InstitucionalVendedora />} />
           <Route path="/landing" element={<Landing />} />
+          <Route path="/contact-sheet" element={<ContactSheet />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacidade" element={<PrivacidadeLGPD />} />
           {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
