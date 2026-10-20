@@ -130,10 +130,10 @@ export const REVALIDACAO_DELTA_GATE_0: RevalidacaoDeltaItem[] = [
     regra:
       'DRE Institucional Trading de 15 linhas com desdobramento da Receita Bruta: (+) Encomenda; (+) Conta e Ordem (somente fee de serviço). Deduções (Y1: 6% | Y2: 16% | Y3+: 13%), CPV tech+cloud, Margem Bruta, Custos Variáveis (cartão+comissão), Margem Contribuição, OPEX completo, EBITDA, D&A, EBIT, Res. Financeiro, EBT, IR/CSLL, Lucro Líquido. Vedado qualquer cálculo de ganho de incentivo fiscal na DRE.',
     conformidadeApp:
-      'Paridade Total. Skill "dre-trading-incentivos-comex" registrada com estrutura literal de 15 linhas + Sub-skill setorial integrada ao Motor Financeiro JBP V4.0 e ao System Prompt A5-A10.',
+      'Paridade Total. Skill "dre-trading-incentivos-comex" registrada com estrutura literal de 15 linhas + Sub-skill setorial integrada ao Motor Financeiro JBP V4.0 e ao System Prompt V7.2.3.',
     status: 'Conforme',
     evidencia:
-      'Migration 0065: skills/dre-trading-incentivos-comex e motor-financeiro-jbp-v4; regras integradas às instruções nativas do jbp-gestao-master.',
+      'Migration 0065/0066: skills/dre-trading-incentivos-comex e motor-financeiro-jbp-v4; regras integradas às instruções nativas do jbp-gestao-master V7.2.3.',
   },
   {
     secao: '§3.4',
@@ -141,14 +141,14 @@ export const REVALIDACAO_DELTA_GATE_0: RevalidacaoDeltaItem[] = [
     regra:
       'WACC = Selic 13,75% + Risco Brasil 4,50% + Prêmio Empresa com exclusão mútua: Regime A (Tech/Startup < 5 anos: Pre-Seed 4,50%, Seed 3,50%, Série A 2,50%); Regime B (Demais setores não-tech: Size Premium por RB normalizada <30M: 3%, 30-80M: 2%, >80M: 1,5% + Alpha idade <5a: +2%, 5-10a: +1%, >10a: 0% + Fragilidades +0,5% Prisão Fundador, +0,5% Sem DRE gerencial mensal). Vedado prêmio startup em não-tech.',
     conformidadeApp:
-      'Paridade Total. Skill "realismo-radical-valuation-jbp-v21" e Seção 3.4 do System Prompt A5-A10 implementadas com formulação determinística e vedação estrita.',
+      'Paridade Total. Skill "realismo-radical-valuation-jbp-v21" e Seção 3.4 do System Prompt V7.2.3 implementadas com formulação determinística e vedação estrita.',
     status: 'Conforme',
     evidencia:
-      'Migration 0065: skills/realismo-radical-valuation-jbp-v21 e playbook com exemplo canônico Aurora Trading (RB 53M, WACC 21,25%).',
+      'Migration 0065/0066: skills/realismo-radical-valuation-jbp-v21 e playbook com exemplo canônico Aurora Trading (RB 53M, WACC 21,25%).',
   },
   {
     secao: '§3.6',
-    calibracao: 'Definições Receita Bruta Trading',
+    calibracao: 'Definições Receita Bruta Trading (Encomenda vs Conta e Ordem)',
     regra:
       'Encomenda = toda operação registrada na contabilidade com NF de Venda (Receita Bruta Operacional). Conta e Ordem = trading é prestadora de serviços, sem trânsito contábil/gerencial da mercadoria; entrega via Simples Remessa; Receita Bruta = SOMENTE NFs de Prestação de Serviços (fee). Simples Remessa NUNCA é registrada como Receita Bruta contábil ou gerencial.',
     conformidadeApp:
@@ -170,25 +170,25 @@ export const REVALIDACAO_DELTA_GATE_0: RevalidacaoDeltaItem[] = [
   },
   {
     secao: '§8.5–§8.7',
-    calibracao: 'Mapa de Conversão Obrigatório A3 / Normalização / Motor Bloqueado A4',
+    calibracao: 'Mapa de Conversão / Normalização / Motor Bloqueado A4',
     regra:
       'Com demonstrativos na Fase 6: obrigatório declarar Mapa de Conversão expresso (conta original do cliente → linha das 15 linhas do Motor, contas consolidadas e ausentes). Sem o mapa, indicadores permanecem [REQUER VERIFICAÇÃO]. Ausência total de demonstrativos e dados insuficientes da Seção 6: MOTOR BLOQUEADO (vedada emissão de DRE, FCF ou Valuation calculados; lista de verificação + documentos necessários). Proibido inferir linha ou inventar número.',
     conformidadeApp:
-      'Paridade Total. Protocolo integral registrado nas seções 8.5, 8.6 e 8.7 do System Prompt A5-A10 e no Prompt 9 da Skill Roteiro de Execução.',
+      'Paridade Total. Protocolo integral registrado nas seções 8.5, 8.6 e 8.7 do System Prompt V7.2.3 e no Prompt 9 da Skill Roteiro de Execução.',
     status: 'Conforme',
     evidencia:
       'Instruções explícitas e invioláveis no System Prompt §8.6 (A3) e §8.7 (A4); refletidas na memória persistente do agente.',
   },
   {
     secao: '§10.12',
-    calibracao: 'Anexo B Padrão Canônico A9',
+    calibracao: 'Anexo B Padrão Canônico EREC A9',
     regra:
       'Anexo B (EREC) do Bloco Solução Completo deve ter obrigatoriamente as colunas: Ação (Eliminar / Reduzir / Elevar / Criar) | Item de Intervenção | Base Conclusiva. Dimensão setorial (Estratégia, Financeiro, Organizacional, Comercial, Operacional, Tributário etc.) deve constar como COLUNA ADICIONAL, nunca como substituta da coluna "Ação". Vedado entregar matriz genérica rotulada de EREC.',
     conformidadeApp:
-      'Paridade Total. Skill "roteiro-execucao-13-prompts" atualizada com o padrão canônico A9 na descrição dos Anexos A–G do Bloco Solução Completo.',
+      'Paridade Total. Skill "roteiro-execucao-13-prompts" e Seção 10.12 do System Prompt atualizadas com o padrão canônico A9 na descrição dos Anexos A–G.',
     status: 'Conforme',
     evidencia:
-      'Migration 0065: skills/roteiro-execucao-13-prompts, seção "Padrão de Anexos do Bloco Solução Completo" (Anexo B A9).',
+      'Migration 0065/0066: System Prompt §10.12 e skills/roteiro-execucao-13-prompts, seção "Padrão de Anexos do Bloco Solução Completo" (Anexo B A9).',
   },
   {
     secao: '§12',
@@ -201,13 +201,57 @@ export const REVALIDACAO_DELTA_GATE_0: RevalidacaoDeltaItem[] = [
     evidencia:
       'System Prompt §12 (A8) e Skill Roteiro Prompt 13 com verificação de SLA ≤2% e checagem item a item.',
   },
+  {
+    secao: '§3.1 (Novo V7.2.3)',
+    calibracao: 'A11 — Exceção da Escada de Deduções (Tributos Embutidos)',
+    regra:
+      'Exceção da Escada (A11): quando os tributos já estiverem embutidos no resultado contábil real do demonstrativo (ex.: balancete/ECD com receitas líquidas de tributos), NÃO sobrepor a escada de deduções (Y1: 6% | Y2: 16% | Y3+: 13%) — usar o valor real e declarar a não aplicação como convenção do motor; vedada a dupla contagem (sobrepor a convenção a tributos já embutidos). Regra universal para qualquer setor corporativo.',
+    conformidadeApp:
+      'Paridade Total. Integrado expressamente no System Prompt V7.2.3 §3.1 e na memória operacional do agente nativo jbp-gestao-master.',
+    status: 'Conforme',
+    evidencia:
+      'Migration 0066: System Prompt §3.1 (Exceção da Escada A11); validado com o gabarito do caso real Beatek (balancete SPED com tributos já embutidos no resultado contábil real).',
+  },
+  {
+    secao: '§3.1 (Novo V7.2.3)',
+    calibracao: 'CS-17 — Exibição Integral da DRE de 15 Linhas',
+    regra:
+      'Exibição Integral (CS-17): a DRE normalizada é SEMPRE exibida na estrutura de 15 linhas do Motor, mesmo quando parcial — linhas não segregáveis recebem [REQUER VERIFICAÇÃO] na própria linha, nunca são omitidas da tabela.',
+    conformidadeApp:
+      'Paridade Total. Integrado expressamente no System Prompt V7.2.3 §3.1 e na instrução canônica de exibição da DRE.',
+    status: 'Conforme',
+    evidencia:
+      'Migration 0066: System Prompt §3.1 ("Exibição Integral (CS-17): a DRE normalizada é SEMPRE exibida na estrutura de 15 linhas do Motor, mesmo quando parcial — linhas não segregáveis recebem [REQUER VERIFICAÇÃO] na própria linha, nunca são omitidas da tabela.").',
+  },
+  {
+    secao: '§6.1 (Novo V7.2.3)',
+    calibracao: 'CS-20 — CTA Condicionado (Gate de Autorização)',
+    regra:
+      'CTA Condicionado (CS-20): se o dossiê registrar autorizacao_devolutiva = "Não autorizo", o Prompt 1 sinaliza na confirmação de carga e o Bloco CTA integral NÃO é emitido — registrar pendência de follow-up comercial, preservar dossiê e Fase 1 no cofre; a devolutiva integral só é emitida após autorização formal do lead ou comando de conversão explícito do operador.',
+    conformidadeApp:
+      'Paridade Total. Integrado no System Prompt V7.2.3 §6.1, alinhado à Seção 9 do Plano V7.2.3 (fluxo de nutrição com teaser assíncrono).',
+    status: 'Conforme',
+    evidencia:
+      'Migration 0066: System Prompt §6.1 (CTA Condicionado CS-20); preservação do dossiê no cofre sem descarte do lead.',
+  },
+  {
+    secao: '§9 (Novo V7.2.3)',
+    calibracao: 'CS-19 — Confirmação de Carga com Versão do Questionário',
+    regra:
+      'Confirmação de Carga com Versão (CS-19): na ingestão do dossiê, a confirmação de carga em até 2 linhas antes da Fase 1 declara também a versão do questionário recebido (ex.: V6.7, V7.2).',
+    conformidadeApp:
+      'Paridade Total. Integrado expressamente na Seção 9 do System Prompt V7.2.3 e na memória do agente.',
+    status: 'Conforme',
+    evidencia:
+      'Migration 0066: System Prompt §9 ("A confirmação declara também a versão do questionário (ex.: V6.7, V7.2) (CS-19).").',
+  },
 ]
 
-export const MARKDOWN_REVALIDACAO_DELTA = `# Checklist de Revalidação Delta do Gate 0 — Paridade A5–A10 (Plano V7.2.2)
-**Data:** 16 de outubro de 2026
-**Agente Nativo:** jbp-gestao-master (V7.2 A5–A10, tier reasoning, agente único)
-**Backend:** Skip Cloud / PocketBase (Migration 0065)
-**Status Geral:** ✅ PARIDADE TOTAL (7 de 7 pontos homologados com paridade determinística literal)
+export const MARKDOWN_REVALIDACAO_DELTA = `# Checklist de Revalidação Delta do Gate 0 — Paridade V7.2.3 (Plano 20/10/2026)
+**Data:** 20 de outubro de 2026
+**Agente Nativo:** jbp-gestao-master (V7.2.3 A5–A10 + A11 + CS-17/19/20, tier reasoning, agente único)
+**Backend:** Skip Cloud / PocketBase (Migration 0066)
+**Status Geral:** ✅ PARIDADE TOTAL (11 de 11 pontos homologados com paridade determinística literal)
 
 ---
 
@@ -243,28 +287,51 @@ export const MARKDOWN_REVALIDACAO_DELTA = `# Checklist de Revalidação Delta do
 
 ## 7. §12 — Prompt 13 Auditoria Comparativa A8
 - **Regra:** Auditoria de Aderência estritamente comparativa item a item contra as saídas reais, citando evidências. Proibido "X/X conformes" genérico e proibida autoavaliação.
-- **Conformidade App:** PARIDADE TOTAL. Registrado na Seção 12 do System Prompt A5–A10 e no Prompt 13 da Skill Roteiro.
+- **Conformidade App:** PARIDADE TOTAL. Registrado na Seção 12 do System Prompt V7.2.3 e no Prompt 13 da Skill Roteiro.
 - **Status:** ✅ CONFORME
 
 ---
 
-## 8. Arquitetura do Agente e Políticas Operacionais
+## 8. §3.1 — A11 (Exceção da Escada de Deduções quando Tributos Embutidos) [NOVO V7.2.3]
+- **Regra:** Quando os tributos já estiverem embutidos no resultado contábil real do demonstrativo (ex.: balancete/ECD com receitas líquidas de tributos), NÃO sobrepor a escada — usar o valor real e declarar a não aplicação como convenção do motor; vedada a dupla contagem.
+- **Conformidade App:** PARIDADE TOTAL. Registrado no System Prompt V7.2.3 §3.1. Gabarito Beatek validado com tributos embutidos.
+- **Status:** ✅ CONFORME
+
+## 9. §3.1 — CS-17 (Exibição Integral da DRE de 15 Linhas) [NOVO V7.2.3]
+- **Regra:** A DRE normalizada é SEMPRE exibida na estrutura de 15 linhas do Motor, mesmo quando parcial — linhas não segregáveis recebem [REQUER VERIFICAÇÃO] na própria linha, nunca são omitidas da tabela.
+- **Conformidade App:** PARIDADE TOTAL. Registrado expressamente no System Prompt V7.2.3 §3.1.
+- **Status:** ✅ CONFORME
+
+## 10. §6.1 — CS-20 (CTA Condicionado ao Gate de Autorização) [NOVO V7.2.3]
+- **Regra:** Se o dossiê registrar autorizacao_devolutiva = "Não autorizo", o Prompt 1 sinaliza na confirmação de carga e o Bloco CTA integral NÃO é emitido — registrar pendência de follow-up comercial, preservar dossiê e Fase 1 no cofre; a devolutiva integral só é emitida após autorização formal do lead ou comando de conversão explícito do operador.
+- **Conformidade App:** PARIDADE TOTAL. Registrado no System Prompt V7.2.3 §6.1 e alinhado ao fluxo de nutrição da Seção 9 do Plano V7.2.3.
+- **Status:** ✅ CONFORME
+
+## 11. §9 — CS-19 (Confirmação de Carga com Versão do Questionário) [NOVO V7.2.3]
+- **Regra:** A confirmação de carga em até 2 linhas antes da Fase 1 declara também a versão do questionário (ex.: V6.7, V7.2).
+- **Conformidade App:** PARIDADE TOTAL. Registrado no System Prompt V7.2.3 §9.
+- **Status:** ✅ CONFORME
+
+---
+
+## 12. Arquitetura do Agente e Políticas Operacionais V7.2.3
 - **Agente:** jbp-gestao-master (tier reasoning, agente único — sem agente leve, conforme Regra Capital).
-- **Alocação de Slots (Seção 11):**
-  - Slot 1: Contexto Estratégico Global V7.2
-  - Slot 2: Master Framework V2.4
-  - Slot 3: Biblioteca Profissional V2.4
-  - Slot 4: Histórico Profissional (+40 anos C-Level JBP)
-  - Slot 5: Demonstrativos do cliente (rotativo)
-- **Histórico Preservado:** Versão anterior guardada em 'skills.historico_versoes' e versão anterior do System Prompt versionada em 'agentes_versoes'.
-- **Guarda de Operação:** Zero leads processados nesta rodada. Setup exclusivo do agente para desbloqueio da Onda 2.
+- **5 Slots de Contexto Conforme §11:**
+  - Slot 1: Contexto Estratégico Global V7.2 (Blocos Setoriais, Motor, Carga de Dados)
+  - Slot 2: Master Framework V2.4 (Áreas 1–8 e Apêndices A–F)
+  - Slot 3: Biblioteca Profissional V2.4 (acervo metodológico de 138 obras)
+  - Slot 4: Histórico Profissional (histórico do expert JBP +40 anos C-Level)
+  - Slot 5: Demonstrativos do cliente (slot rotativo — alimenta o Prompt 1 e a Fase 6)
+- **Skills Ativas e Intocadas:** 4 skills consolidadas registradas na migration 0065 e referenciadas no agente nativo (Motor Financeiro JBP V4.0, DRE Trading & Incentivos — Comércio Internacional, Realismo Radical & Valuation JBP V2.1, JBP — Roteiro de Execução 13 Prompts).
+- **Histórico Preservado:** Versão anterior A5-A10 preservada como histórico em 'agentes_versoes' com metadados de data e calibrações aplicadas.
+- **Guarda de Operação:** Zero leads processados nesta rodada. Setup exclusivo do agente para a Onda 2.
 `
 
-export const MARKDOWN_LOG_DIVERGENCIAS = `# Log de Divergências — Paridade V7.2
-**Versão do App:** v0.0.85
-**Escopo:** Gate 0B + 10 ajustes de paridade
-**Resultado Final:** ✅ Zero divergências em aberto (10 de 10 corrigidas)
-**Status do Gate:** Pronto para validação e liberação da Onda 1
+export const MARKDOWN_LOG_DIVERGENCIAS = `# Log de Divergências — Paridade V7.2 e Revalidação V7.2.3
+**Versão do App:** v0.0.113
+**Escopo:** Gate 0B (10 ajustes) + Calibração V7.2.3 (A5–A10 + A11 + CS-17/19/20)
+**Resultado Final:** ✅ Zero divergências em aberto (10 de 10 Gate 0B corrigidas + 11 de 11 Revalidação Delta V7.2.3 homologadas)
+**Status do Gate 0:** Re-homologado para V7.2.3 conforme Plano de Operação e Testes V7.2.3 (20/10/2026)
 
 ---
 
@@ -285,14 +352,35 @@ export const MARKDOWN_LOG_DIVERGENCIAS = `# Log de Divergências — Paridade V7
 
 ---
 
-## Nota de Interface e Conformidade de Documentação
-Regra de interface: zero ocorrências de 'obrigatório'/'opcional' sobre documentos (verificado por busca no código / grep).
-Fontes: PDF 'Questionários Consolidados 12 Setores V7.2' (30set26) e site (referência visual).
+## Calibrações V7.2.3 Registradas no Log (Ciclo Aurora + Ciclo Beatek — 20/10/2026)
+
+| Código | Descrição / Calibração | Status de Fechamento |
+|---|---|---|
+| CS-08 | ACC/ACE propostos para importadora | Fechamento com A6 (proibição de ACC/ACE para importadoras) |
+| CS-09 | Perda de retenção de anexo no Bloco Solução | Resolvida com estrutura tabular sem caracteres box-drawing |
+| CS-10 | Deduções mantidas sobre base contábil inflada | Fechamento com A5 (escada incide sempre sobre RB normalizada) |
+| CS-11 | WACC com prêmio de startup em empresa madura | Resolvida com Skill Realismo Radical V2.1 (Regimes A/B exclusão mútua) |
+| CS-12 | Presunção de IR/CSLL calculada sem política definida | Resolvida com A10 (presunção de referência permitida com flag DCTF/DAS/LALUR) |
+| CS-13 | Porte da governança calibrado pelo faturamento bruto declarado | Fechamento com A7 (limiar de R$ 60M/ano sempre avaliado pela RB normalizada F6) |
+| CS-14 | Autoauditoria leniente no Prompt 13 | Fechamento com A8 (Prompt 13 estritamente comparativo item a item) |
+| CS-15 | Triangulação autônoma de qualidade | Ponto forte preservado no protocolo |
+| CS-16 | Anexo B entregue como matriz por Dimensão sem ações EREC | Fechamento com A9 no System Prompt 10.12 e na Skill 13 Prompts |
+| CS-17 | DRE de 15 linhas apresentada em formato condensado (Beatek) | Fechamento com regra 5.16 e System Prompt §3.1 (exibição integral com [REQUER VERIFICAÇÃO] na linha não segregável) |
+| CS-18 / A11 | Escada de deduções sobreposta a tributos contábeis embutidos | Fechamento com A11 e System Prompt §3.1 (quando tributos já embutidos no resultado contábil real, não sobrepor a escada; convenção do motor declarada; vedada dupla contagem) |
+| CS-19 | Questionário V6.7 processado sem sinalização de versão | Fechamento com regra da Seção 9 do System Prompt (confirmação declara a versão do questionário) |
+| CS-20 | Lead com autorizacao_devolutiva = "Não autorizo" | Fechamento com System Prompt §6.1 (CTA Condicionado: Prompt 1 sinaliza, CTA integral não emitido, cofre preservado, trilha de nutrição com teaser) |
 
 ---
 
-## Parecer Solicitado
-Validar a fidelidade da cópia e liberar o Gate 0B para a Onda 1.
+## Nota de Interface e Conformidade de Documentação
+Regra de interface: zero ocorrências de 'obrigatório'/'opcional' sobre documentos (verificado por busca no código / grep).
+Fontes: PDF 'Questionários Consolidados 12 Setores V7.2' (30set26), 'System_Prompt_JBP_GM_V7.2_aplicado_A11_20out26' (20out26), 'Plano_de_Operacao_e_Testes_V7.2.3_20out26' (20out26).
+
+---
+
+## Parecer de Revalidação Delta V7.2.3
+Núcleo do agente nativo jbp-gestao-master atualizado para V7.2.3 com System Prompt integral de 19.668 caracteres.
+4 skills ativas e inalteradas. Histórico A5–A10 arquivado em agentes_versoes. Zero leads processados nesta rodada. Gate 0 re-homologado com sucesso.
 `
 
 export default function AdminDivergencias() {
@@ -330,9 +418,9 @@ export default function AdminDivergencias() {
               Área Restrita do Administrador
             </span>
             <span className="text-[#808080]">•</span>
-            <span className="text-[#0066CC]">Governança V7.2.2</span>
+            <span className="text-[#0066CC]">Governança V7.2.3</span>
             <span className="text-[#808080]">•</span>
-            <span className="text-[#22B14C] font-mono">Agente A5–A10</span>
+            <span className="text-[#22B14C] font-mono">Agente V7.2.3 (A11 + CS-17/19/20)</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[#0066CC] flex items-center gap-2.5">
             <GitCompare className="w-7 h-7 text-[#0066CC]" />
@@ -340,8 +428,8 @@ export default function AdminDivergencias() {
           </h1>
           <p className="text-xs md:text-sm text-[#555555] mt-1 max-w-3xl leading-relaxed">
             Painel oficial de controle de paridade do <strong>Gate 0B</strong> e checklist de{' '}
-            <strong>Revalidação Delta do Gate 0 (Calibração A5–A10)</strong> para desbloqueio seguro
-            da Onda 2.
+            <strong>Revalidação Delta do Gate 0 (Calibração V7.2.3)</strong> conforme o Plano de
+            Operação e Testes V7.2.3 (20/10/2026).
           </p>
         </div>
 
@@ -392,7 +480,7 @@ export default function AdminDivergencias() {
             className="text-xs font-bold data-[state=active]:bg-[#0066CC] data-[state=active]:text-white rounded-[3px] px-4 py-1.5"
           >
             <ShieldCheck className="w-4 h-4 mr-1.5 inline-block" />
-            Revalidação Delta — Gate 0 (A5–A10)
+            Revalidação Delta — Gate 0 (V7.2.3)
           </TabsTrigger>
           <TabsTrigger
             value="gate0b"
@@ -448,10 +536,10 @@ export default function AdminDivergencias() {
                 </div>
                 <div>
                   <div className="text-[11px] font-semibold text-[#808080] uppercase tracking-wider">
-                    Paridade A5–A10
+                    Paridade V7.2.3
                   </div>
                   <div className="text-sm font-bold text-[#22B14C] flex items-center gap-1">
-                    7/7 Pontos Conformes
+                    11/11 Pontos Conformes
                   </div>
                   <div className="text-[10px] text-[#555555]">Zero divergências</div>
                 </div>
@@ -481,15 +569,16 @@ export default function AdminDivergencias() {
                 <div>
                   <CardTitle className="text-lg font-bold text-[#333333] flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-[#22B14C]" />
-                    Checklist de Revalidação Delta do Gate 0 — Calibração A5–A10 (15/10/2026)
+                    Checklist de Revalidação Delta do Gate 0 — Versão V7.2.3 (20/10/2026)
                   </CardTitle>
                   <CardDescription className="text-xs text-[#666666] mt-0.5">
-                    Verificação formal de conformidade com os ajustes de calibração pós-ciclo Aurora
-                    Trading integrados ao agente jbp-gestao-master e às 4 skills.
+                    Verificação formal de conformidade com os ajustes A5–A10 (15/10/2026) e A11 +
+                    CS-17/19/20 (20/10/2026) integrados ao agente jbp-gestao-master e às 4 skills
+                    ativas.
                   </CardDescription>
                 </div>
                 <Badge className="bg-[#22B14C] text-white text-xs px-2.5 py-1 font-semibold rounded-[2px] self-start sm:self-auto">
-                  7/7 Itens Homologados
+                  11/11 Itens Homologados
                 </Badge>
               </div>
             </CardHeader>
@@ -506,7 +595,7 @@ export default function AdminDivergencias() {
                         Calibração & Título
                       </TableHead>
                       <TableHead className="w-[38%] font-bold text-[#333333] text-xs">
-                        Regra Canônica A5–A10
+                        Regra Canônica V7.2.3 (A5–A10 + A11 + CS-17/19/20)
                       </TableHead>
                       <TableHead className="w-[30%] font-bold text-[#333333] text-xs">
                         Conformidade no App & Evidência
@@ -560,8 +649,8 @@ export default function AdminDivergencias() {
               <CardContent className="p-4 pt-1 space-y-2 text-xs text-[#444444] leading-relaxed">
                 <div className="space-y-1.5 bg-white border border-[#E0E0E0] rounded-[4px] p-3 font-mono text-[11px]">
                   <div>
-                    <strong>Instruções do Expert:</strong> System Prompt V7.2 Núcleo A5–A10 (7 págs
-                    integrais, não ocupa slot de arquivo).
+                    <strong>Instruções do Expert:</strong> System Prompt V7.2 Núcleo V7.2.3 (19.668
+                    caracteres integrais, não ocupa slot de arquivo).
                   </div>
                   <div>
                     <strong>Slot 1:</strong> Contexto Estratégico Global V7.2 (Blocos Setoriais,
@@ -571,16 +660,15 @@ export default function AdminDivergencias() {
                     <strong>Slot 2:</strong> Master Framework V2.4 (Áreas 1–8 e Apêndices A–F)
                   </div>
                   <div>
-                    <strong>Slot 3:</strong> Biblioteca Profissional V2.4 (acervo metodológico de
-                    138 obras)
+                    <strong>Slot 3:</strong> Biblioteca Profissional V2.4 (acervo metodológico)
                   </div>
                   <div>
                     <strong>Slot 4:</strong> Histórico Profissional (histórico do expert JBP +40
                     anos C-Level)
                   </div>
                   <div>
-                    <strong>Slot 5:</strong> Demonstrativos do cliente (slot rotativo — alimenta
-                    Prompt 1 e Fase 6)
+                    <strong>Slot 5:</strong> Demonstrativos do cliente (slot rotativo — alimenta o
+                    Prompt 1 e a Fase 6)
                   </div>
                 </div>
                 <p className="text-[11px] text-[#666666]">
@@ -600,19 +688,20 @@ export default function AdminDivergencias() {
               </CardHeader>
               <CardContent className="p-4 pt-1 space-y-3">
                 <p className="text-xs text-[#1e7e34] font-medium leading-relaxed">
-                  Todos os requisitos do Plano V7.2.2 e dos ajustes de calibração A5–A10 foram
-                  atendidos integralmente. O agente <strong>jbp-gestao-master</strong> encontra-se
-                  com System Prompt A5–A10 integral, 4 skills consolidadas registradas, histórico
-                  versionado preservado em <code>skills.historico_versoes</code> e{' '}
-                  <code>agentes_versoes</code>, e zero leads processados.
+                  Todos os requisitos do Plano V7.2.3 (20/10/2026) e das calibrações A5–A10 + A11 +
+                  CS-17/19/20 foram atendidos integralmente. O agente{' '}
+                  <strong>jbp-gestao-master</strong> encontra-se com System Prompt V7.2.3 integral
+                  (19.668 caracteres), 4 skills consolidadas ativas e intocadas, histórico da versão
+                  A5–A10 preservado em <code>agentes_versoes</code> com metadados de data e
+                  calibrações, e zero leads processados.
                 </p>
                 <div className="pt-2 border-t border-[#22B14C]/20 flex flex-wrap items-center justify-between text-[11px] text-[#666666]">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-[#808080]" />
-                    Homologado em 16/10/2026
+                    Homologado em 20/10/2026
                   </span>
                   <span className="font-mono text-[#0066CC] font-semibold">
-                    Gate 0 Desbloqueado → Autorizada Onda 2
+                    Gate 0 V7.2.3 Homologado → Setup Concluído
                   </span>
                 </div>
               </CardContent>
@@ -815,8 +904,8 @@ export default function AdminDivergencias() {
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-[#22B14C] shrink-0" />
           <span>
-            Documento de Governança e Paridade V7.2 permanente registrado no app. Gate 0 e
-            Revalidação Delta A5–A10 concluídos sem resíduos.
+            Documento de Governança e Paridade V7.2.3 permanente registrado no app. Gate 0 e
+            Revalidação Delta V7.2.3 concluídos sem resíduos.
           </span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
