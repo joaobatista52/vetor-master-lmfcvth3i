@@ -47,7 +47,7 @@ const clientJourneyNavItems = [
   { title: 'Plano de Ação (+ Consultor)', path: '/plano-de-acao', icon: ListTodo, step: '2' },
   { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '3' },
   { title: 'Devolutiva & Heat Map', path: '/resultados', icon: Award, step: '4' },
-  { title: 'Áreas da Empresa', path: '/areas-da-empresa', icon: Activity, step: '5' },
+  { title: 'Trilha de Etapas', path: '/areas-da-empresa', icon: Activity, step: '5' },
   { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '6' },
   { title: 'Níveis e Planos', path: '/niveis-e-planos', icon: Layers, step: '7' },
 ]

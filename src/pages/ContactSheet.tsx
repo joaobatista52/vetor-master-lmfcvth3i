@@ -182,7 +182,7 @@ export default function ContactSheet() {
             rota="/resultados"
             corCamada="amber"
             nomeTela="Resultados e Devolutiva"
-            legenda="Isca gratuita (heat map + resumo); solução completa atrás de assinatura. NOTA: tela sob revisão de paridade — o site trata 'Etapas', não '8 Áreas Estratégicas' (Rodada 1.5 pendente); a miniatura retrata o estado atual."
+            legenda="Alinhado à Rodada 1.5: unidade canônica ETAPAS (paridade total com o site, sem dupla grade de 8); fim do gráfico de evolução fake; CTAs contextuais por perfil (Lead: 'Agendar minha Devolutiva Executiva', Assinante: 'Atualizar Diagnóstico'); isca com badge 'Demonstração'."
           >
             <MiniResultadosDevolutiva />
           </CardItemContactSheet>
@@ -193,8 +193,8 @@ export default function ContactSheet() {
             camada="CAMADA 2"
             rota="/dashboard"
             corCamada="amber"
-            nomeTela="Dashboard Executivo"
-            legenda="Estado vazio honesto declara 'demonstração parametrizada' para o setor; Micro-Epifanias Gatilho alimentadas pelo Contexto V7.2 §6."
+            nomeTela="Dashboard do Plano por Etapas"
+            legenda="Diretriz 3 implementada na Rodada 1.5: 3 blocos determinísticos (Saúde Financeira — DRE 15 linhas CS-17, Buffett, WACC por estágio; Trilha de Etapas Fase 5; OKRs Vivos) com badges 'Demonstração' explícitos em todos os cartões."
           >
             <MiniDashboardExecutivo />
           </CardItemContactSheet>
@@ -206,19 +206,19 @@ export default function ContactSheet() {
             rota="/plano-de-acao"
             corCamada="amber"
             nomeTela="Plano de Ação + Consultor Digital"
-            legenda="Plano 5W2H + chat do Consultor Digital (hoje determinístico/demonstrativo — não conectado ao agente nativo jbp-gestao-master; integração prevista na Onda 2)."
+            legenda="Alinhado à Rodada 1.5: chat simulado com afirmações de portão superado DESATIVADO; aviso honesto de acoplamento do agente nativo jbp-gestao-master na Onda 2; plano 5W2H mantido com taxonomia canônica."
           >
             <MiniPlanoDeAcao />
           </CardItemContactSheet>
 
-          {/* 09 — CAMADA 2 · Áreas da Empresa (/areas-da-empresa) */}
+          {/* 09 — CAMADA 2 · Trilha de Etapas (/areas-da-empresa) */}
           <CardItemContactSheet
             numero="09"
             camada="CAMADA 2"
             rota="/areas-da-empresa"
             corCamada="amber"
-            nomeTela="Áreas da Empresa"
-            legenda="Camada 2 operacional — hoje estática com dados de demonstração hardcoded; destino definido pelo expert: plano pautado por ETAPAS, não por áreas (Rodada 1.5)."
+            nomeTela="Trilha de Etapas Metodológicas"
+            legenda="Substituição da antiga página demo de 8 áreas (scores/vazamentos fake eliminados): visualização da Trilha de Etapas da Metodologia JBP GM V7.2.3 com estado honesto e estrutura pronta para recepção de dados do motor na Onda 2."
           >
             <MiniAreasDaEmpresa />
           </CardItemContactSheet>
@@ -242,21 +242,22 @@ export default function ContactSheet() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-1">
             <div className="text-xs font-semibold text-[#F8FAFC]">
-              Vetor Master SaaS • V7.2.3 • Contact Sheet Macro
+              Vetor Master SaaS • V7.2.3 • Contact Sheet Macro (Pós-Rodada 1.5)
             </div>
             <p className="text-xs text-[#8B98B4] max-w-3xl leading-relaxed">
-              Retrato macro do app na v0.0.115 — V7.2.3. Rodadas em curso: 1.5 (paridade Etapas ×
-              Áreas) e 2 (Fluxo de leads Seção 9 — estados, gate de autorização, nutrição, teaser,
-              devolutiva assíncrona).
+              Retrato macro do app na v0.0.116 — V7.2.3. Rodada 1.5 concluída: Trilha de Etapas
+              implementada em /areas-da-empresa e /resultados, chat fake desativado, CTAs
+              contextuais por perfil e Dashboard estruturado nos 3 blocos (Saúde Financeira CS-17,
+              Trilha CS-5, OKRs). Próximo passo: Onda 2 (núcleo + worker de leads da Seção 9).
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <Badge
               variant="outline"
-              className="border-[#24334F] bg-[#16213A] text-[#5B9DFF] text-[11px] font-mono px-3 py-1"
+              className="border-[#22B14C]/40 bg-[#22B14C]/10 text-[#3DDC74] text-[11px] font-mono px-3 py-1"
             >
-              Auditoria v0.0.115
+              Rodada 1.5 Concluída (v0.0.116)
             </Badge>
           </div>
         </div>
@@ -870,87 +871,86 @@ function MiniHomeAssinante() {
 function MiniResultadosDevolutiva() {
   return (
     <div className="w-full h-full flex flex-col bg-[#0B1120] text-[#F8FAFC] p-2.5 space-y-2 overflow-hidden">
-      {/* Banner Passo 03 */}
+      {/* Banner Passo 03 com CTA Contextual */}
       <div className="bg-[#111A2E] border border-[#24334F] rounded p-1.5 flex items-center justify-between text-[7px]">
         <div>
           <span className="text-[6px] font-bold text-[#5B9DFF] uppercase tracking-wider block">
-            Passo 03 da Jornada • Vetor Master V7.2
+            Passo 03 • Unidade Canônica: Etapas (V7.2)
           </span>
           <span className="font-bold text-[#F8FAFC] text-[8.5px]">
             Resultados e Devolutiva Executiva
           </span>
         </div>
-        <div className="text-[6px] text-[#3DDC74] bg-[#3DDC74]/10 border border-[#3DDC74]/30 px-1 py-0.5 rounded">
-          Isca Gratuita + Paywall
+        <div className="text-[6px] text-[#3DDC74] bg-[#22B14C]/20 border border-[#22B14C]/30 px-1 py-0.5 rounded font-semibold">
+          CTA: Agendar Devolutiva
         </div>
       </div>
 
-      {/* Heat Map 8x8 de Áreas Estratégicas (Células coloridas / Aguardando dados) */}
+      {/* Trilha Canônica de Etapas (Paridade Total com o Site) */}
       <div className="bg-[#16213A] border border-[#24334F] rounded p-1.5 space-y-1">
         <div className="flex items-center justify-between text-[6.5px]">
           <span className="font-bold text-[#F8FAFC] flex items-center gap-1">
-            <BarChart3 className="w-2 h-2 text-[#0066CC]" />
-            Heat Map das 8 Áreas Estratégicas (Foresight & Limiares)
+            <Layers className="w-2 h-2 text-[#5B9DFF]" />
+            Trilha de Etapas da Metodologia (Fases 1 a 8)
           </span>
-          <span className="text-[6px] text-[#8B98B4]">— Aguardando dados</span>
+          <span className="text-[5.5px] text-[#5B9DFF] bg-[#111A2E] px-1 py-0.2 rounded border border-[#24334F]">
+            Demonstração
+          </span>
         </div>
 
-        {/* Grade 8x8 simplificada com cores de criticidade */}
-        <div className="grid grid-cols-8 gap-0.5">
-          {Array.from({ length: 32 }).map((_, i) => {
-            const isRed = i === 2 || i === 7 || i === 18 || i === 25
-            const isYellow = i === 5 || i === 11 || i === 14 || i === 29
-            const isGreen = i === 0 || i === 8 || i === 16 || i === 22
-            return (
-              <div
-                key={i}
-                className={`h-2.5 rounded-[1px] flex items-center justify-center text-[5px] font-mono ${
-                  isRed
-                    ? 'bg-rose-500/80 text-white font-bold'
-                    : isYellow
-                      ? 'bg-amber-400/80 text-[#0B1120] font-bold'
-                      : isGreen
-                        ? 'bg-emerald-500/80 text-white'
-                        : 'bg-[#111A2E] text-[#8B98B4] border border-[#24334F]'
-                }`}
-              >
-                {isRed ? '!' : isYellow ? '▲' : isGreen ? '✓' : '—'}
-              </div>
-            )
-          })}
+        {/* 8 Etapas Canônicas */}
+        <div className="grid grid-cols-4 gap-1">
+          {[
+            'Etapa 01 · Diagnóstico',
+            'Etapa 02 · Estratégia',
+            'Etapa 03 · Capacidade',
+            'Etapa 04 · Governança',
+            'Etapa 05 · Roadmap',
+            'Etapa 06 · Finanças',
+            'Etapa 07 · Riscos',
+            'Etapa 08 · Foresight',
+          ].map((et, i) => (
+            <div
+              key={i}
+              className="bg-[#111A2E] border border-[#24334F] p-1 rounded text-[5.5px] flex flex-col justify-between"
+            >
+              <span className="font-mono text-[#5B9DFF] font-bold">P0{i + 1}</span>
+              <span className="text-white truncate font-medium">{et.split('·')[1]?.trim()}</span>
+              <span className="text-[5px] text-[#8B98B4]">Aguardando</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Diagnóstico Executivo (Resumo) */}
+      {/* Diagnóstico Executivo com Badge Demonstração Explícito */}
       <div className="bg-[#111A2E] border border-[#24334F] rounded p-1.5 text-[6.5px] space-y-1">
         <div className="flex items-center justify-between">
           <span className="font-bold text-[#F8FAFC] flex items-center gap-1">
             <FileText className="w-2 h-2 text-[#5B9DFF]" />
-            Diagnóstico Executivo (Resumo)
+            Diagnóstico Executivo (Isca Gratuita)
           </span>
-          <span className="text-[6px] text-[#3DDC74]">Disponível Grátis</span>
+          <span className="text-[5.5px] text-amber-400 bg-amber-400/10 border border-amber-400/30 px-1 py-0.2 rounded">
+            Demonstração (Motor V7.2 em Onda 2)
+          </span>
         </div>
         <p className="text-[#C7D0E0] line-clamp-1">
-          Identificados 3 vazamentos críticos: alçadas de compra, margem no canal direto e
-          conciliação DRE.
+          Análise preliminar de vazamentos estruturais mapeados pelas lentes de Hackman e Buffett.
         </p>
       </div>
 
-      {/* Bloco de Paywall: Solução Completa V7.2 */}
-      <div className="bg-gradient-to-r from-[#1B2742] to-[#16213A] border border-[#5B9DFF]/60 rounded p-1.5 flex items-center justify-between text-[7px]">
+      {/* Solução Completa V7.2 */}
+      <div className="bg-[#1B2742] border border-[#24334F] rounded p-1.5 flex items-center justify-between text-[7px]">
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded bg-[#FF9900]/20 border border-[#FF9900]/40 flex items-center justify-center text-[#FFB84D]">
-            <Lock className="w-2.5 h-2.5" />
-          </div>
+          <CheckCircle2 className="w-2.5 h-2.5 text-[#3DDC74]" />
           <div>
             <div className="font-bold text-white text-[7.5px]">Solução Completa V7.2</div>
             <div className="text-[6px] text-[#8B98B4]">
-              Desbloqueie o roadmap 5W2H, OKRs e análise financeira
+              Desbloqueie roadmap 5W2H e DRE de 15 linhas
             </div>
           </div>
         </div>
-        <div className="h-3.5 px-2 bg-[#0066CC] hover:bg-[#22B14C] text-white rounded text-[6px] font-bold flex items-center">
-          Assinar Plano
+        <div className="h-3.5 px-2 bg-[#0066CC] text-white rounded text-[6px] font-bold flex items-center">
+          Atualizar Diagnóstico
         </div>
       </div>
     </div>
@@ -1128,36 +1128,29 @@ function MiniPlanoDeAcao() {
         </div>
       </div>
 
-      {/* Coluna 2: Painel de Chat do Consultor Digital (13 Prompts Fixos) */}
+      {/* Coluna 2: Consultor Digital Desativado (Honesto — Onda 2) */}
       <div className="w-36 bg-[#16213A] border border-[#24334F] rounded p-1.5 flex flex-col justify-between text-[6.5px]">
         <div className="border-b border-[#24334F] pb-1 space-y-0.5">
           <div className="font-bold text-[#F8FAFC] flex items-center gap-1 text-[7px]">
-            <Bot className="w-2.5 h-2.5 text-[#5B9DFF]" />
+            <Bot className="w-2.5 h-2.5 text-[#FFB84D]" />
             <span>Consultor Digital</span>
           </div>
-          <div className="text-[5.5px] text-[#8B98B4]">Roteiro de 13 Prompts Fixos</div>
+          <div className="text-[5.5px] text-[#FFB84D] font-mono">Retorna na Onda 2</div>
         </div>
 
-        {/* Bolhas de Conversa */}
-        <div className="space-y-1 my-1 overflow-hidden">
-          <div className="bg-[#111A2E] p-1 rounded text-[#C7D0E0] text-[5.5px]">
-            <span className="font-bold text-[#5B9DFF] block text-[6px]">Consultor V7.2:</span>
-            Iniciando análise do Prompt 03: Alavancas de margem identificadas no setor.
-          </div>
-          <div className="bg-[#0066CC]/20 border border-[#0066CC]/30 p-1 rounded text-white text-[5.5px] ml-1">
-            <span className="font-bold text-[#3DDC74] block text-[6px]">Você:</span>
-            Quais as 2 prioridades imediatas desta semana?
-          </div>
-          <div className="bg-[#111A2E] p-1 rounded text-[#C7D0E0] text-[5.5px]">
-            <span className="font-bold text-[#5B9DFF] block text-[6px]">Consultor V7.2:</span>
-            1. Bloquear concessão manual de desconto; 2. Ajustar curva ABC.
-          </div>
+        {/* Aviso de Desativação e Alinhamento */}
+        <div className="space-y-1 my-1 overflow-hidden bg-[#111A2E] p-1.5 rounded border border-[#24334F] text-[5.5px]">
+          <span className="font-bold text-[#FFB84D] block text-[6px]">Status Rodada 1.5:</span>
+          <p className="text-[#8B98B4] leading-tight">
+            Chat fake desativado. Agente nativo{' '}
+            <code className="text-[#5B9DFF]">jbp-gestao-master</code> será conectado na Onda 2 sem
+            afirmações simuladas.
+          </p>
         </div>
 
-        {/* Campo de Envio Simulado */}
-        <div className="h-4 bg-[#111A2E] border border-[#24334F] rounded px-1 flex items-center justify-between text-[5.5px] text-[#8B98B4]">
-          <span>Digite sua dúvida...</span>
-          <Send className="w-2 h-2 text-[#5B9DFF]" />
+        {/* Rodapé informativo */}
+        <div className="h-4 bg-[#111A2E] border border-[#24334F] rounded px-1 flex items-center justify-center text-[5.5px] text-[#8B98B4]">
+          <span>Acoplamento Onda 2</span>
         </div>
       </div>
     </div>
@@ -1165,19 +1158,19 @@ function MiniPlanoDeAcao() {
 }
 
 /* =========================================================================
-   09 — MINIATURA: ÁREAS DA EMPRESA (/areas-da-empresa)
+   09 — MINIATURA: TRILHA DE ETAPAS (/areas-da-empresa)
    ========================================================================= */
 
 function MiniAreasDaEmpresa() {
-  const areas = [
-    { num: '01', nome: 'Direção & Gov.', score: 42, status: 'critico' },
-    { num: '02', nome: 'Comercial', score: 58, status: 'atencao' },
-    { num: '03', nome: 'Operações', score: 48, status: 'critico' },
-    { num: '04', nome: 'Finanças', score: 64, status: 'atencao' },
-    { num: '05', nome: 'Pessoas', score: 72, status: 'saudavel' },
-    { num: '06', nome: 'Tecnologia', score: 52, status: 'atencao' },
-    { num: '07', nome: 'Jurídico', score: 60, status: 'atencao' },
-    { num: '08', nome: 'Inovação', score: 38, status: 'critico' },
+  const etapas = [
+    { num: '01', nome: 'Diagnóstico & Epifania', foco: 'Hackman & Foresight' },
+    { num: '02', nome: 'Estratégia & Moat', foco: 'Lente de Buffett' },
+    { num: '03', nome: 'Capacidade & Gargalos', foco: 'Teoria das Restrições' },
+    { num: '04', nome: 'Governança & Alçadas', foco: 'Matriz RACI e Alçadas' },
+    { num: '05', nome: 'Roadmap & 5W2H', foco: 'Execução e OKRs' },
+    { num: '06', nome: 'Finanças & DRE 15L', foco: 'WACC e Valuation' },
+    { num: '07', nome: 'Riscos & Compliance', foco: 'Matriz de Risco e LGPD' },
+    { num: '08', nome: 'Foresight & Perpetuidade', foco: 'Cone dos Futuros' },
   ]
 
   return (
@@ -1186,72 +1179,49 @@ function MiniAreasDaEmpresa() {
       <div className="flex items-center justify-between border-b border-[#24334F] pb-1 text-[7px]">
         <div>
           <span className="text-[6px] font-bold text-[#5B9DFF] uppercase tracking-wider block">
-            Camada 2 • Área Operacional do Assinante
+            Camada 2 • Trilha de Etapas Metodológicas
           </span>
           <span className="font-bold text-[#F8FAFC] text-[8.5px]">
-            Áreas da Empresa & Vazamentos Identificados
+            Plano Pautado por Etapas (Substituição de 8 Áreas)
           </span>
         </div>
-        <div className="text-[6px] text-[#8B98B4]">8 Pilares Organizacionais</div>
+        <div className="text-[5.5px] text-[#5B9DFF] bg-[#111A2E] px-1 py-0.2 rounded border border-[#24334F]">
+          Demonstração Estrutural
+        </div>
       </div>
 
-      {/* Grade de 8 Cards com Score Circular / Barra */}
+      {/* Grade de 8 Etapas Canônicas */}
       <div className="grid grid-cols-4 gap-1.5 flex-1">
-        {areas.map((a) => {
-          const isCritico = a.status === 'critico'
-          const isAtencao = a.status === 'atencao'
+        {etapas.map((et) => {
           return (
             <div
-              key={a.num}
-              className={`bg-[#16213A] border rounded p-1 flex flex-col justify-between text-[6.5px] ${
-                isCritico
-                  ? 'border-rose-500/40'
-                  : isAtencao
-                    ? 'border-[#FF9900]/40'
-                    : 'border-emerald-500/40'
-              }`}
+              key={et.num}
+              className="bg-[#16213A] border border-[#24334F] rounded p-1 flex flex-col justify-between text-[6.5px]"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[#5B9DFF] text-[6px] font-bold">{a.num}</span>
-                <span
-                  className={`text-[5.5px] font-bold px-1 rounded ${
-                    isCritico
-                      ? 'bg-rose-500/15 text-rose-400'
-                      : isAtencao
-                        ? 'bg-[#FF9900]/15 text-[#FFB84D]'
-                        : 'bg-emerald-500/15 text-emerald-400'
-                  }`}
-                >
-                  {isCritico ? 'Crítico' : isAtencao ? 'Atenção' : 'Saudável'}
-                </span>
+                <span className="font-mono text-[#5B9DFF] text-[6px] font-bold">Fase {et.num}</span>
+                <span className="text-[5px] text-[#8B98B4] font-mono">P{et.num}</span>
               </div>
-              <div className="font-semibold text-white truncate text-[7px]">{a.nome}</div>
-              <div className="flex items-baseline justify-between mt-0.5">
-                <span className="font-mono font-bold text-white text-[8px]">{a.score}%</span>
-                <span className="text-[5px] text-[#8B98B4]">score</span>
-              </div>
-              <div className="w-full h-1 bg-[#111A2E] rounded overflow-hidden mt-0.5">
-                <div
-                  className={`h-full ${
-                    isCritico ? 'bg-rose-500' : isAtencao ? 'bg-[#FF9900]' : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${a.score}%` }}
-                />
+              <div className="font-semibold text-white truncate text-[7px]">{et.nome}</div>
+              <div className="text-[5.5px] text-[#8B98B4] truncate">{et.foco}</div>
+              <div className="pt-0.5 border-t border-[#24334F] flex items-center justify-between text-[5px] text-[#8B98B4]">
+                <span>Status</span>
+                <span className="text-[#5B9DFF]">Aguardando</span>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Detalhe de Vazamentos da Área Ativa */}
+      {/* Detalhe de Honestidade Visual */}
       <div className="bg-[#111A2E] border border-[#24334F] rounded p-1.5 text-[6.5px] space-y-0.5">
-        <div className="text-[#FFB84D] font-bold flex items-center gap-1 text-[7px]">
-          <AlertTriangle className="w-2 h-2 text-[#FF9900]" />
-          <span>Vazamentos Identificados em 01. Direção & Governança:</span>
+        <div className="text-[#3DDC74] font-bold flex items-center gap-1 text-[7px]">
+          <ShieldCheck className="w-2 h-2 text-[#3DDC74]" />
+          <span>Honestidade Visual:</span>
         </div>
         <div className="text-[#C7D0E0] text-[6px] line-clamp-1">
-          • Ausência de alçada formal para decisões de compra • Dependência pessoal do fundador em
-          85% dos contratos
+          Scores hardcoded eliminados. Etapas prontas para recepção de dados reais do motor na Onda
+          2.
         </div>
       </div>
     </div>

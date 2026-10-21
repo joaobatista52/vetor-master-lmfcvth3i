@@ -95,8 +95,8 @@ export default function PlanoDeAcao() {
             </TabsList>
 
             <div className="inline-flex items-center gap-2 text-xs text-[#8B98B4]">
-              <Bot className="w-4 h-4 text-[#5B9DFF]" />
-              <span>Consultor Digital integrado abaixo com 13 Prompts e Portões</span>
+              <Bot className="w-4 h-4 text-[#FFB84D]" />
+              <span>Consultor Digital (retorna na Onda 2 via agente nativo)</span>
             </div>
           </div>
 
@@ -245,9 +245,9 @@ export default function PlanoDeAcao() {
         {/* Chat do Consultor Digital Integrado na Camada 2 — Item 2c */}
         <div className="pt-4 mt-auto">
           <div className="flex items-center gap-2 mb-3">
-            <MessageSquare className="w-4 h-4 text-[#5B9DFF]" />
+            <MessageSquare className="w-4 h-4 text-[#FFB84D]" />
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#F8FAFC]">
-              Consultor Digital Guiado • Roteiro de 13 Prompts Fixos
+              Consultor Digital Guiado • Acoplamento do Agente Nativo (Onda 2)
             </h2>
           </div>
           <ChatConsultorDigital />

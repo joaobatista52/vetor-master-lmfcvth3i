@@ -46,49 +46,9 @@ const PROMPTS_13_METADATA = [
  * Fonte: Skill Roteiro de Execução (13 Prompts Fixos e Automação)
  */
 export function ChatConsultorDigital() {
-  const [promptAtivoIdx, setPromptAtivoIdx] = useState<number>(3) // P4: Plano de Ação ativo
-  const [inputTexto, setInputTexto] = useState('')
-  const [mensagens, setMensagens] = useState<MensagemChat[]>([
-    {
-      id: '1',
-      remetente: 'agente',
-      promptAtivo: 'P4',
-      texto:
-        'Olá! Eu sou seu Consultor Digital Vetor Master V7.2. O portão P3→P4 foi superado com sucesso sob sua assinatura ativa. Estamos no prompt P4/P5 com foco na execução do Plano de Ação 5W2H e estancamento imediato dos vazamentos de margem. Como posso orientar sua decisão executiva agora?',
-      horario: 'Agora',
-    },
-  ])
-
-  const handleEnviar = (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!inputTexto.trim()) return
-
-    const novaMsg: MensagemChat = {
-      id: String(Date.now()),
-      remetente: 'usuario',
-      texto: inputTexto,
-      horario: 'Agora',
-    }
-
-    setMensagens((prev) => [...prev, novaMsg])
-    setInputTexto('')
-
-    // Resposta determinística do Consultor Digital baseada no roteiro de 13 prompts
-    setTimeout(() => {
-      const respostaAgente: MensagemChat = {
-        id: String(Date.now() + 1),
-        remetente: 'agente',
-        promptAtivo: PROMPTS_13_METADATA[promptAtivoIdx].id,
-        texto: `[Consultor Digital • ${PROMPTS_13_METADATA[promptAtivoIdx].nome}]: Analisando pela lente determinística de governança: o primeiro passo é não tolerar ambiguidade de donos. Recomendo parametrizar o prazo no 5W2H e validar se a liderança possui alçada de até R$ 5.000 sem acionar o fundador. Essa intervenção protege seu caixa e desonera 4h semanais da diretoria.`,
-        horario: 'Agora',
-      }
-      setMensagens((prev) => [...prev, respostaAgente])
-    }, 800)
-  }
-
   return (
-    <Card className="bg-[#16213A] border-[#24334F] text-[#F8FAFC] rounded-[4px] shadow-lg flex flex-col h-[520px]">
-      <CardHeader className="border-b border-[#24334F] pb-3 shrink-0 flex flex-row items-center justify-between">
+    <Card className="bg-[#16213A] border-[#24334F] text-[#F8FAFC] rounded-[4px] shadow-lg">
+      <CardHeader className="border-b border-[#24334F] pb-4 flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-[4px] bg-[#0066CC]/20 border border-[#5B9DFF]/40 flex items-center justify-center text-[#5B9DFF]">
             <Bot className="w-5 h-5" />
@@ -96,78 +56,68 @@ export function ChatConsultorDigital() {
           <div>
             <CardTitle className="text-sm font-bold text-[#F8FAFC] flex items-center gap-2">
               <span>Consultor Digital Vetor Master</span>
-              <span className="font-mono text-[10px] text-[#3DDC74] bg-[#111A2E] px-1.5 py-0.5 rounded border border-[#24334F]">
-                V7.2 DETERMINÍSTICO
+              <span className="font-mono text-[10px] text-[#FFB84D] bg-[#111A2E] px-1.5 py-0.5 rounded border border-[#24334F]">
+                INTEGRAÇÃO ONDA 2
               </span>
             </CardTitle>
             <p className="text-[11px] text-[#8B98B4]">
-              Execução guiada dos 13 Prompts Fixos • Portão Ativo:{' '}
-              {PROMPTS_13_METADATA[promptAtivoIdx].portao}
+              Roteiro dos 13 Prompts Fixos & Automação • Agente nativo jbp-gestao-master
             </p>
           </div>
         </div>
 
-        <Badge className="bg-[#3DDC74]/15 text-[#3DDC74] border-[#3DDC74]/30 text-[10px] font-semibold">
-          Assinante Ativo (P4 Liberado)
+        <Badge className="bg-[#FF9900]/15 text-[#FFB84D] border-[#FF9900]/30 text-[10px] font-semibold flex items-center gap-1">
+          <Lock className="w-3 h-3" />
+          <span>Desativado temporariamente (Rodada 1.5)</span>
         </Badge>
       </CardHeader>
 
-      <CardContent className="p-4 flex-1 flex flex-col justify-between overflow-hidden">
-        {/* Histórico de Mensagens */}
-        <div className="overflow-y-auto space-y-3 pr-2 flex-1 mb-4">
-          {mensagens.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-2.5 ${msg.remetente === 'usuario' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.remetente === 'agente' && (
-                <div className="w-7 h-7 rounded-full bg-[#0066CC] flex items-center justify-center text-white shrink-0 mt-0.5">
-                  <Bot className="w-3.5 h-3.5" />
-                </div>
-              )}
-              <div
-                className={`max-w-[85%] rounded-[4px] p-3 text-xs leading-relaxed ${
-                  msg.remetente === 'usuario'
-                    ? 'bg-[#0066CC] text-white'
-                    : 'bg-[#111A2E] border border-[#24334F] text-[#C7D0E0]'
-                }`}
-              >
-                {msg.promptAtivo && (
-                  <div className="text-[9px] font-mono text-[#5B9DFF] uppercase font-bold mb-1">
-                    {msg.promptAtivo} • ROTEIRO V7.2
-                  </div>
-                )}
-                <div>{msg.texto}</div>
-                <div className="text-[9px] text-[#8B98B4] text-right mt-1">{msg.horario}</div>
-              </div>
-              {msg.remetente === 'usuario' && (
-                <div className="w-7 h-7 rounded-full bg-[#1B2742] border border-[#24334F] flex items-center justify-center text-[#5B9DFF] shrink-0 mt-0.5">
-                  <User className="w-3.5 h-3.5" />
-                </div>
-              )}
-            </div>
-          ))}
+      <CardContent className="p-6 space-y-4">
+        <div className="p-4 rounded-[4px] bg-[#111A2E] border border-[#24334F] flex items-start gap-3">
+          <Info className="w-5 h-5 text-[#5B9DFF] shrink-0 mt-0.5" />
+          <div className="space-y-1.5 text-xs">
+            <h4 className="font-bold text-[#F8FAFC] text-sm">
+              Alinhamento ao Protocolo JBP GM V7.2.3 (Auditoria de UI/UX)
+            </h4>
+            <p className="text-[#C7D0E0] leading-relaxed">
+              O chat com respostas simuladas foi <strong>desativado nesta Rodada 1.5</strong> para
+              assegurar a credibilidade do produto e eliminar qualquer declaração hardcoded sobre
+              portões metodológicos.
+            </p>
+            <p className="text-[#8B98B4] leading-relaxed">
+              Na <strong>Onda 2</strong>, este módulo será conectado diretamente ao agente nativo{' '}
+              <code className="text-[#5B9DFF] font-mono">jbp-gestao-master</code> (System Prompt
+              A5–A10 + A11 + CS-17/19/20 e as 4 skills consolidadas), consumindo o diagnóstico real
+              do assinante e respeitando a validação humana nos portões MaaS/Bespoke.
+            </p>
+          </div>
         </div>
 
-        {/* Input e Ações de Prompt */}
-        <form
-          onSubmit={handleEnviar}
-          className="pt-2 border-t border-[#24334F] flex items-center gap-2"
-        >
-          <Input
-            value={inputTexto}
-            onChange={(e) => setInputTexto(e.target.value)}
-            placeholder="Consulte o Consultor Digital sobre o plano, vazamentos ou rituais..."
-            className="bg-[#111A2E] border-[#24334F] text-xs text-[#F8FAFC] placeholder:text-[#8B98B4] rounded-[4px] h-9"
-          />
-          <Button
-            type="submit"
-            className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] h-9 px-4 text-xs font-semibold shrink-0 gap-1.5"
-          >
-            <span>Enviar</span>
-            <Send className="w-3 h-3" />
-          </Button>
-        </form>
+        {/* Visão de Roteiro Planejado (transparência metodológica, sem mentir sobre portão superado) */}
+        <div className="space-y-2">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#8B98B4]">
+            Estrutura canônica dos 13 prompts em acoplamento:
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {PROMPTS_13_METADATA.slice(0, 6).map((p) => (
+              <div
+                key={p.id}
+                className="p-2.5 rounded-[3px] bg-[#0E1726] border border-[#24334F] text-[11px] flex items-center justify-between"
+              >
+                <span className="font-mono text-[#5B9DFF] font-bold">{p.id}</span>
+                <span className="text-[#C7D0E0] truncate px-2">
+                  {p.nome.split(':')[1]?.trim() || p.nome}
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] border-[#24334F] text-[#8B98B4] font-mono shrink-0"
+                >
+                  {p.portao}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

@@ -12,8 +12,22 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { ContextualCta, PerfilUsuario } from '@/components/contextual-cta'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
+  const { user, isAuthenticated, isAdmin } = useAuth()
+
+  // Perfil contextual para CTAs
+  const perfilUsuario: PerfilUsuario = (() => {
+    if (!isAuthenticated) return 'visitante'
+    if (isAdmin) return 'assinante_maas_bespoke'
+    if (user?.role === 'admin') return 'assinante_maas_bespoke'
+    // Usuário autenticado na área do assinante
+    return 'assinante_saas'
+  })()
+
   return (
     <div className="space-y-6">
       {/* Banner de Boas-Vindas Institucional VETOR MASTER */}
@@ -32,20 +46,12 @@ export default function Index() {
             construir uma empresa autogerenciável.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            asChild
-            className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] gap-2 shadow-sm font-medium"
-          >
-            <Link to="/questionario">
-              <Activity className="w-4 h-4" />
-              Novo Diagnóstico
-            </Link>
-          </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+          <ContextualCta perfil={perfilUsuario} origem="app" />
           <Button
             asChild
             variant="outline"
-            className="border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white rounded-[4px]"
+            className="border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white rounded-[4px] text-xs h-10"
           >
             <Link to="/niveis-e-planos">Níveis e Planos</Link>
           </Button>
@@ -69,7 +75,7 @@ export default function Index() {
             {
               step: '02',
               title: 'Resultados',
-              desc: 'Heat Map das 8 Áreas',
+              desc: 'Trilha de Etapas & Devolutiva',
               path: '/resultados',
               active: false,
             },
@@ -113,19 +119,24 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Cards de Métricas Principais */}
+      {/* Cards de Métricas Principais com Badges de Demonstração (Honestidade Visual — Achado 8) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px] shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-semibold text-[#808080] uppercase tracking-wider">
               Score de Liberdade
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-[#22B14C]" />
+            <Badge
+              variant="outline"
+              className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+            >
+              Demonstração
+            </Badge>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-[#333333]">68%</div>
             <p className="text-xs text-[#22B14C] mt-1 font-medium">
-              +12% este mês no índice de autonomia
+              Alimentado a partir do diagnóstico real
             </p>
           </CardContent>
         </Card>
@@ -134,27 +145,39 @@ export default function Index() {
             <CardTitle className="text-xs font-semibold text-[#808080] uppercase tracking-wider">
               Plano de Ação 5W2H
             </CardTitle>
-            <Clock className="h-4 w-4 text-[#FF9900]" />
+            <Badge
+              variant="outline"
+              className="text-[9px] border-[#FF9900]/40 text-[#D97706] font-mono"
+            >
+              Demonstração
+            </Badge>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-[#333333]">
-              7 <span className="text-sm text-[#808080] font-normal">iniciativas ativas</span>
+              3 <span className="text-sm text-[#808080] font-normal">iniciativas modelo</span>
             </div>
-            <p className="text-xs text-[#808080] mt-1">3 com cadência esta semana</p>
+            <p className="text-xs text-[#808080] mt-1">Conforme roteiro Camaleão V7.2</p>
           </CardContent>
         </Card>
         <Card className="bg-[#F5F5F5] border-[#E0E0E0] rounded-[4px] shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-semibold text-[#808080] uppercase tracking-wider">
-              Frameworks V2.4 Mapeados
+              Etapas Metodológicas
             </CardTitle>
-            <Target className="h-4 w-4 text-[#0066CC]" />
+            <Badge
+              variant="outline"
+              className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+            >
+              Demonstração
+            </Badge>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-[#333333]">
-              8 <span className="text-sm text-[#808080] font-normal">/ 8 Áreas</span>
+              8 <span className="text-sm text-[#808080] font-normal">Etapas Canônicas</span>
             </div>
-            <p className="text-xs text-[#0066CC] mt-1 font-medium">Metodologia Vetor Master V7.2</p>
+            <p className="text-xs text-[#0066CC] mt-1 font-medium">
+              Metodologia JBP Gestão Master V7.2
+            </p>
           </CardContent>
         </Card>
       </div>
