@@ -263,6 +263,118 @@ export const REVALIDACAO_DELTA_GATE_0: RevalidacaoDeltaItem[] = [
     evidencia:
       'Migration 0066: System Prompt §9 ("A confirmação declara também a versão do questionário (ex.: V6.7, V7.2) (CS-19).").',
   },
+  {
+    secao: 'Gate 0 Delta #1',
+    calibracao: 'Questionário dos 12 Setores (Contagem & Condicionais)',
+    regra:
+      'Os 12 setores do PDF Consolidado V7.2 com 9 seções cada; seleção múltipla ativa nas perguntas de listagem (fontes de receita, certificações, barreiras, automações); Trading 1.9 condicional com textarea quando Sim e 1.13 subpergunta quando Não.',
+    conformidadeApp:
+      'Paridade Total. Estrutura de perguntas e seções integral em setores-questionario.ts; seleção múltipla via RenderCampoMultiplo; condicionais ativas em Questionario.tsx.',
+    status: 'Conforme',
+    evidencia: 'src/data/setores-questionario.ts e src/pages/Questionario.tsx linhas 2065–2175.',
+  },
+  {
+    secao: 'Gate 0 Delta #2',
+    calibracao: 'Etapa 11 (Seção 9) e Etapa 12 (Anexos & Submissão)',
+    regra:
+      'Etapa 11 = Seção 9 — Próximos Passos (9.1 a 9.4 literais); Etapa 12 = Bloco de Documentação Adicional & Anexos (págs. 44–45 do PDF) com submissão final; ordem definitiva respeitada.',
+    conformidadeApp:
+      'Paridade Total. ETAPAS_INFO[10] = Próximos Passos (9.1–9.4) e ETAPAS_INFO[11] = Documentação Adicional & Anexos com submissão final do questionário.',
+    status: 'Conforme',
+    evidencia: 'src/pages/Questionario.tsx linhas 89–174 e 1475–1825.',
+  },
+  {
+    secao: 'Gate 0 Delta #3',
+    calibracao: 'Bloco Final de Documentação nos 12 Setores',
+    regra:
+      'Sem menções a "obrigatório" ou "opcional" sobre documentos; formatos exclusivos Word (.doc, .docx), PDF (.pdf) e Excel (.xls, .xlsx); imagens bloqueadas; 100MB por arquivo e 15 arquivos/campo; 3 grupos de anexos; LGPD.',
+    conformidadeApp:
+      'Paridade Total. Constante BLOCO_DOCUMENTACAO_FINAL presente nos 12 setores; zero ocorrências de "obrigatório"/"opcional" em labels/badges.',
+    status: 'Conforme',
+    evidencia:
+      'src/data/setores-questionario.ts linhas 3552–3617 e src/pages/Questionario.tsx linhas 1586–1756.',
+  },
+  {
+    secao: 'Gate 0 Delta #4',
+    calibracao: 'Zero Resíduos V6.7 no Código do App',
+    regra:
+      'Normalização completa V6.7 → V7.2 em todo o app (interfaces, setores, frameworks, questionários, bibliotecas). Única exceção: detector retroativo CS-19 no backend.',
+    conformidadeApp:
+      'Paridade Total. Zero resíduos V6.7 no src/ do projeto. Backend suporta CS-19 declarando versão recebida na confirmação de carga.',
+    status: 'Conforme',
+    evidencia: 'Auditoria por grep no código e migration 0033.',
+  },
+  {
+    secao: 'Gate 0 Delta #5',
+    calibracao: 'Zero Importador/Exportador .json & Sync Site-App',
+    regra:
+      'Nenhum importador .json (nem lead nem Admin); nenhum lead exporta .json; sincronização direta via coleção compartilhada (hook sync_site_leads.js).',
+    conformidadeApp:
+      'Paridade Total. Sem botões de import/export .json no app; hook sync_site_leads.js ativo com cron de 1 minuto e sincronização manual em /admin/leads.',
+    status: 'Conforme',
+    evidencia: 'pocketbase/hooks/sync_site_leads.js e src/pages/AdminLeads.tsx.',
+  },
+  {
+    secao: 'Gate 0 Delta #6',
+    calibracao: 'Ciclo de Estados dos Leads & Blindagem Lista de Espera',
+    regra:
+      'Ciclo: novo → processando → diagnostico_pronto → gate de autorização (devolutiva ou nutrição); leads lista_espera sem processamento automático; promoção lista_espera → novo SOMENTE via aprovação manual do Admin.',
+    conformidadeApp:
+      'Paridade Total. Guardas ativas em lead-processing-guard.ts e worker_leads_onda2.js (HTTP 403); aprovação manual pelo Admin em AdminLeads.tsx.',
+    status: 'Conforme',
+    evidencia: 'src/services/lead-processing-guard.ts e pocketbase/hooks/worker_leads_onda2.js.',
+  },
+  {
+    secao: 'Gate 0 Delta #7',
+    calibracao: 'Micro-epifanias por Setor (Contexto Global §6)',
+    regra:
+      'Micro-epifanias gatilho mapeadas por setor econômico alinhadas à Seção 6 do Contexto Estratégico Global V7.2.',
+    conformidadeApp:
+      'Paridade Total. 12 setores com micro-epifanias literais no código e no banco.',
+    status: 'Conforme',
+    evidencia: 'src/data/setores-canonicos.ts e migration 0034.',
+  },
+  {
+    secao: 'Gate 0 Delta #8',
+    calibracao: 'Agente Único jbp-gestao-master em Tier Reasoning',
+    regra:
+      'Agente único jbp-gestao-master em tier reasoning. Proibido agente leve ou modelos paralelos. Bibliocompanion e Consultor Digital usam o mesmo agente único.',
+    conformidadeApp:
+      'Paridade Total. Migration 0066 define tier reasoning; bibliocompanion_onda2.js e consultor_digital_onda2.js invocam exclusivamente $ai.agent("jbp-gestao-master").',
+    status: 'Conforme',
+    evidencia: 'Migration 0066 e hooks bibliocompanion_onda2.js e consultor_digital_onda2.js.',
+  },
+  {
+    secao: 'Gate 0 Delta #9',
+    calibracao: 'Fronteira da Biblioteca (Ativo Intelectual Admin)',
+    regra:
+      'Conteúdo da Biblioteca é ativo intelectual restrito ao Admin (/admin/biblioteca); Bibliocompanion opera só na Biblioteca do Assinante com guarda Conceito × Consultoria.',
+    conformidadeApp:
+      'Paridade Total. BibliotecaProfissional.tsx restrita ao Admin; Bibliocompanion possui detector e aviso inegociável de fronteira Conceito × Consultoria.',
+    status: 'Conforme',
+    evidencia: 'src/pages/BibliotecaProfissional.tsx e pocketbase/hooks/bibliocompanion_onda2.js.',
+  },
+  {
+    secao: 'Gate 0 Delta #10',
+    calibracao: 'Páginas e Elementos Protegidos Intocados',
+    regra:
+      'Página institucional, questionário, 19 FAQs literais, planos/preços oficiais (SaaS R$ 1.190, MaaS R$ 3.290, sessão R$ 890, Bespoke R$ 15.750, hora R$ 790), LGPD, Membro Fundador, /admin/leads.',
+    conformidadeApp: 'Paridade Total. Todos os arquivos e constantes protegidos mantidos intactos.',
+    status: 'Conforme',
+    evidencia:
+      'src/data/cases-e-faq.ts, src/data/escada-valor-oficial.ts, src/pages/InstitucionalVendedora.tsx e src/pages/PrivacidadeLGPD.tsx.',
+  },
+  {
+    secao: 'Gate 0 Delta #11',
+    calibracao: 'Honestidade Visual & ContextualCta Unificado',
+    regra:
+      'Badge "Demonstração" em todo card sem dado real; /resultados em ETAPAS; CTAs consolidados no ContextualCta sem duplicados.',
+    conformidadeApp:
+      'Paridade Total. Badges aplicadas em cards mockados; fluxo em etapas em Resultados.tsx; CTAs únicos via ContextualCta.',
+    status: 'Conforme',
+    evidencia:
+      'src/pages/Resultados.tsx, src/pages/PlanoDeAcao.tsx e src/components/contextual-cta.tsx.',
+  },
 ]
 
 export const MARKDOWN_REVALIDACAO_DELTA = `# Checklist de Revalidação Delta do Gate 0 — Paridade V7.2.3 (Plano 20/10/2026)
@@ -559,9 +671,9 @@ export default function AdminDivergencias() {
                     Paridade V7.2.3
                   </div>
                   <div className="text-sm font-bold text-[#22B14C] flex items-center gap-1">
-                    11/11 Pontos Conformes
+                    22/22 Pontos Conformes
                   </div>
-                  <div className="text-[10px] text-[#555555]">Zero divergências</div>
+                  <div className="text-[10px] text-[#555555]">Gate 0 Revalidado 100%</div>
                 </div>
               </CardContent>
             </Card>
@@ -598,7 +710,7 @@ export default function AdminDivergencias() {
                   </CardDescription>
                 </div>
                 <Badge className="bg-[#22B14C] text-white text-xs px-2.5 py-1 font-semibold rounded-[2px] self-start sm:self-auto">
-                  11/11 Itens Homologados
+                  22/22 Itens Homologados
                 </Badge>
               </div>
             </CardHeader>
