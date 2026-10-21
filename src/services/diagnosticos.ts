@@ -176,6 +176,8 @@ export const getDiagnostico = async (id: string): Promise<Diagnostico> => {
     custo_gateway: r.custo_gateway,
     origem_tipo: r.origem_tipo,
     origem_parceiro: r.origem_parceiro,
+    versao_incremental: r.versao_incremental || 1,
+    historico_versoes: r.historico_versoes || [],
     created: r.created,
     updated: r.updated,
   }
@@ -203,6 +205,8 @@ export const getDiagnosticoByLeadId = async (leadId: string): Promise<Diagnostic
       custo_gateway: r.custo_gateway,
       origem_tipo: r.origem_tipo,
       origem_parceiro: r.origem_parceiro,
+      versao_incremental: r.versao_incremental || 1,
+      historico_versoes: r.historico_versoes || [],
       created: r.created,
       updated: r.updated,
     }

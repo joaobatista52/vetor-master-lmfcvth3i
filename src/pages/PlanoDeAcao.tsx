@@ -95,8 +95,8 @@ export default function PlanoDeAcao() {
             </TabsList>
 
             <div className="inline-flex items-center gap-2 text-xs text-[#8B98B4]">
-              <Bot className="w-4 h-4 text-[#FFB84D]" />
-              <span>Consultor Digital (retorna na Onda 2 via agente nativo)</span>
+              <Bot className="w-4 h-4 text-[#22B14C]" />
+              <span>Consultor Digital Ativo (Agente Nativo V7.2.3)</span>
             </div>
           </div>
 
