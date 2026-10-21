@@ -114,16 +114,25 @@ export default function PlanoDeAcao() {
                         className={`absolute top-0 left-0 w-1 h-full ${status === 'todo' ? 'bg-gray-300' : status === 'doing' ? 'bg-primary' : 'bg-green-500'}`}
                       />
                       <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-3">
+                        {/* Rodada 1.5b: badge "Demonstração" obrigatório em toda tarefa sem dado real do banco */}
+                        <div className="flex justify-between items-start gap-2 mb-3">
                           <Badge variant="outline" className="text-xs bg-secondary/50 font-medium">
                             {task.area}
                           </Badge>
-                          <Badge
-                            variant={task.priority === 'Alta' ? 'destructive' : 'secondary'}
-                            className="text-[10px]"
-                          >
-                            {task.priority} Prioridade
-                          </Badge>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] border-[#FF9900]/40 text-[#D97706] font-mono"
+                            >
+                              Demonstração
+                            </Badge>
+                            <Badge
+                              variant={task.priority === 'Alta' ? 'destructive' : 'secondary'}
+                              className="text-[10px]"
+                            >
+                              {task.priority} Prioridade
+                            </Badge>
+                          </div>
                         </div>
 
                         <h3 className="font-semibold text-lg mb-2 leading-tight group-hover:text-primary transition-colors">
@@ -145,9 +154,17 @@ export default function PlanoDeAcao() {
                           </SheetTrigger>
                           <SheetContent className="sm:max-w-md w-full p-0 flex flex-col">
                             <SheetHeader className="p-6 pb-0 text-left">
-                              <Badge className="w-fit mb-2 bg-primary/10 text-primary hover:bg-primary/20 border-none">
-                                Guia de Implementação
-                              </Badge>
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <Badge className="w-fit bg-primary/10 text-primary hover:bg-primary/20 border-none">
+                                  Guia de Implementação
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] border-[#FF9900]/40 text-[#D97706] font-mono w-fit"
+                                >
+                                  Demonstração
+                                </Badge>
+                              </div>{' '}
                               <SheetTitle className="text-2xl">{task.title}</SheetTitle>
                               <SheetDescription className="mt-2 text-base">
                                 Siga este passo a passo validado para implementar esta estratégia de

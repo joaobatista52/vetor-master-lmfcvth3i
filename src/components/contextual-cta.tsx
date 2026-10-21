@@ -17,7 +17,7 @@ export type PerfilUsuario = 'visitante' | 'lead' | 'assinante_saas' | 'assinante
 interface ContextualCtaProps {
   perfil: PerfilUsuario
   className?: string
-  origem?: 'resultados' | 'dashboard' | 'app'
+  origem?: 'resultados' | 'dashboard' | 'app' | 'diagnosticos'
 }
 
 /**
@@ -38,6 +38,30 @@ export function ContextualCta({
   className = '',
   origem = 'resultados',
 }: ContextualCtaProps) {
+  // Rodada 1.5b — origem 'diagnosticos': CTA ÚNICO da Central de Diagnósticos.
+  // Um lead com diagnóstico pronto NUNCA vê CTA de refazer diagnóstico (regra b) —
+  // mantém o CTA único de Devolutiva Executiva. Visitante e assinantes veem um
+  // único CTA apontando para o Questionário dos 12 Setores.
+  if (origem === 'diagnosticos' && perfil !== 'lead') {
+    const label =
+      perfil === 'visitante'
+        ? 'Realizar Diagnóstico Gratuito'
+        : 'Preencher Questionário dos 12 Setores'
+    return (
+      <div className={`flex items-center ${className}`}>
+        <Button
+          asChild
+          className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] shadow-sm font-semibold text-xs h-10 px-4 gap-2"
+        >
+          <Link to="/questionario">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{label}</span>
+          </Link>
+        </Button>
+      </div>
+    )
+  }
+
   // (a) Visitante (não logado)
   if (perfil === 'visitante') {
     return (

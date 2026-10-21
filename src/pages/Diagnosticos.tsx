@@ -1,105 +1,47 @@
-import { useState } from 'react'
-import {
-  CheckCircle2,
-  ChevronRight,
-  Play,
-  AlertCircle,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Settings,
-} from 'lucide-react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
+import { BarChart3, ClipboardList, Map, Target } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Label } from '@/components/ui/label'
+import { ContextualCta, PerfilUsuario } from '@/components/contextual-cta'
+import { useAuth } from '@/hooks/use-auth'
 
-const categories = [
-  {
-    id: 'op',
-    title: 'Operações & Processos',
-    desc: 'Avalie a dependência da sua presença física no dia a dia da empresa.',
-    icon: Settings,
-    score: 65,
-    status: 'Melhorando',
-    color: 'text-blue-500',
-    bg: 'bg-blue-50',
-  },
-  {
-    id: 'rh',
-    title: 'Gestão de Pessoas',
-    desc: 'Meça a capacidade do seu time de tomar decisões sem você.',
-    icon: Users,
-    score: 40,
-    status: 'Crítico',
-    color: 'text-red-500',
-    bg: 'bg-red-50',
-  },
-  {
-    id: 'fin',
-    title: 'Financeiro & Eficiência',
-    desc: 'Análise de previsibilidade de caixa e margens de lucro.',
-    icon: DollarSign,
-    score: 80,
-    status: 'Saudável',
-    color: 'text-green-500',
-    bg: 'bg-green-50',
-  },
-  {
-    id: 'sales',
-    title: 'Vendas & Escala',
-    desc: 'Sua máquina de vendas funciona de forma previsível e independente?',
-    icon: TrendingUp,
-    score: 0,
-    status: 'Não iniciado',
-    color: 'text-gray-500',
-    bg: 'bg-gray-100',
-  },
-]
-
-const mockQuestions = [
-  'Se você tirar 30 dias de férias hoje, a empresa continua crescendo?',
-  'Quantas decisões diárias passam obrigatoriamente por você?',
-  'Os processos da sua área mais crítica estão documentados?',
-]
-
+/**
+ * Central de Diagnósticos Estratégicos — Rodada 1.5b (saneamento da Rodada 1.5)
+ *
+ * Estado honesto: esta tela NÃO inventa scores, wizard de avaliação rápida nem
+ * "descobertas" fixas. Todo diagnóstico exibido aqui deriva exclusivamente das
+ * respostas reais do Questionário dos 12 Setores (3 Pilares), processadas pelo
+ * motor determinístico V7.2. Sem dado real do banco, a tela permanece vazia.
+ *
+ * O CTA é decidido centralizadamente pelo ContextualCta (por perfil) — nenhum
+ * botão de diagnóstico duplicado vive nesta página.
+ */
 export default function Diagnosticos() {
-  const [openWizard, setOpenWizard] = useState(false)
-  const [step, setStep] = useState(0)
-  const [activeCategory, setActiveCategory] = useState<any>(null)
-  const [completed, setCompleted] = useState(false)
+  const { user, isAuthenticated, isAdmin } = useAuth()
 
-  const handleStart = (cat: any) => {
-    setActiveCategory(cat)
-    setStep(0)
-    setCompleted(false)
-    setOpenWizard(true)
-  }
+  const perfilUsuario: PerfilUsuario = (() => {
+    if (!isAuthenticated) return 'visitante'
+    if (isAdmin) return 'assinante_maas_bespoke'
+    if (user?.role === 'admin') return 'assinante_maas_bespoke'
+    return 'assinante_saas'
+  })()
 
-  const nextStep = () => {
-    if (step < mockQuestions.length - 1) {
-      setStep((s) => s + 1)
-    } else {
-      setCompleted(true)
-    }
-  }
+  const entregaveis = [
+    {
+      icon: Map,
+      titulo: 'Heat Map de Criticalidade',
+      desc: 'Mapa de calor das 8 áreas da empresa, calculado a partir das suas respostas reais.',
+    },
+    {
+      icon: BarChart3,
+      titulo: 'Scores por Área',
+      desc: 'Nível de autonomia, eficiência e saúde estratégica por área — somente com dado real.',
+    },
+    {
+      icon: Target,
+      titulo: 'Plano de Ação 5W2H',
+      desc: 'Tarefas executáveis e OKRs desdobrados do seu diagnóstico, não de um receituário genérico.',
+    },
+  ]
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -119,183 +61,58 @@ export default function Diagnosticos() {
             operação diária.
           </p>
         </div>
-        <Button
-          asChild
-          className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] gap-2 shadow-sm shrink-0 font-medium"
-        >
-          <a href="/questionario">
-            <Play className="w-4 h-4" />
-            Iniciar Questionário dos 12 Setores
-          </a>
-        </Button>
+        {/* CTA único — decisão centralizada no ContextualCta por perfil */}
+        <div className="shrink-0">
+          <ContextualCta perfil={perfilUsuario} origem="diagnosticos" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        {categories.map((cat) => (
-          <Card
-            key={cat.id}
-            className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] transition-all hover:border-[#0066CC] hover:shadow-sm group"
-          >
-            <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-5 pb-3">
-              <div className="p-3 rounded-[4px] bg-white border border-[#E0E0E0] text-[#0066CC] shrink-0">
-                <cat.icon className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-bold text-[#333333] group-hover:text-[#0066CC] transition-colors">
-                    {cat.title}
-                  </CardTitle>
-                  {cat.score > 0 ? (
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] rounded-[3px] font-semibold ${
-                        cat.score > 70
-                          ? 'border-[#22B14C] text-[#22B14C] bg-white'
-                          : cat.score > 50
-                            ? 'border-[#FF9900] text-[#FF9900] bg-white'
-                            : 'border-red-500 text-red-500 bg-white'
-                      }`}
-                    >
-                      {cat.score}% Saúde
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] text-[#808080] border-[#E0E0E0] bg-white"
-                    >
-                      Novo
-                    </Badge>
-                  )}
-                </div>
-                <CardDescription className="mt-1 text-xs text-[#808080] line-clamp-2">
-                  {cat.desc}
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="px-5 py-2">
-              {cat.score > 0 ? (
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs text-[#808080]">
-                    <span>Nível de Autonomia</span>
-                    <span className="font-semibold text-[#333333]">{cat.score}%</span>
-                  </div>
-                  <Progress value={cat.score} className="h-2 rounded-[2px]" />
-                </div>
-              ) : (
-                <div className="py-2.5 px-3 bg-white border border-[#E0E0E0] rounded-[4px] text-xs text-[#808080] flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-[#FF9900]" /> Avaliação preliminar pendente
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="p-5 pt-3">
-              <Button
-                variant={cat.score === 0 ? 'default' : 'outline'}
-                className={`w-full gap-2 rounded-[4px] text-xs font-medium ${
-                  cat.score === 0
-                    ? 'bg-[#0066CC] hover:bg-[#22B14C] text-white'
-                    : 'border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white'
-                }`}
-                onClick={() => handleStart(cat)}
+      {/* Estado vazio honesto — nenhum score, wizard ou descoberta sem dado real do banco */}
+      <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] shadow-sm">
+        <CardHeader className="items-center text-center pb-2">
+          <div className="p-4 rounded-[4px] bg-white border border-[#E0E0E0] text-[#0066CC] w-fit mx-auto">
+            <ClipboardList className="w-8 h-8" />
+          </div>
+          <div className="pt-2 flex justify-center">
+            <Badge
+              variant="outline"
+              className="text-[10px] border-[#FF9900]/40 text-[#D97706] bg-white font-mono"
+            >
+              Aguardando dados do questionário
+            </Badge>
+          </div>
+          <CardTitle className="text-xl md:text-2xl font-bold text-[#333333] pt-2">
+            Nenhum diagnóstico processado ainda
+          </CardTitle>
+          <CardDescription className="text-xs md:text-sm text-[#333333] max-w-2xl mx-auto leading-relaxed pt-1">
+            Os diagnósticos desta central são gerados exclusivamente a partir das respostas reais do
+            Questionário dos 12 Setores (Prisão do Fundador, Ineficiência Invisível e Abismo
+            Estratégia vs. Execução), processadas pelo motor determinístico V7.2. Enquanto o
+            questionário não for respondido, nenhum score, ranking ou descoberta é exibido aqui —
+            esta tela não apresenta dados simulados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2 pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            {entregaveis.map((item) => (
+              <div
+                key={item.titulo}
+                className="p-4 rounded-[4px] bg-white border border-[#E0E0E0] text-left"
               >
-                {cat.score === 0 ? (
-                  <Play className="w-3.5 h-3.5" />
-                ) : (
-                  <Settings className="w-3.5 h-3.5" />
-                )}
-                {cat.score === 0 ? 'Iniciar Avaliação Rápida' : 'Refazer Avaliação'}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-
-      <Dialog open={openWizard} onOpenChange={setOpenWizard}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
-          {activeCategory && !completed && (
-            <>
-              <div className="p-6 pb-0">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className={`p-2 rounded-md ${activeCategory.bg} ${activeCategory.color}`}>
-                    <activeCategory.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{activeCategory.title}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Questão {step + 1} de {mockQuestions.length}
-                    </p>
-                  </div>
+                <div className="p-2 rounded-[4px] bg-[#F5F5F5] border border-[#E0E0E0] text-[#0066CC] w-fit">
+                  <item.icon className="w-4 h-4" />
                 </div>
-                <Progress value={((step + 1) / mockQuestions.length) * 100} className="h-1 mb-8" />
-
-                <div className="min-h-[200px] animate-slide-in-right">
-                  <h2 className="text-xl font-medium mb-6">{mockQuestions[step]}</h2>
-
-                  <RadioGroup defaultValue="" className="space-y-3">
-                    {[
-                      'Sim, funciona perfeitamente sem mim.',
-                      'Funciona, mas com algumas falhas e atrasos.',
-                      'Difícil, a equipe precisaria me acionar constantemente.',
-                      'Impossível, tudo pararia no primeiro dia.',
-                    ].map((opt, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center space-x-3 border p-4 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer focus-within:border-primary focus-within:ring-1"
-                      >
-                        <RadioGroupItem value={`opt-${i}`} id={`opt-${i}`} />
-                        <Label
-                          htmlFor={`opt-${i}`}
-                          className="flex-1 cursor-pointer font-normal text-sm"
-                        >
-                          {opt}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+                <h3 className="text-sm font-semibold text-[#333333] mt-3">{item.titulo}</h3>
+                <p className="text-xs text-[#808080] mt-1 leading-relaxed">{item.desc}</p>
               </div>
-              <div className="p-6 pt-4 border-t border-border flex justify-end">
-                <Button onClick={nextStep} className="gap-2">
-                  {step === mockQuestions.length - 1 ? 'Finalizar' : 'Próxima'}
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </>
-          )}
-
-          {completed && (
-            <div className="p-8 text-center animate-fade-in flex flex-col items-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Diagnóstico Concluído!</h2>
-              <p className="text-muted-foreground mb-8">
-                Analisamos suas respostas e geramos novos itens estratégicos para o seu Plano de
-                Ação.
-              </p>
-
-              <div className="bg-secondary/50 rounded-lg p-4 w-full mb-8 text-left">
-                <h4 className="font-medium text-sm text-foreground mb-3">
-                  Principais Descobertas:
-                </h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5" /> Alta dependência
-                    de aprovações manuais.
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-1.5" /> Falta de
-                    processos documentados no comercial.
-                  </li>
-                </ul>
-              </div>
-
-              <Button className="w-full max-w-sm" onClick={() => setOpenWizard(false)}>
-                Desbloquear Plano de Ação
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            ))}
+          </div>
+          <p className="text-[11px] text-[#808080] text-center mt-5">
+            O diagnóstico é preenchido automaticamente quando o Questionário dos 12 Setores é
+            concluído e processado.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

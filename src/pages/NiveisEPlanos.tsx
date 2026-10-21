@@ -208,6 +208,7 @@ export default function NiveisEPlanos() {
               parametrizados especificamente para a realidade de pequenas e médias empresas.
             </p>
           </div>
+          {/* Rodada 1.5b: CTA duplicado "Iniciar Diagnóstico Gratuito" removido — a decisão de CTA fica centralizada no ContextualCta por perfil. */}
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Button
               variant="outline"
@@ -215,12 +216,6 @@ export default function NiveisEPlanos() {
               onClick={() => navigate('/areas-da-empresa')}
             >
               Ver Áreas da Empresa
-            </Button>
-            <Button
-              className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs font-semibold"
-              onClick={() => navigate('/questionario')}
-            >
-              Iniciar Diagnóstico Gratuito
             </Button>
           </div>
         </div>

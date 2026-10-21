@@ -46,15 +46,9 @@ export default function Index() {
             construir uma empresa autogerenciável.
           </p>
         </div>
+        {/* Rodada 1.5b: botão duplicado "Níveis e Planos" removido — decisão de CTA centralizada no ContextualCta */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
           <ContextualCta perfil={perfilUsuario} origem="app" />
-          <Button
-            asChild
-            variant="outline"
-            className="border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white rounded-[4px] text-xs h-10"
-          >
-            <Link to="/niveis-e-planos">Níveis e Planos</Link>
-          </Button>
         </div>
       </div>
 

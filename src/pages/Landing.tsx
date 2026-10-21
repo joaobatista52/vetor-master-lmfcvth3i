@@ -73,16 +73,8 @@ export default function Landing() {
               40 anos de liderança executiva convertidos em algoritmos que estancam os vazamentos
               invisíveis e fecham o abismo entre estratégia e execução.
             </p>
+            {/* Rodada 1.5b: CTA duplicado "Iniciar Diagnóstico Gratuito" removido — a decisão de CTA fica no ContextualCta por perfil. Mantido apenas o CTA institucional de Níveis e Planos. */}
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Button
-                size="lg"
-                asChild
-                className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] font-medium gap-2"
-              >
-                <Link to="/questionario">
-                  Iniciar Diagnóstico Gratuito <ArrowRight className="w-4 h-4" />
-                </Link>
-              </Button>
               <Button
                 size="lg"
                 variant="outline"
