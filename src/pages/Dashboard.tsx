@@ -264,25 +264,60 @@ export default function Dashboard() {
     ultimoDiagnostico &&
     (ultimoDiagnostico.status === 'concluido' ||
       (ultimoDiagnostico.dre_normalizada_15_linhas &&
-        ultimoDiagnostico.dre_normalizada_15_linhas.length > 0))
+        ultimoDiagnostico.dre_normalizada_15_linhas.length > 0) ||
+      ultimoDiagnostico.relatorio_gerado)
   )
   const temPlanosReais = planos.length > 0
   const temOKRsReais = okrs.length > 0
   const semDadosReais = !temDiagnosticoReal && !temPlanosReais && !temOKRsReais
 
+  // Extrair indicadores calculados pelo motor do diagnóstico (Fase 6 / Gabarito / Dados de Entrada)
+  const metricasFinanceirasReais = useMemo(() => {
+    if (!temDiagnosticoReal || !ultimoDiagnostico) return null
+    const de = ultimoDiagnostico.dados_entrada || {}
+    const gab = ultimoDiagnostico.gabarito_auditoria || {}
+    const faturamentoStr = de.cliente?.faturamento_declarado || de.faturamento || ''
+    return {
+      faturamento: faturamentoStr,
+      setor: ultimoDiagnostico.setor || de.cliente?.setor || 'Geral',
+      versaoQuestionario: ultimoDiagnostico.versao_questionario || 'V7.2',
+      faseAtual: ultimoDiagnostico.fase_atual || 1,
+      temDREGravada: !!(
+        ultimoDiagnostico.dre_normalizada_15_linhas &&
+        ultimoDiagnostico.dre_normalizada_15_linhas.length > 0
+      ),
+      temEREC: !!(
+        ultimoDiagnostico.estrutura_erec_a9 && ultimoDiagnostico.estrutura_erec_a9.length > 0
+      ),
+    }
+  }, [temDiagnosticoReal, ultimoDiagnostico])
+
   // DRE a exibir: se houver dado real no diagnóstico, alimenta a tabela; senão, usa a canônica com [REQUER VERIFICAÇÃO]
   const dreExibicao = useMemo(() => {
-    if (temDiagnosticoReal && ultimoDiagnostico?.dre_normalizada_15_linhas) {
-      return ultimoDiagnostico.dre_normalizada_15_linhas.map((d: any, idx: number) => ({
-        num: d.numero || idx + 1,
-        descricao: d.linha || `Linha ${idx + 1}`,
-        valor: d.valor || '[REQUER VERIFICAÇÃO]',
-        segregado: d.valor && d.valor !== '[REQUER VERIFICAÇÃO]',
-        nota:
-          d.nota ||
-          (d.valor === '[REQUER VERIFICAÇÃO]' ? 'Pendente de validação' : 'Auditado pelo motor'),
-        natureza: idx === 2 || idx === 8 || idx === 14 ? 'subtotal_destaque' : 'normal',
-      }))
+    if (
+      temDiagnosticoReal &&
+      ultimoDiagnostico?.dre_normalizada_15_linhas &&
+      ultimoDiagnostico.dre_normalizada_15_linhas.length > 0
+    ) {
+      return ultimoDiagnostico.dre_normalizada_15_linhas.map((d: any, idx: number) => {
+        const num = d.numero || idx + 1
+        const valorReal =
+          d.valor !== undefined && d.valor !== null ? String(d.valor) : '[REQUER VERIFICAÇÃO]'
+        const temValorRealSegregado =
+          valorReal !== '[REQUER VERIFICAÇÃO]' && valorReal.trim() !== ''
+        return {
+          num,
+          descricao: d.linha || DRE_15_LINHAS_CANONICA[idx]?.descricao || `Linha ${idx + 1}`,
+          valor: valorReal,
+          segregado: temValorRealSegregado,
+          nota:
+            d.nota ||
+            (temValorRealSegregado
+              ? 'Auditado pelo motor determinístico V7.2'
+              : 'Pendente de validação / documento (CS-17)'),
+          natureza: idx === 2 || idx === 8 || idx === 14 ? 'subtotal_destaque' : 'normal',
+        }
+      })
     }
     return DRE_15_LINHAS_CANONICA
   }, [temDiagnosticoReal, ultimoDiagnostico])
@@ -360,40 +395,81 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Banner de Demonstração / Estado Honesto (Regra de Honestidade Visual — Achado 8) */}
-      <Card className="bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-[#0066CC]/30 rounded-[4px] shadow-sm overflow-hidden">
-        <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1 max-w-3xl">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-[#0066CC]/10 text-[#0066CC] hover:bg-[#0066CC]/15 border-none text-[11px] font-semibold">
-                Demonstração Estrutural (Rodada 1.5)
-              </Badge>
-              <span className="text-xs font-semibold text-[#333333]">
-                Estrutura pronta para recepção dos dados do motor na Onda 2
-              </span>
+      {/* Banner de Status dos Dados (Regra de Honestidade Visual — Achado 8) */}
+      {temDiagnosticoReal ? (
+        <Card className="bg-gradient-to-r from-emerald-50/70 via-white to-slate-50 border-emerald-500/30 rounded-[4px] shadow-sm overflow-hidden">
+          <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1 max-w-3xl">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-[#22B14C] text-white hover:bg-[#1E9E43] border-none text-[11px] font-semibold">
+                  Diagnóstico Real V7.2 Gravado
+                </Badge>
+                <span className="text-xs font-semibold text-[#333333]">
+                  Setor: {metricasFinanceirasReais?.setor} • Fase Atual:{' '}
+                  {metricasFinanceirasReais?.faseAtual}
+                </span>
+              </div>
+              <p className="text-xs text-[#808080] leading-relaxed">
+                Os blocos com dados reais exibem o badge{' '}
+                <strong className="text-[#22B14C]">"Dado Real V7.2"</strong>. Linhas da DRE
+                pendentes de segregação contábil ou documentos complementares recebem o marcador
+                canônico{' '}
+                <span className="font-mono text-amber-700 bg-amber-100 px-1 py-0.2 rounded text-[11px]">
+                  [REQUER VERIFICAÇÃO]
+                </span>{' '}
+                conforme o protocolo CS-17.
+              </p>
             </div>
-            <p className="text-xs text-[#808080] leading-relaxed">
-              Todos os cartões sem dados gravados exibem o badge explícito{' '}
-              <strong className="text-[#0066CC]">"Demonstração"</strong>. Linhas da DRE com
-              exigência de segregação contábil recebem o marcador canônico{' '}
-              <span className="font-mono text-amber-700 bg-amber-100 px-1 py-0.2 rounded text-[11px]">
-                [REQUER VERIFICAÇÃO]
-              </span>{' '}
-              conforme o protocolo CS-17.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="border-[#0066CC] text-[#0066CC] rounded-[4px] text-xs h-9"
-            >
-              <Link to="/areas-da-empresa">Ver Trilha de Etapas</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="border-[#0066CC] text-[#0066CC] rounded-[4px] text-xs h-9"
+              >
+                <Link to="/areas-da-empresa">Ver Trilha de Etapas</Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-[4px] text-xs h-9"
+              >
+                <Link to="/plano-de-acao">Ir para Plano de Ação</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="bg-gradient-to-r from-blue-50/70 via-white to-slate-50 border-[#0066CC]/30 rounded-[4px] shadow-sm overflow-hidden">
+          <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1 max-w-3xl">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-[#0066CC]/10 text-[#0066CC] hover:bg-[#0066CC]/15 border-none text-[11px] font-semibold">
+                  Modo Demonstração (Sem diagnóstico gravado)
+                </Badge>
+                <span className="text-xs font-semibold text-[#333333]">
+                  Valores ilustrativos de referência metodológica
+                </span>
+              </div>
+              <p className="text-xs text-[#808080] leading-relaxed">
+                Nenhum diagnóstico real foi gravado ainda para esta conta. Todos os cartões exibem o
+                badge explícito <strong className="text-[#0066CC]">"Demonstração"</strong>. Responda
+                o Questionário Estratégico para alimentar este painel com a inteligência
+                determinística da sua empresa.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                asChild
+                size="sm"
+                className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-[4px] text-xs h-9 shadow-sm"
+              >
+                <Link to="/questionario">Preencher Questionário</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ========================================================================= */}
       {/* BLOCO 1 — SAÚDE FINANCEIRA (FASE 6) */}
@@ -493,12 +569,18 @@ export default function Dashboard() {
                   <PieChart className="w-4 h-4 text-[#0066CC]" />
                   WACC Determinístico Parametrizado por Estágio
                 </CardTitle>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                >
-                  Demonstração
-                </Badge>
+                {!temDiagnosticoReal ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+                  >
+                    Demonstração
+                  </Badge>
+                ) : (
+                  <Badge className="bg-[#22B14C] text-white text-[9px] font-mono border-none">
+                    Dado Real V7.2
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-[#808080] mt-0.5">
                 Memória de cálculo: WACC = Selic (13,75%) + Risco Brasil (4,50%) + Prêmio por
@@ -672,25 +754,37 @@ export default function Dashboard() {
               grade de 8 Áreas).
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
-          >
-            Demonstração
-          </Badge>
+          {temDiagnosticoReal || temPlanosReais ? (
+            <Badge className="bg-[#22B14C] text-white text-[10px] font-mono self-start sm:self-auto border-none">
+              Trilha Ativa V7.2
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
+            >
+              Demonstração
+            </Badge>
+          )}
         </div>
 
         {/* Grade das 8 Etapas com Dono, Prazo e Progresso */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {fasesStateMachineV72.map((f, idx) => {
-            const isCorrente = idx === 0 // Etapa 1 em foco inicial
+            const faseAtualDiag = ultimoDiagnostico?.fase_atual || 1
+            const isCorrente = f.numero === faseAtualDiag
+            const isConcluida = temDiagnosticoReal && f.numero < faseAtualDiag
+            const temDadoRealNestaEtapa = temDiagnosticoReal && f.numero <= faseAtualDiag
+
             return (
               <Card
                 key={f.numero}
                 className={`rounded-[4px] p-4 shadow-xs flex flex-col justify-between transition-all ${
                   isCorrente
                     ? 'bg-white border-2 border-[#0066CC] ring-2 ring-[#0066CC]/15'
-                    : 'bg-[#F5F5F5] border border-[#E0E0E0]'
+                    : isConcluida
+                      ? 'bg-emerald-50/50 border border-emerald-300'
+                      : 'bg-[#F5F5F5] border border-[#E0E0E0]'
                 }`}
               >
                 <div className="space-y-2">
@@ -699,18 +793,26 @@ export default function Dashboard() {
                       className={
                         isCorrente
                           ? 'bg-[#0066CC] text-white text-[10px] font-bold'
-                          : 'bg-[#111A2E] text-white text-[10px] font-mono'
+                          : isConcluida
+                            ? 'bg-[#22B14C] text-white text-[10px] font-bold'
+                            : 'bg-[#111A2E] text-white text-[10px] font-mono'
                       }
                     >
                       Etapa 0{f.numero}
                     </Badge>
                     <div className="flex items-center gap-1">
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                      >
-                        Demonstração
-                      </Badge>
+                      {temDadoRealNestaEtapa ? (
+                        <Badge className="bg-[#22B14C]/10 text-[#1E9E43] border-none text-[9px] font-mono font-bold">
+                          {isConcluida ? 'Concluída' : 'Em Curso'}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+                        >
+                          Demonstração
+                        </Badge>
+                      )}
                       {isCorrente && (
                         <span className="text-[10px] font-bold text-[#22B14C] uppercase">
                           Corrente
@@ -734,7 +836,13 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center justify-between pt-1">
                     <span>Progresso Real:</span>
-                    <strong className="text-[#0066CC] font-mono">Aguardando Onda 2</strong>
+                    {temDadoRealNestaEtapa ? (
+                      <strong className="text-[#22B14C] font-mono">
+                        {isConcluida ? '100% Concluída' : 'Em Execução (Fase Ativa)'}
+                      </strong>
+                    ) : (
+                      <strong className="text-[#808080] font-mono">Aguardando Diagnóstico</strong>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -763,124 +871,177 @@ export default function Dashboard() {
               Etapa.
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
-          >
-            Demonstração
-          </Badge>
+          {temOKRsReais ? (
+            <Badge className="bg-[#22B14C] text-white text-[10px] font-mono self-start sm:self-auto border-none">
+              OKRs Ativos ({okrs.length})
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
+            >
+              Demonstração
+            </Badge>
+          )}
         </div>
 
-        {/* 3 OKRs Canônicos Vivos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant="outline"
-                  className="border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono font-bold"
-                >
-                  Vínculo: Etapa 01 (Diagnóstico)
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                >
-                  Demonstração
-                </Badge>
-              </div>
-              <h3 className="text-sm font-bold text-[#333333] leading-snug">
-                Estancar os 3 maiores vazamentos invisíveis operacionais
-              </h3>
-              <p className="text-xs text-[#808080]">
-                Descentralização de alçadas e bloqueio de concessões de desconto manuais.
-              </p>
-            </div>
+        {/* OKRs Reais do Banco OU 3 OKRs Canônicos com badge correto */}
+        {temOKRsReais ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {okrs.map((okrItem) => (
+              <Card
+                key={okrItem.id}
+                className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Badge
+                      variant="outline"
+                      className="border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono font-bold"
+                    >
+                      Etapa {okrItem.etapa ? `0${okrItem.etapa}` : 'Estratégica'}
+                    </Badge>
+                    <Badge className="bg-[#22B14C] text-white text-[9px] font-mono border-none">
+                      Dado Real
+                    </Badge>
+                  </div>
+                  <h3 className="text-sm font-bold text-[#333333] leading-snug">
+                    {okrItem.objetivo}
+                  </h3>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Progress value={okrItem.progresso || 0} className="h-1.5 flex-1" />
+                    <span className="font-mono text-xs font-bold text-[#0066CC]">
+                      {okrItem.progresso || 0}%
+                    </span>
+                  </div>
+                </div>
 
-            <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#333333]">KR 1: Taxa de ruptura curva A &lt; 3%</span>
-                <span className="font-mono text-[#0066CC] font-bold">Meta: 3,0%</span>
+                <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
+                  {okrItem.resultados_chave?.map((kr: any, kIdx: number) => (
+                    <div key={kIdx} className="flex items-center justify-between gap-2">
+                      <span className="text-[#333333] truncate">
+                        KR {kIdx + 1}: {kr.descricao || kr.titulo || 'Resultado-Chave'}
+                      </span>
+                      <span className="font-mono text-[#0066CC] font-bold shrink-0">
+                        {kr.progresso !== undefined ? `${kr.progresso}%` : 'Em andamento'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant="outline"
+                    className="border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono font-bold"
+                  >
+                    Vínculo: Etapa 01 (Diagnóstico)
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+                  >
+                    Demonstração
+                  </Badge>
+                </div>
+                <h3 className="text-sm font-bold text-[#333333] leading-snug">
+                  Estancar os 3 maiores vazamentos invisíveis operacionais
+                </h3>
+                <p className="text-xs text-[#808080]">
+                  Descentralização de alçadas e bloqueio de concessões de desconto manuais.
+                </p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#333333]">KR 2: Alçadas formais até R$ 5.000</span>
-                <span className="font-mono text-[#22B14C] font-bold">Meta: 100%</span>
-              </div>
-            </div>
-          </Card>
 
-          <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant="outline"
-                  className="border-[#FF9900]/40 text-[#D97706] bg-[#FF9900]/10 text-[10px] font-mono font-bold"
-                >
-                  Vínculo: Etapa 05 (Roadmap)
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                >
-                  Demonstração
-                </Badge>
+              <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#333333]">KR 1: Taxa de ruptura curva A &lt; 3%</span>
+                  <span className="font-mono text-[#0066CC] font-bold">Meta: 3,0%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#333333]">KR 2: Alçadas formais até R$ 5.000</span>
+                  <span className="font-mono text-[#22B14C] font-bold">Meta: 100%</span>
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-[#333333] leading-snug">
-                Autonomia operacional e libertação do fundador
-              </h3>
-              <p className="text-xs text-[#808080]">
-                Rituais semanais e desoneração da diretoria de rotinas do dia a dia.
-              </p>
-            </div>
+            </Card>
 
-            <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#333333]">KR 1: Horas semanais do fundador &lt; 10h</span>
-                <span className="font-mono text-[#0066CC] font-bold">Meta: 10h</span>
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant="outline"
+                    className="border-[#FF9900]/40 text-[#D97706] bg-[#FF9900]/10 text-[10px] font-mono font-bold"
+                  >
+                    Vínculo: Etapa 05 (Roadmap)
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+                  >
+                    Demonstração
+                  </Badge>
+                </div>
+                <h3 className="text-sm font-bold text-[#333333] leading-snug">
+                  Autonomia operacional e libertação do fundador
+                </h3>
+                <p className="text-xs text-[#808080]">
+                  Rituais semanais e desoneração da diretoria de rotinas do dia a dia.
+                </p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#333333]">KR 2: Rituais quinzenais 5W2H cumpridos</span>
-                <span className="font-mono text-[#22B14C] font-bold">Meta: 100%</span>
-              </div>
-            </div>
-          </Card>
 
-          <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant="outline"
-                  className="border-emerald-500/40 text-emerald-800 bg-emerald-50 text-[10px] font-mono font-bold"
-                >
-                  Vínculo: Etapa 06 (Finanças)
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                >
-                  Demonstração
-                </Badge>
+              <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#333333]">KR 1: Horas semanais do fundador &lt; 10h</span>
+                  <span className="font-mono text-[#0066CC] font-bold">Meta: 10h</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#333333]">KR 2: Rituais quinzenais 5W2H cumpridos</span>
+                  <span className="font-mono text-[#22B14C] font-bold">Meta: 100%</span>
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-[#333333] leading-snug">
-                Blindagem de margem e segurança financeira (Buffett)
-              </h3>
-              <p className="text-xs text-[#808080]">
-                Construção de reserva de capital de giro e DRE até o 10º dia útil.
-              </p>
-            </div>
+            </Card>
 
-            <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#333333]">KR 1: Margem de segurança &gt; 50%</span>
-                <span className="font-mono text-[#0066CC] font-bold">Meta: 50%</span>
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-500/40 text-emerald-800 bg-emerald-50 text-[10px] font-mono font-bold"
+                  >
+                    Vínculo: Etapa 06 (Finanças)
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+                  >
+                    Demonstração
+                  </Badge>
+                </div>
+                <h3 className="text-sm font-bold text-[#333333] leading-snug">
+                  Blindagem de margem e segurança financeira (Buffett)
+                </h3>
+                <p className="text-xs text-[#808080]">
+                  Construção de reserva de capital de giro e DRE até o 10º dia útil.
+                </p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#333333]">KR 2: Fechamento DRE até D+10</span>
-                <span className="font-mono text-[#22B14C] font-bold">Meta: D+10</span>
+
+              <div className="space-y-2 pt-2 border-t border-[#E0E0E0] text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#333333]">KR 1: Margem de segurança &gt; 50%</span>
+                  <span className="font-mono text-[#0066CC] font-bold">Meta: 50%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#333333]">KR 2: Fechamento DRE até D+10</span>
+                  <span className="font-mono text-[#22B14C] font-bold">Meta: D+10</span>
+                </div>
               </div>
-            </div>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        )}
       </section>
     </div>
   )

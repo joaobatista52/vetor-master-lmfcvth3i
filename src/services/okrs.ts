@@ -11,6 +11,7 @@ export interface OKR {
   objetivo: string
   resultados_chave: ResultadoChave[]
   progresso: number
+  etapa?: number
   created: string
   updated: string
 }
@@ -23,6 +24,7 @@ export const getOKRs = async (): Promise<OKR[]> => {
     objetivo: r.objetivo || '',
     resultados_chave: Array.isArray(r.resultados_chave) ? r.resultados_chave : [],
     progresso: r.progresso || 0,
+    etapa: r.etapa || undefined,
     created: r.created,
     updated: r.updated,
   })) as OKR[]

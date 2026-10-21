@@ -1,4 +1,4 @@
-import { pb } from '@/lib/pocketbase/client'
+import pb from '@/lib/pocketbase/client'
 
 export interface ConsultaBibliocompanionParams {
   pergunta: string
@@ -30,7 +30,8 @@ export async function consultarBibliocompanion(
   params: ConsultaBibliocompanionParams,
 ): Promise<ConsultaBibliocompanionResult> {
   const token = pb.authStore.token
-  const response = await fetch('/backend/v1/bibliocompanion/consultar', {
+  const baseUrl = import.meta.env.VITE_POCKETBASE_URL || ''
+  const response = await fetch(`${baseUrl}/backend/v1/bibliocompanion/consultar`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

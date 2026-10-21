@@ -259,13 +259,19 @@ export default function PlanoDeAcao() {
           ))}
         </Tabs>
 
-        {/* Chat do Consultor Digital Integrado na Camada 2 — Item 2c */}
+        {/* Chat do Consultor Digital Integrado na Camada 2 — Reativado Onda 2 */}
         <div className="pt-4 mt-auto">
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquare className="w-4 h-4 text-[#FFB84D]" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#F8FAFC]">
-              Consultor Digital Guiado • Acoplamento do Agente Nativo (Onda 2)
-            </h2>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-[#FFB84D]" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#F8FAFC]">
+                Consultor Digital Guiado • Agente Nativo JBP Gestão Master V7.2.3
+              </h2>
+            </div>
+            <div className="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Chat Ativo (13 Prompts & Portões)
+            </div>
           </div>
           <ChatConsultorDigital />
         </div>
