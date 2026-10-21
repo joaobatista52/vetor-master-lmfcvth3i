@@ -260,14 +260,39 @@ export default function Dashboard() {
   }, [])
 
   const ultimoDiagnostico = diagnosticos[0] || null
-  const semDadosReais = diagnosticos.length === 0 && planos.length === 0
+  const temDiagnosticoReal = !!(
+    ultimoDiagnostico &&
+    (ultimoDiagnostico.status === 'concluido' ||
+      (ultimoDiagnostico.dre_normalizada_15_linhas &&
+        ultimoDiagnostico.dre_normalizada_15_linhas.length > 0))
+  )
+  const temPlanosReais = planos.length > 0
+  const temOKRsReais = okrs.length > 0
+  const semDadosReais = !temDiagnosticoReal && !temPlanosReais && !temOKRsReais
+
+  // DRE a exibir: se houver dado real no diagnóstico, alimenta a tabela; senão, usa a canônica com [REQUER VERIFICAÇÃO]
+  const dreExibicao = useMemo(() => {
+    if (temDiagnosticoReal && ultimoDiagnostico?.dre_normalizada_15_linhas) {
+      return ultimoDiagnostico.dre_normalizada_15_linhas.map((d: any, idx: number) => ({
+        num: d.numero || idx + 1,
+        descricao: d.linha || `Linha ${idx + 1}`,
+        valor: d.valor || '[REQUER VERIFICAÇÃO]',
+        segregado: d.valor && d.valor !== '[REQUER VERIFICAÇÃO]',
+        nota:
+          d.nota ||
+          (d.valor === '[REQUER VERIFICAÇÃO]' ? 'Pendente de validação' : 'Auditado pelo motor'),
+        natureza: idx === 2 || idx === 8 || idx === 14 ? 'subtotal_destaque' : 'normal',
+      }))
+    }
+    return DRE_15_LINHAS_CANONICA
+  }, [temDiagnosticoReal, ultimoDiagnostico])
 
   // Perfil contextual do usuário para o CTA
   const perfilUsuario: PerfilUsuario = (() => {
     if (!isAuthenticated) return 'visitante'
     if (isAdmin) return 'assinante_maas_bespoke'
     if (user?.role === 'admin') return 'assinante_maas_bespoke'
-    if (ultimoDiagnostico) return 'assinante_saas'
+    if (temDiagnosticoReal) return 'assinante_saas'
     return 'visitante'
   })()
 
@@ -389,12 +414,18 @@ export default function Dashboard() {
               DRE de 15 linhas (CS-17), Thresholds da Lente de Buffett e Memória de Cálculo de WACC.
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
-          >
-            Demonstração
-          </Badge>
+          {!temDiagnosticoReal ? (
+            <Badge
+              variant="outline"
+              className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
+            >
+              Demonstração
+            </Badge>
+          ) : (
+            <Badge className="bg-[#22B14C] text-white text-[10px] font-mono self-start sm:self-auto border-none">
+              Dado Real V7.2
+            </Badge>
+          )}
         </div>
 
         {/* Thresholds Buffett (6 Cartões) */}
@@ -404,9 +435,11 @@ export default function Dashboard() {
               <Target className="w-3.5 h-3.5 text-[#0066CC]" />
               Os 6 Thresholds da Lente de Buffett (V7.2)
             </span>
-            <Badge variant="outline" className="text-[9px] border-[#808080]/30 text-[#808080]">
-              Demonstração
-            </Badge>
+            {!temDiagnosticoReal && (
+              <Badge variant="outline" className="text-[9px] border-[#808080]/30 text-[#808080]">
+                Demonstração
+              </Badge>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -421,12 +454,14 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-[#333333]">{th.nome}</span>
                       <div className="flex items-center gap-1">
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono px-1 py-0"
-                        >
-                          Demonstração
-                        </Badge>
+                        {!temDiagnosticoReal && (
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono px-1 py-0"
+                          >
+                            Demonstração
+                          </Badge>
+                        )}
                         <Badge
                           className={`text-[10px] font-semibold ${
                             isSaudavel
@@ -534,12 +569,18 @@ export default function Dashboard() {
                   <FileCheck2 className="w-4 h-4 text-[#0066CC]" />
                   DRE Institucional de 15 Linhas (Protocolo CS-17 / Subitem 1.6.A)
                 </CardTitle>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                >
-                  Demonstração
-                </Badge>
+                {!temDiagnosticoReal ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
+                  >
+                    Demonstração
+                  </Badge>
+                ) : (
+                  <Badge className="bg-[#22B14C] text-white text-[9px] font-mono border-none">
+                    Dado Real V7.2
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-[#808080] mt-0.5">
                 Exibição integral das 15 linhas canônicas. Linhas não segregadas ou declaradas
@@ -553,7 +594,7 @@ export default function Dashboard() {
           </div>
 
           <div className="divide-y divide-[#E0E0E0] text-xs">
-            {DRE_15_LINHAS_CANONICA.map((l) => {
+            {dreExibicao.map((l: any) => {
               const isDestaque = l.natureza === 'subtotal_destaque'
               const isSubtotal = l.natureza === 'subtotal'
               return (

@@ -41,19 +41,44 @@ export interface Diagnostico {
   }
   origem_tipo?: 'direto' | 'parceiro'
   origem_parceiro?: string
-  created: string
-  updated: string
+  versao_incremental?: number
+  historico_versoes?: Array<{
+    versao: number
+    arquivado_em: string
+    status: string
+    versao_questionario: string
+    fase_atual: number
+    relatorio_gerado: string
+    dados_entrada: any
+    dre_normalizada_15_linhas: any
+    estrutura_erec_a9: any
+    custo_gateway: any
+    motivo: string
+  }>
+  created?: string
+  updated?: string
 }
-
 export const getDiagnosticos = async (): Promise<Diagnostico[]> => {
   const records = await pb.collection('diagnosticos').getFullList({ sort: '-created' })
   return records.map((r: any) => ({
     id: r.id,
     user: r.user,
+    lead: r.lead,
+    status: r.status,
+    autorizacao_devolutiva: r.autorizacao_devolutiva,
+    versao_questionario: r.versao_questionario,
     dados_entrada: r.dados_entrada || {},
     relatorio_gerado: r.relatorio_gerado || '',
     setor: r.setor || '',
     fase_atual: r.fase_atual,
+    dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
+    estrutura_erec_a9: r.estrutura_erec_a9,
+    gabarito_auditoria: r.gabarito_auditoria,
+    custo_gateway: r.custo_gateway,
+    origem_tipo: r.origem_tipo,
+    origem_parceiro: r.origem_parceiro,
+    versao_incremental: r.versao_incremental || 1,
+    historico_versoes: r.historico_versoes || [],
     created: r.created,
     updated: r.updated,
   })) as Diagnostico[]
@@ -122,6 +147,8 @@ export const getLatestDiagnostico = async (): Promise<Diagnostico | null> => {
       custo_gateway: r.custo_gateway,
       origem_tipo: r.origem_tipo,
       origem_parceiro: r.origem_parceiro,
+      versao_incremental: r.versao_incremental || 1,
+      historico_versoes: r.historico_versoes || [],
       created: r.created,
       updated: r.updated,
     }

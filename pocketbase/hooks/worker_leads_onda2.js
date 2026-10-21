@@ -306,9 +306,43 @@ routerAdd(
         },
       ]
 
-      // 4. Salvar diagnóstico
-      const diagCol = $app.findCollectionByNameOrId('diagnosticos')
-      const diagRec = new Record(diagCol)
+      // 4. Salvar diagnóstico (Adendo III: Atualização incremental — atualiza o registro se já existir, preservando histórico de versões)
+      let diagRec
+      let historicoVersoes = []
+      let versaoIncremental = 1
+
+      try {
+        diagRec = $app.findFirstRecordByData('diagnosticos', 'lead', leadId)
+        // Se já existe, acumular a versão anterior no histórico incremental
+        const historicoRaw = diagRec.getString('historico_versoes')
+        if (historicoRaw && historicoRaw !== 'null' && historicoRaw !== '') {
+          try {
+            historicoVersoes = JSON.parse(historicoRaw) || []
+          } catch (_) {
+            historicoVersoes = []
+          }
+        }
+        const versaoAtualNum = diagRec.getInt('versao_incremental') || 1
+        versaoIncremental = versaoAtualNum + 1
+
+        historicoVersoes.push({
+          versao: versaoAtualNum,
+          arquivado_em: new Date().toISOString(),
+          status: diagRec.getString('status'),
+          versao_questionario: diagRec.getString('versao_questionario'),
+          fase_atual: diagRec.getInt('fase_atual'),
+          relatorio_gerado: diagRec.getString('relatorio_gerado'),
+          dados_entrada: diagRec.get('dados_entrada'),
+          dre_normalizada_15_linhas: diagRec.get('dre_normalizada_15_linhas'),
+          estrutura_erec_a9: diagRec.get('estrutura_erec_a9'),
+          custo_gateway: diagRec.get('custo_gateway'),
+          motivo: 'Adendo III — Atualização incremental de diagnóstico pelo motor V7.2.3',
+        })
+      } catch (_) {
+        const diagCol = $app.findCollectionByNameOrId('diagnosticos')
+        diagRec = new Record(diagCol)
+      }
+
       diagRec.set('lead', leadId)
       diagRec.set('setor', setor)
       diagRec.set('status', 'concluido')
@@ -329,6 +363,8 @@ routerAdd(
       diagRec.set('custo_gateway', custoUso)
       diagRec.set('origem_tipo', isParceiro ? 'parceiro' : 'direto')
       diagRec.set('origem_parceiro', origemParceiro)
+      diagRec.set('versao_incremental', versaoIncremental)
+      diagRec.set('historico_versoes', historicoVersoes)
       $app.save(diagRec)
 
       // 5. Atualizar máquina de estados do lead

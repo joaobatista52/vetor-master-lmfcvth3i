@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T17:41:36.420Z",
+  "generatedAt": "2026-10-21T18:05:54.714Z",
   "collections": [
     {
       "name": "users",
@@ -534,6 +534,18 @@
         {
           "name": "origem_parceiro",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "historico_versoes",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "versao_incremental",
+          "type": "number",
           "required": false,
           "system": false
         }
@@ -1267,6 +1279,63 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_agentes_versoes_slug ON agentes_versoes (slug_agente, versao)"]
+    },
+    {
+      "name": "bibliocompanion_consultas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != \"\"",
+        "view": "@request.auth.id != \"\"",
+        "create": "@request.auth.id != \"\"",
+        "update": "@request.auth.id = user.id || @request.auth.role = \"admin\"",
+        "delete": "@request.auth.role = \"admin\""
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "pergunta",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resposta",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tema_conceitual",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "camada",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "obras_referenciadas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "barreira_consultoria_acionada",
+          "type": "bool",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": []
     }
   ]
 }

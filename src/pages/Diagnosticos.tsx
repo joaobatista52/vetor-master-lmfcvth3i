@@ -78,18 +78,17 @@ export default function Diagnosticos() {
               variant="outline"
               className="text-[10px] border-[#FF9900]/40 text-[#D97706] bg-white font-mono"
             >
-              Aguardando dados do questionário
+              Aguardando processamento do motor
             </Badge>
           </div>
           <CardTitle className="text-xl md:text-2xl font-bold text-[#333333] pt-2">
             Nenhum diagnóstico processado ainda
           </CardTitle>
           <CardDescription className="text-xs md:text-sm text-[#333333] max-w-2xl mx-auto leading-relaxed pt-1">
-            Os diagnósticos desta central são gerados exclusivamente a partir das respostas reais do
-            Questionário dos 12 Setores (Prisão do Fundador, Ineficiência Invisível e Abismo
-            Estratégia vs. Execução), processadas pelo motor determinístico V7.2. Enquanto o
-            questionário não for respondido, nenhum score, ranking ou descoberta é exibido aqui —
-            esta tela não apresenta dados simulados.
+            Os diagnósticos desta central são gerados exclusivamente a partir dos dados do seu
+            dossiê estratégico, processados pelo motor determinístico V7.2.3. Enquanto o
+            processamento não for concluído no cofre do assinante, nenhum score, ranking ou
+            descoberta é exibido aqui — esta tela não apresenta dados simulados.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-2 pb-6">
@@ -108,8 +107,8 @@ export default function Diagnosticos() {
             ))}
           </div>
           <p className="text-[11px] text-[#808080] text-center mt-5">
-            O diagnóstico é preenchido automaticamente quando o Questionário dos 12 Setores é
-            concluído e processado.
+            O diagnóstico é atualizado incrementalmente a cada nova iteração do motor
+            determinístico.
           </p>
         </CardContent>
       </Card>

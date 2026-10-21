@@ -38,24 +38,37 @@ export function ContextualCta({
   className = '',
   origem = 'resultados',
 }: ContextualCtaProps) {
-  // Rodada 1.5b — origem 'diagnosticos': CTA ÚNICO da Central de Diagnósticos.
-  // Um lead com diagnóstico pronto NUNCA vê CTA de refazer diagnóstico (regra b) —
-  // mantém o CTA único de Devolutiva Executiva. Visitante e assinantes veem um
-  // único CTA apontando para o Questionário dos 12 Setores.
+  // Rodada 1.5b / Adendo II — origem 'diagnosticos':
+  // Lead mantém CTA único de Devolutiva Executiva.
+  // Visitante não logado vê CTA para o questionário gratuito.
+  // Assinante logado NÃO tem CTA para o questionário público na sua área (Adendo II).
   if (origem === 'diagnosticos' && perfil !== 'lead') {
-    const label =
-      perfil === 'visitante'
-        ? 'Realizar Diagnóstico Gratuito'
-        : 'Preencher Questionário dos 12 Setores'
+    if (perfil === 'visitante') {
+      return (
+        <div className={`flex items-center ${className}`}>
+          <Button
+            asChild
+            className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] shadow-sm font-semibold text-xs h-10 px-4 gap-2"
+          >
+            <Link to="/questionario">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Realizar Diagnóstico Gratuito</span>
+            </Link>
+          </Button>
+        </div>
+      )
+    }
+
+    // Assinante logado (SaaS / MaaS / Bespoke)
     return (
-      <div className={`flex items-center ${className}`}>
+      <div className={`flex items-center gap-2 ${className}`}>
         <Button
           asChild
           className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] shadow-sm font-semibold text-xs h-10 px-4 gap-2"
         >
-          <Link to="/questionario">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{label}</span>
+          <Link to="/diagnosticos">
+            <History className="w-3.5 h-3.5" />
+            <span>Atualizar Diagnóstico</span>
           </Link>
         </Button>
       </div>
