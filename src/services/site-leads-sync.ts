@@ -16,6 +16,10 @@ export interface LeadRecord {
   protocolo: string
   origem: string
   origem_tipo: string
+  origem_parceiro?: string
+  parceiro_confirmou?: boolean
+  parceiro_confirmou_em?: string
+  parceiro_email?: string
   status: string
   autorizacao_devolutiva: string
   formato_interesse: string
@@ -35,6 +39,11 @@ export interface LeadRecord {
   contrato_social?: string[] | string
   certificacoes?: string[] | string
   documentacao_adicional?: string[] | string
+  processado_em?: string
+  data_devolutiva?: string
+  teaser_gerado?: any
+  cadencia_nutricao?: any
+  consentimento_lgpd?: boolean
   site_lead_id: string
   membro_fundador?: boolean
   checkpoint_valido_ate?: string
@@ -132,6 +141,63 @@ export async function dispararTesteE2E(): Promise<E2ETestResult> {
       success: false,
       message: err?.message || 'Erro ao executar teste ponta-a-ponta.',
       error: String(err),
+    }
+  }
+}
+
+export async function processarLeadViaWorker(
+  leadId: string,
+): Promise<{ success: boolean; message?: string; resultado?: any; error?: string }> {
+  try {
+    const res = await pb.send<{ success: boolean; message?: string; resultado?: any }>(
+      `/backend/v1/worker/processar-lead/${leadId}`,
+      { method: 'POST' },
+    )
+    return res
+  } catch (err: any) {
+    console.error('Falha ao processar lead via worker:', err)
+    return {
+      success: false,
+      error: err?.message || 'Erro ao comunicar com o worker de processamento.',
+    }
+  }
+}
+
+export async function confirmarParceiroLead(
+  leadId: string,
+): Promise<{ success: boolean; message?: string; novo_status?: string; error?: string }> {
+  try {
+    const res = await pb.send<{ success: boolean; message?: string; novo_status?: string }>(
+      `/backend/v1/leads/${leadId}/confirmar-parceiro`,
+      { method: 'POST' },
+    )
+    return res
+  } catch (err: any) {
+    console.error('Falha ao confirmar parceria:', err)
+    return {
+      success: false,
+      error: err?.message || 'Erro ao confirmar parceiro.',
+    }
+  }
+}
+
+export async function executarCadenciaNutricaoManual(): Promise<{
+  success: boolean
+  message?: string
+  total_processados?: number
+  error?: string
+}> {
+  try {
+    const res = await pb.send<{ success: boolean; message?: string; total_processados?: number }>(
+      '/backend/v1/worker/executar-cadencia',
+      { method: 'POST' },
+    )
+    return res
+  } catch (err: any) {
+    console.error('Falha ao acionar cadência:', err)
+    return {
+      success: false,
+      error: err?.message || 'Erro ao acionar cadência.',
     }
   }
 }

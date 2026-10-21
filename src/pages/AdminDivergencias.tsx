@@ -121,6 +121,24 @@ export const DIVERGENCIAS_GATE_0B: DivergenciaItem[] = [
     status: 'Corrigida',
     versao: 'v0.0.84/85',
   },
+  {
+    numero: 11,
+    divergencia:
+      'Onda 2 — Skill "Roteiro de Execução 13 Prompts": Anexo B na versão anterior à correção de 16/10/2026.',
+    correcao:
+      'Atualizado para o padrão canônico A9: tabela EREC com colunas "Ação (Eliminar/Reduzir/Elevar/Criar) | Item de Intervenção | Base Conclusiva" + "Dimensão setorial" como coluna adicional. Versão aplicada seguiu a descrição canônica da especificação da Onda 2, pendente de conferência literal pelo expert.',
+    status: 'Corrigida',
+    versao: 'Onda 2 (v0.0.119 / Migration 0067)',
+  },
+  {
+    numero: 12,
+    divergencia:
+      'Onda 2 — Canal de Mensageria: Envio por WhatsApp não suportado nativamente na plataforma de hosting.',
+    correcao:
+      'Comunicações de cadência e teasers (D+3, D+10, D+25) roteadas 100% via e-mail transacional ($mails). Limitação de plataforma documentada para decisão do expert quanto ao canal de WhatsApp fora do app.',
+    status: 'Mitigada / Documentada',
+    versao: 'Onda 2 (Worker V7.2.3)',
+  },
 ]
 
 export const REVALIDACAO_DELTA_GATE_0: RevalidacaoDeltaItem[] = [
@@ -349,6 +367,8 @@ export const MARKDOWN_LOG_DIVERGENCIAS = `# Log de Divergências — Paridade V7
 | 08 | Trading 1.10 continha a palavra "não" (erro do PDF, já corrigido nele). | Enunciado alinhado ao PDF corrigido. | ✅ Corrigida (v0.0.84/85) |
 | 09 | Trading 1.13 sem a subpergunta condicional. | Quando "Não": "Em caso negativo, as operações são estruturadas como Importação por Encomenda? ( ) Sim ( ) Não". | ✅ Corrigida (v0.0.84/85) |
 | 10 | Ordem das etapas finais divergia do PDF (documentação antes de Próximos Passos). | Etapa 11 = Seção 9 — Próximos Passos (9.1–9.4); Etapa 12 = Documentação Adicional & Anexos (págs. 44–45: 3 grupos, Word/PDF/Excel, 100MB, 15 arquivos, sem bloqueio de envio, LGPD) com submissão final; rascunhos antigos migrados automaticamente. | ✅ Corrigida (v0.0.84/85) |
+| 11 | Onda 2 — Skill "Roteiro de Execução 13 Prompts": Anexo B na versão anterior à correção de 16/10/2026. | Atualizado para o padrão canônico A9: tabela EREC com colunas Ação (Eliminar/Reduzir/Elevar/Criar) | Item de Intervenção | Base Conclusiva + Dimensão setorial adicional. Versão aplicada seguiu a descrição canônica da especificação, pendente de conferência literal pelo expert. | ✅ Corrigida (Onda 2 / Migração 0067) |
+| 12 | Onda 2 — Canal de Mensageria: Envio por WhatsApp não suportado nesta plataforma. | Cadência e teasers de nutrição (D+3/D+10/D+25) enviados via e-mail transacional ($mails). Limitação de plataforma registrada para decisão do expert fora do app. | ⚠️ Mitigada / Documentada |
 
 ---
 

@@ -584,7 +584,12 @@ export function LeadDetailsDialog({
   onOpenChange,
   onLeadUpdated,
 }: LeadDetailsDialogProps) {
-  const [activeTab, setActiveTab] = useState<'questionario' | 'anexos' | 'bruto'>('questionario')
+  const [activeTab, setActiveTab] = useState<'questionario' | 'diagnostico' | 'anexos' | 'bruto'>(
+    'questionario',
+  )
+  const [diagnosticoVinculado, setDiagnosticoVinculado] = useState<any | null>(null)
+  const [loadingDiagnostico, setLoadingDiagnostico] = useState<boolean>(false)
+  const [processandoWorker, setProcessandoWorker] = useState<boolean>(false)
   const [currentLead, setCurrentLead] = useState<LeadRecord | null>(initialLead)
   const [loadingFresh, setLoadingFresh] = useState<boolean>(false)
   const [savingStatus, setSavingStatus] = useState<boolean>(false)
@@ -621,11 +626,26 @@ export function LeadDetailsDialog({
           }
         })
 
+      // Carregar diagnóstico vinculado ao lead, se houver
+      setLoadingDiagnostico(true)
+      import('@/services/diagnosticos')
+        .then(({ getDiagnosticoByLeadId }) => getDiagnosticoByLeadId(targetId))
+        .then((diag) => {
+          if (isMounted) setDiagnosticoVinculado(diag)
+        })
+        .catch(() => {
+          if (isMounted) setDiagnosticoVinculado(null)
+        })
+        .finally(() => {
+          if (isMounted) setLoadingDiagnostico(false)
+        })
+
       return () => {
         isMounted = false
       }
     } else if (!open) {
       setCurrentLead(initialLead)
+      setDiagnosticoVinculado(null)
     }
   }, [open, leadId, initialLead])
 
@@ -1324,6 +1344,13 @@ export function LeadDetailsDialog({
                 <span>Questionário Completo</span>
               </TabsTrigger>
               <TabsTrigger
+                value="diagnostico"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#FFB84D]" />
+                <span>Diagnóstico V7.2 {diagnosticoVinculado ? '✓' : ''}</span>
+              </TabsTrigger>
+              <TabsTrigger
                 value="anexos"
                 className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
               >
@@ -1337,7 +1364,6 @@ export function LeadDetailsDialog({
                 Dados Brutos
               </TabsTrigger>
             </TabsList>
-
             <div className="flex-1 min-h-0 overflow-y-auto pr-2">
               {/* ABA 1: QUESTIONÁRIO COMPLETO */}
               <TabsContent value="questionario" className="mt-0 space-y-4 pb-4">
@@ -1444,6 +1470,298 @@ export function LeadDetailsDialog({
                     )
                   })}
                 </div>{' '}
+              </TabsContent>
+
+              {/* ABA DIAGNÓSTICO V7.2 & COFRE (ONDA 2) */}
+              <TabsContent value="diagnostico" className="mt-0 space-y-4 pb-4">
+                <div className="p-3 bg-[#16213A] border border-[#5B9DFF]/40 rounded-[4px] flex items-center justify-between text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#FFB84D]" />
+                    <span className="font-semibold text-[#F8FAFC]">
+                      Ativo Estratégico no Cofre — JBP Gestão Master V7.2.3
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Botão de Disparo Manual sob Controle do Admin (Sem disparo em lote) */}
+                    {(lead.status || '').toLowerCase() !== 'teste' && (
+                      <Button
+                        size="sm"
+                        disabled={processandoWorker}
+                        onClick={async () => {
+                          setProcessandoWorker(true)
+                          try {
+                            const { processarLeadViaWorker } =
+                              await import('@/services/site-leads-sync')
+                            const res = await processarLeadViaWorker(lead.id)
+                            if (res.success) {
+                              setFeedbackMsg({
+                                type: 'success',
+                                text: 'Diagnóstico processado com sucesso pelo agente V7.2.3! Status atualizado no cofre.',
+                              })
+                              const { getLeadById } = await import('@/services/site-leads-sync')
+                              const fresh = await getLeadById(lead.id)
+                              if (fresh) setCurrentLead(fresh)
+                              const { getDiagnosticoByLeadId } =
+                                await import('@/services/diagnosticos')
+                              const freshDiag = await getDiagnosticoByLeadId(lead.id)
+                              if (freshDiag) setDiagnosticoVinculado(freshDiag)
+                              if (onLeadUpdated) onLeadUpdated()
+                            } else {
+                              setFeedbackMsg({
+                                type: 'error',
+                                text: res.error || 'Falha ao acionar worker.',
+                              })
+                            }
+                          } catch (err: any) {
+                            setFeedbackMsg({
+                              type: 'error',
+                              text: err?.message || 'Erro ao comunicar com worker.',
+                            })
+                          } finally {
+                            setProcessandoWorker(false)
+                          }
+                        }}
+                        className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs h-7 px-2.5 gap-1.5"
+                      >
+                        {processandoWorker ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5" />
+                        )}
+                        <span>
+                          {diagnosticoVinculado
+                            ? 'Reprocessar Diagnóstico'
+                            : 'Processar Agora (Worker V7.2)'}
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status e Metadados do Lead no Fluxo da Seção 9 / Parceiro */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <Card className="bg-[#16213A] border-[#24334F] p-3">
+                    <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                      Origem do Lead
+                    </span>
+                    <div className="text-sm font-semibold text-[#F8FAFC] mt-0.5">
+                      {lead.origem_tipo === 'parceiro' || lead.origem_parceiro ? (
+                        <span className="text-purple-300">
+                          Parceiro: <strong>{lead.origem_parceiro || 'Não especificado'}</strong>
+                        </span>
+                      ) : (
+                        <span className="text-[#3DDC74]">Lead Direto (Site)</span>
+                      )}
+                    </div>
+                    {lead.origem_tipo === 'parceiro' && (
+                      <div className="mt-2 text-[11px] text-[#8B98B4]">
+                        Status Parceiro:{' '}
+                        {lead.parceiro_confirmou ? (
+                          <span className="text-[#3DDC74] font-medium">
+                            Confirmado em{' '}
+                            {new Date(lead.parceiro_confirmou_em || '').toLocaleDateString('pt-BR')}
+                          </span>
+                        ) : (
+                          <span className="text-[#FFB84D] font-medium">
+                            Aguardando confirmação do consultor
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+
+                  <Card className="bg-[#16213A] border-[#24334F] p-3">
+                    <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                      Gate Devolutiva (CS-20)
+                    </span>
+                    <div className="text-sm font-semibold text-[#F8FAFC] mt-0.5">
+                      {(lead.autorizacao_devolutiva || '').toLowerCase().includes('sim') ? (
+                        <span className="text-[#3DDC74]">Autorização Concedida (Sim)</span>
+                      ) : (
+                        <span className="text-rose-400">Não Autorizo → Nutrição Ativa</span>
+                      )}
+                    </div>
+                    <div className="mt-2 text-[11px] text-[#8B98B4]">
+                      Formato:{' '}
+                      <span className="text-[#F8FAFC]">
+                        {lead.formato_interesse || lead.plano_interesse || '—'}
+                      </span>
+                    </div>
+                  </Card>
+
+                  <Card className="bg-[#16213A] border-[#24334F] p-3">
+                    <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                      Economia Unitária SaaS
+                    </span>
+                    <div className="text-sm font-semibold text-[#F8FAFC] mt-0.5">
+                      {diagnosticoVinculado?.custo_gateway ? (
+                        <span className="text-[#3DDC74]">
+                          Custo Gateway: ${diagnosticoVinculado.custo_gateway.custo_usd}{' '}
+                          <span className="text-[10px] text-[#8B98B4]">
+                            ({diagnosticoVinculado.custo_gateway.tempo_execucao_ms}ms)
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-[#8B98B4]">Ainda não calculado</span>
+                      )}
+                    </div>
+                    <div className="mt-2 text-[11px] text-[#8B98B4]">
+                      Versão Questionário (CS-19):{' '}
+                      <span className="text-[#5B9DFF] font-mono">
+                        {diagnosticoVinculado?.versao_questionario || 'V7.2'}
+                      </span>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* DRE Normalizada de 15 Linhas (CS-17) */}
+                {diagnosticoVinculado?.dre_normalizada_15_linhas && (
+                  <Card className="bg-[#16213A] border-[#24334F]">
+                    <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/60 flex-row items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                          <span>CS-17: DRE Normalizada em 15 Linhas (Snapshot Fase 6)</span>
+                        </CardTitle>
+                        <p className="text-[11px] text-[#8B98B4]">
+                          Estrutura mandatória sem omissões; linhas não segregáveis recebem [REQUER
+                          VERIFICAÇÃO]
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] border-[#3DDC74]/50 text-[#3DDC74]"
+                      >
+                        15 / 15 Linhas
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="p-3 text-xs">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-[#24334F] text-[#8B98B4] text-[11px]">
+                              <th className="py-1 px-2 w-12 font-mono">#</th>
+                              <th className="py-1 px-2">Linha Contábil</th>
+                              <th className="py-1 px-2 text-right">Valor Declarado / Apurado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {diagnosticoVinculado.dre_normalizada_15_linhas.map(
+                              (l: any, idx: number) => (
+                                <tr
+                                  key={idx}
+                                  className="border-b border-[#24334F]/30 hover:bg-[#111A2E]/40 font-mono text-[11px]"
+                                >
+                                  <td className="py-1 px-2 text-[#8B98B4]">
+                                    {String(l.numero).padStart(2, '0')}
+                                  </td>
+                                  <td className="py-1 px-2 text-[#F8FAFC] font-sans font-medium">
+                                    {l.linha}
+                                  </td>
+                                  <td className="py-1 px-2 text-right">
+                                    {String(l.valor).includes('[REQUER') ? (
+                                      <span className="text-[#FFB84D] bg-[#FF9900]/10 px-1.5 py-0.5 rounded text-[10px]">
+                                        {l.valor}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[#3DDC74] font-semibold">
+                                        {l.valor}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ),
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Estrutura Canônica EREC A9 */}
+                {diagnosticoVinculado?.estrutura_erec_a9 && (
+                  <Card className="bg-[#16213A] border-[#24334F]">
+                    <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/60">
+                      <CardTitle className="text-xs font-bold text-[#F8FAFC]">
+                        Anexo B Canônico A9: Matriz EREC Estruturada
+                      </CardTitle>
+                      <p className="text-[11px] text-[#8B98B4]">
+                        Tabela quadrivalente com colunas Ação | Item de Intervenção | Base
+                        Conclusiva | Dimensão setorial
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-3 text-xs">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-[#24334F] text-[#8B98B4] text-[11px]">
+                              <th className="py-1 px-2 w-28">Ação (EREC)</th>
+                              <th className="py-1 px-2">Item de Intervenção</th>
+                              <th className="py-1 px-2">Base Conclusiva</th>
+                              <th className="py-1 px-2 w-32">Dimensão Setorial</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {diagnosticoVinculado.estrutura_erec_a9.map((er: any, idx: number) => (
+                              <tr
+                                key={idx}
+                                className="border-b border-[#24334F]/30 hover:bg-[#111A2E]/40 text-xs"
+                              >
+                                <td className="py-1.5 px-2 font-semibold">
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] ${
+                                      er.acao === 'Eliminar'
+                                        ? 'border-rose-500/50 text-rose-300 bg-rose-500/10'
+                                        : er.acao === 'Reduzir'
+                                          ? 'border-amber-500/50 text-amber-300 bg-amber-500/10'
+                                          : er.acao === 'Elevar'
+                                            ? 'border-blue-500/50 text-blue-300 bg-blue-500/10'
+                                            : 'border-emerald-500/50 text-emerald-300 bg-emerald-500/10'
+                                    }`}
+                                  >
+                                    {er.acao}
+                                  </Badge>
+                                </td>
+                                <td className="py-1.5 px-2 text-[#F8FAFC] font-medium">
+                                  {er.item}
+                                </td>
+                                <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
+                                  {er.base}
+                                </td>
+                                <td className="py-1.5 px-2 text-[#5B9DFF] text-[11px] font-mono">
+                                  {er.dimensao}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Relatório Gerado pelo Agente V7.2 */}
+                {diagnosticoVinculado?.relatorio_gerado ? (
+                  <Card className="bg-[#0B1120] border-[#24334F]">
+                    <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70">
+                      <CardTitle className="text-xs font-bold text-[#F8FAFC]">
+                        Output do Motor Determinístico (Fase 1 + Snapshot F6)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <pre className="text-[11px] font-mono text-[#C7D0E0] whitespace-pre-wrap leading-relaxed max-h-[350px] overflow-y-auto">
+                        {diagnosticoVinculado.relatorio_gerado}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="p-6 bg-[#16213A] rounded border border-[#24334F] text-center text-xs text-[#8B98B4]">
+                    Nenhum diagnóstico gerado ainda para este lead. Utilize o botão{' '}
+                    <strong className="text-[#5B9DFF]">Processar Agora</strong> acima para acionar o
+                    motor JBP Gestão Master V7.2.3.
+                  </div>
+                )}
               </TabsContent>
 
               {/* ABA 2: ANEXOS RE-HOSPEDADOS */}

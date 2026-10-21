@@ -13,11 +13,34 @@ export interface HeatMap {
 
 export interface Diagnostico {
   id: string
-  user: string
+  user?: string
+  lead?: string
+  status?: 'processando' | 'concluido' | 'erro'
+  autorizacao_devolutiva?: string
+  versao_questionario?: string
   dados_entrada: Record<string, any>
   relatorio_gerado: string
   setor?: string
   fase_atual?: number
+  dre_normalizada_15_linhas?: Array<{
+    numero: number
+    linha: string
+    valor: string | number
+    nota?: string
+  }>
+  estrutura_erec_a9?: Array<{ acao: string; item: string; base: string; dimensao: string }>
+  gabarito_auditoria?: Record<string, any>
+  custo_gateway?: {
+    tokens_input: number
+    tokens_output: number
+    custo_usd: number
+    tempo_execucao_ms: number
+    executado_em: string
+    agente: string
+    versao: string
+  }
+  origem_tipo?: 'direto' | 'parceiro'
+  origem_parceiro?: string
   created: string
   updated: string
 }
@@ -85,10 +108,20 @@ export const getLatestDiagnostico = async (): Promise<Diagnostico | null> => {
     return {
       id: r.id,
       user: r.user,
+      lead: r.lead,
+      status: r.status,
+      autorizacao_devolutiva: r.autorizacao_devolutiva,
+      versao_questionario: r.versao_questionario,
       dados_entrada: r.dados_entrada || {},
       relatorio_gerado: r.relatorio_gerado || '',
       setor: r.setor || '',
       fase_atual: r.fase_atual,
+      dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
+      estrutura_erec_a9: r.estrutura_erec_a9,
+      gabarito_auditoria: r.gabarito_auditoria,
+      custo_gateway: r.custo_gateway,
+      origem_tipo: r.origem_tipo,
+      origem_parceiro: r.origem_parceiro,
       created: r.created,
       updated: r.updated,
     }
@@ -102,12 +135,52 @@ export const getDiagnostico = async (id: string): Promise<Diagnostico> => {
   return {
     id: r.id,
     user: r.user,
+    lead: r.lead,
+    status: r.status,
+    autorizacao_devolutiva: r.autorizacao_devolutiva,
+    versao_questionario: r.versao_questionario,
     dados_entrada: r.dados_entrada || {},
     relatorio_gerado: r.relatorio_gerado || '',
     setor: r.setor || '',
     fase_atual: r.fase_atual,
+    dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
+    estrutura_erec_a9: r.estrutura_erec_a9,
+    gabarito_auditoria: r.gabarito_auditoria,
+    custo_gateway: r.custo_gateway,
+    origem_tipo: r.origem_tipo,
+    origem_parceiro: r.origem_parceiro,
     created: r.created,
     updated: r.updated,
+  }
+}
+
+export const getDiagnosticoByLeadId = async (leadId: string): Promise<Diagnostico | null> => {
+  try {
+    const r: any = await pb.collection('diagnosticos').getFirstListItem(`lead="${leadId}"`, {
+      sort: '-created',
+    })
+    return {
+      id: r.id,
+      user: r.user,
+      lead: r.lead,
+      status: r.status,
+      autorizacao_devolutiva: r.autorizacao_devolutiva,
+      versao_questionario: r.versao_questionario,
+      dados_entrada: r.dados_entrada || {},
+      relatorio_gerado: r.relatorio_gerado || '',
+      setor: r.setor || '',
+      fase_atual: r.fase_atual,
+      dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
+      estrutura_erec_a9: r.estrutura_erec_a9,
+      gabarito_auditoria: r.gabarito_auditoria,
+      custo_gateway: r.custo_gateway,
+      origem_tipo: r.origem_tipo,
+      origem_parceiro: r.origem_parceiro,
+      created: r.created,
+      updated: r.updated,
+    }
+  } catch {
+    return null
   }
 }
 

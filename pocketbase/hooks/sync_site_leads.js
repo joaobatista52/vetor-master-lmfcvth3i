@@ -1433,7 +1433,7 @@ routerAdd(
       protocolo: testProtocol,
       origem: 'Site Institucional',
       origem_tipo: 'site',
-      status: 'Novo',
+      status: 'novo',
       autorizacao_devolutiva: 'Sim',
       formato_interesse: 'MaaS',
       nome_completo: 'Carlos Eduardo Silveira (Lead E2E Teste)',

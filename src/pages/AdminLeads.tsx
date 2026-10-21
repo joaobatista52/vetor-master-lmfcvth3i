@@ -61,9 +61,20 @@ export default function AdminLeads() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<
-    'ativos' | 'todos' | 'novo' | 'em_processamento' | 'concluido' | 'teste' | 'lista_espera'
-  >('ativos')
-  const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
+    | 'ativos'
+    | 'teste'
+    | 'novo'
+    | 'em_processamento'
+    | 'diagnostico_pronto'
+    | 'nutricao'
+    | 'parceiro_em_relacao'
+    | 'devolutiva_agendada'
+    | 'devolutiva_realizada'
+    | 'convertido'
+    | 'follow_up'
+    | 'lista_espera'
+    | 'todos'
+  >('ativos')  const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [credConfig, setCredConfig] = useState<IntegracaoSiteConfig | null>(null)
   const [feedback, setFeedback] = useState<{
@@ -203,11 +214,21 @@ export default function AdminLeads() {
   const countNovos = leads.filter((l) => (l.status || '').toLowerCase() === 'novo').length
   const countEmProcessamento = leads.filter((l) => {
     const s = (l.status || '').toLowerCase()
-    return s === 'em_processamento' || s === 'processamento' || s === 'em andamento'
+    return s === 'em_processamento' || s === 'processamento' || s === 'processando'
   }).length
-  const countConcluidos = leads.filter((l) => {
+  const countDiagnosticoPronto = leads.filter((l) => {
     const s = (l.status || '').toLowerCase()
-    return s === 'concluido' || s === 'concluído' || s === 'processado'
+    return s === 'diagnostico_pronto' || s === 'concluido' || s === 'concluído' || s === 'processado'
+  }).length
+  const countNutricao = leads.filter(
+    (l) => (l.status || '').toLowerCase() === 'nutricao',
+  ).length
+  const countParceiro = leads.filter(
+    (l) => (l.status || '').toLowerCase() === 'parceiro_em_relacao',
+  ).length
+  const countDevolutiva = leads.filter((l) => {
+    const s = (l.status || '').toLowerCase()
+    return s === 'devolutiva_agendada' || s === 'devolutiva_realizada'
   }).length
   const countListaEspera = leads.filter((l) => {
     const s = (l.status || '').toLowerCase()
@@ -232,15 +253,30 @@ export default function AdminLeads() {
       statusFilter === 'em_processamento' &&
       statusNormalized !== 'em_processamento' &&
       statusNormalized !== 'processamento' &&
+      statusNormalized !== 'processando' &&
       statusNormalized !== 'em andamento'
     ) {
       return false
     }
     if (
-      statusFilter === 'concluido' &&
+      statusFilter === 'diagnostico_pronto' &&
+      statusNormalized !== 'diagnostico_pronto' &&
       statusNormalized !== 'concluido' &&
       statusNormalized !== 'concluído' &&
       statusNormalized !== 'processado'
+    ) {
+      return false
+    }
+    if (statusFilter === 'nutricao' && statusNormalized !== 'nutricao') {
+      return false
+    }
+    if (statusFilter === 'parceiro_em_relacao' && statusNormalized !== 'parceiro_em_relacao') {
+      return false
+    }
+    if (
+      statusFilter === 'devolutiva_agendada' &&
+      statusNormalized !== 'devolutiva_agendada' &&
+      statusNormalized !== 'devolutiva_realizada'
     ) {
       return false
     }
@@ -504,15 +540,51 @@ export default function AdminLeads() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setStatusFilter('concluido')}
+                  onClick={() => setStatusFilter('diagnostico_pronto')}
                   className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
-                    statusFilter === 'concluido'
+                    statusFilter === 'diagnostico_pronto'
                       ? 'bg-[#0066CC] text-white font-semibold'
                       : 'text-[#8B98B4] hover:text-[#F8FAFC]'
                   }`}
-                  title="Processamento concluído"
+                  title="Diagnóstico pronto no cofre dentro do SLA"
                 >
-                  Concluído ({countConcluidos})
+                  Diag. Pronto ({countDiagnosticoPronto})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('parceiro_em_relacao')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'parceiro_em_relacao'
+                      ? 'bg-[#9333EA] text-white font-semibold'
+                      : 'text-[#C084FC] hover:text-white'
+                  }`}
+                  title="Leads de parceiros em relação (comunicação vai ao parceiro)"
+                >
+                  Parceiro ({countParceiro})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('nutricao')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'nutricao'
+                      ? 'bg-[#E11D48] text-white font-semibold'
+                      : 'text-[#FB7185] hover:text-white'
+                  }`}
+                  title="Trilha de nutrição com teaser assíncrono (D+3, D+10, D+25)"
+                >
+                  Nutrição ({countNutricao})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('devolutiva_agendada')}
+                  className={`px-2 py-1 rounded-[3px] text-xs font-medium transition-colors ${
+                    statusFilter === 'devolutiva_agendada'
+                      ? 'bg-[#22B14C] text-white font-semibold'
+                      : 'text-[#4ADE80] hover:text-white'
+                  }`}
+                  title="Devolutiva agendada / realizada"
+                >
+                  Devolutiva ({countDevolutiva})
                 </button>
                 <button
                   type="button"
@@ -680,6 +752,59 @@ export default function AdminLeads() {
                             >
                               Novo
                             </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'processando' ||
+                            (lead.status || '').toLowerCase() === 'em_processamento' ||
+                            (lead.status || '').toLowerCase() === 'processamento' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#5B9DFF]/60 text-[#5B9DFF] bg-[#0066CC]/15 text-[10px] font-semibold animate-pulse"
+                            >
+                              Processando
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'diagnostico_pronto' ||
+                            (lead.status || '').toLowerCase() === 'concluido' ||
+                            (lead.status || '').toLowerCase() === 'concluído' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-[#3DDC74]/60 text-[#3DDC74] bg-[#3DDC74]/15 text-[10px] font-semibold"
+                            >
+                              Diagnóstico Pronto
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'parceiro_em_relacao' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-purple-500/60 text-purple-300 bg-purple-500/15 text-[10px] font-semibold"
+                            >
+                              Parceiro em Relação
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'nutricao' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-rose-500/60 text-rose-300 bg-rose-500/15 text-[10px] font-semibold"
+                            >
+                              Nutrição (Teaser)
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'devolutiva_agendada' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-emerald-500/60 text-emerald-300 bg-emerald-500/15 text-[10px] font-semibold"
+                            >
+                              Devolutiva Agendada
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'devolutiva_realizada' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-teal-500/60 text-teal-300 bg-teal-500/15 text-[10px] font-semibold"
+                            >
+                              Devolutiva Realizada
+                            </Badge>
+                          ) : (lead.status || '').toLowerCase() === 'convertido' ? (
+                            <Badge
+                              variant="outline"
+                              className="border-blue-500/60 text-blue-300 bg-blue-500/15 text-[10px] font-semibold"
+                            >
+                              Convertido
+                            </Badge>
                           ) : (lead.status || '').toLowerCase() === 'lista_espera' ? (
                             <Badge
                               variant="outline"
@@ -687,22 +812,6 @@ export default function AdminLeads() {
                             >
                               <Clock className="w-3 h-3 text-[#FF9900]" />
                               <span>Lista de Prioridade</span>
-                            </Badge>
-                          ) : (lead.status || '').toLowerCase() === 'em_processamento' ||
-                            (lead.status || '').toLowerCase() === 'processamento' ? (
-                            <Badge
-                              variant="outline"
-                              className="border-[#5B9DFF]/60 text-[#5B9DFF] bg-[#0066CC]/15 text-[10px] font-semibold"
-                            >
-                              Em processamento
-                            </Badge>
-                          ) : (lead.status || '').toLowerCase() === 'concluido' ||
-                            (lead.status || '').toLowerCase() === 'concluído' ? (
-                            <Badge
-                              variant="outline"
-                              className="border-[#3DDC74]/60 text-[#3DDC74] bg-[#3DDC74]/15 text-[10px] font-semibold"
-                            >
-                              Concluído
                             </Badge>
                           ) : (
                             <Badge
@@ -766,6 +875,36 @@ export default function AdminLeads() {
                               align="end"
                               className="bg-[#111A2E] border-[#24334F] text-[#F8FAFC] text-xs min-w-[210px] space-y-0.5"
                             >
+                              {/* Ação especial: Confirmar Parceiro (Adendo Bloco I) */}
+                              {((lead.status || '').toLowerCase() === 'parceiro_em_relacao' ||
+                                (lead.origem_tipo === 'parceiro' && !lead.parceiro_confirmou)) && (
+                                <DropdownMenuItem
+                                  onClick={async () => {
+                                    setActionLoadingId(lead.id)
+                                    try {
+                                      const res = await (await import('@/services/site-leads-sync')).confirmarParceiroLead(lead.id)
+                                      if (res.success) {
+                                        setFeedback({
+                                          type: 'success',
+                                          message: `Parceiro confirmado! Lead transferido para o fluxo de autorização: ${res.novo_status}`,
+                                        })
+                                        await loadLeads()
+                                      } else {
+                                        setFeedback({ type: 'error', message: res.error || 'Falha ao confirmar parceria.' })
+                                      }
+                                    } catch (err: any) {
+                                      setFeedback({ type: 'error', message: err?.message || 'Erro ao acionar backend.' })
+                                    } finally {
+                                      setActionLoadingId(null)
+                                    }
+                                  }}
+                                  className="gap-2 cursor-pointer text-purple-300 hover:bg-[#16213A] focus:bg-[#16213A] focus:text-purple-300 font-semibold"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                                  <span>Parceiro confirmou interesse</span>
+                                </DropdownMenuItem>
+                              )}
+
                               {/* Ação especial para leads em lista_espera: Aprovar e processar (virar Novo) */}
                               {(lead.status || '').toLowerCase() === 'lista_espera' && (
                                 <DropdownMenuItem
