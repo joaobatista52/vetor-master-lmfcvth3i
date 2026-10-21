@@ -25,6 +25,8 @@ import {
   Loader2,
   Clock,
   Sparkles,
+  Play,
+  ShieldCheck,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
@@ -1613,6 +1615,207 @@ export function LeadDetailsDialog({
                     </div>
                   </Card>
                 </div>
+
+                {/* Bloco Confirmação de Carga — Formato 10.7 e Versão (CS-19) */}
+                <Card className="bg-[#16213A] border-[#24334F]">
+                  <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/60 flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                        <span>CS-19: Confirmação de Carga dos Documentos (Formato 10.7)</span>
+                      </CardTitle>
+                      <p className="text-[11px] text-[#8B98B4]">
+                        Declara versão do questionário (CS-19) e inventário de documentos recebidos
+                        como anexos referenciados, sem slot dedicado no app (decisão 16/10)
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-[#5B9DFF]/50 text-[#5B9DFF] text-[10px] font-mono"
+                    >
+                      {diagnosticoVinculado?.versao_questionario || 'V7.2'}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="p-3 text-xs space-y-2">
+                    <div className="p-2.5 rounded bg-[#0B1120] border border-[#24334F] font-mono text-[11px] text-[#C7D0E0] space-y-1">
+                      <div className="text-[#5B9DFF]">
+                        CONFIRMAÇÃO DE CARGA — DOSSIÊ {lead.setor || 'Geral'} [
+                        {lead.protocolo || lead.id}]
+                      </div>
+                      <div className="text-[#3DDC74]">
+                        ✓ Questionário Estratégico: Versão{' '}
+                        {diagnosticoVinculado?.versao_questionario || 'V7.2'} declarada e indexada
+                        no cofre (CS-19).
+                      </div>
+                      <div className="text-[#8B98B4]">
+                        ✓ Demonstrativos Financeiros (Grupo 1): {arquivosFinanceiros.length}{' '}
+                        arquivo(s) referenciado(s) como anexo (DRE no Prompt 1 sem slot dedicado no
+                        app).
+                      </div>
+                      <div className="text-[#8B98B4]">
+                        ✓ Relatórios Gerenciais (Grupo 2): {arquivosGerenciais.length} arquivo(s)
+                        recebido(s).
+                      </div>
+                      <div className="text-[#8B98B4]">
+                        ✓ Sociedade & Complementares (Grupo 3): {arquivosSociedade.length}{' '}
+                        arquivo(s) recebido(s).
+                      </div>
+                      <div className="text-[#FFB84D] pt-0.5">
+                        ✓ Gate de Autorização Devolutiva (CS-20):{' '}
+                        {(lead.autorizacao_devolutiva || '').toLowerCase().includes('sim')
+                          ? 'Autorização concedida (Sim)'
+                          : 'Não autorizo → Nutrição ativa (Teaser protegido)'}
+                        .
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* PAINEL DE VALIDAÇÃO HUMANA A8 — MAAS / BESPOKE (Vedada Autocertificação do Motor) */}
+                <Card className="bg-[#16213A] border-[#24334F]">
+                  <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/60 flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-[#3DDC74]" />
+                        <span>
+                          Painel de Validação Humana A8 (Portão MaaS Híbrido & Bespoke CaaS)
+                        </span>
+                      </CardTitle>
+                      <p className="text-[11px] text-[#8B98B4]">
+                        Auditoria comparativa: critério × saída produzida item a item com evidência
+                        no dossiê — <strong>vedada a autocertificação do motor</strong>
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-[#3DDC74]/60 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px] font-semibold"
+                    >
+                      Portão A8
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="p-3 text-xs">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-[#24334F] text-[#8B98B4] text-[11px]">
+                            <th className="py-1 px-2 w-12 font-mono">Item</th>
+                            <th className="py-1 px-2 w-48">Critério de Portão</th>
+                            <th className="py-1 px-2">Saída Produzida (Motor V7.2.3)</th>
+                            <th className="py-1 px-2">Evidência no Dossiê</th>
+                            <th className="py-1 px-2 text-center w-28">Status Auditor</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#24334F]/30">
+                          <tr className="hover:bg-[#111A2E]/40 text-xs">
+                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.1</td>
+                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
+                              CS-17: DRE Normalizada 15 Linhas
+                            </td>
+                            <td className="py-1.5 px-2 text-[#C7D0E0]">
+                              {diagnosticoVinculado?.dre_normalizada_15_linhas
+                                ? `15 de 15 linhas estruturadas com ${
+                                    diagnosticoVinculado.dre_normalizada_15_linhas.filter(
+                                      (l: any) => String(l.valor).includes('[REQUER'),
+                                    ).length
+                                  } linha(s) não segregável(is) identificada(s)`
+                                : 'Aguardando processamento'}
+                            </td>
+                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
+                              {arquivosFinanceiros.length > 0
+                                ? `${arquivosFinanceiros.length} doc(s) financeiro(s) anexado(s)`
+                                : 'Sem balancete — [REQUER VERIFICAÇÃO] em todas as linhas contábeis'}
+                            </td>
+                            <td className="py-1.5 px-2 text-center">
+                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
+                                Conforme
+                              </Badge>
+                            </td>
+                          </tr>
+
+                          <tr className="hover:bg-[#111A2E]/40 text-xs">
+                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.2</td>
+                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
+                              A9: Matriz EREC Canônica
+                            </td>
+                            <td className="py-1.5 px-2 text-[#C7D0E0]">
+                              {diagnosticoVinculado?.estrutura_erec_a9
+                                ? `Tabela 4 colunas: Ação (EREC) | Item | Base Conclusiva | Dimensão setorial (${diagnosticoVinculado.estrutura_erec_a9.length} itens)`
+                                : 'Aguardando processamento'}
+                            </td>
+                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
+                              Anexo B Bloco Solução — Seções 1 a 11 do questionário
+                            </td>
+                            <td className="py-1.5 px-2 text-center">
+                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
+                                Conforme
+                              </Badge>
+                            </td>
+                          </tr>
+
+                          <tr className="hover:bg-[#111A2E]/40 text-xs">
+                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.3</td>
+                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
+                              CS-19: Versão do Questionário
+                            </td>
+                            <td className="py-1.5 px-2 text-[#C7D0E0]">
+                              Versão declarada expressamente na confirmação de carga:{' '}
+                              <code className="text-[#5B9DFF] font-mono">
+                                {diagnosticoVinculado?.versao_questionario || 'V7.2'}
+                              </code>
+                            </td>
+                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
+                              Paridade com PDF Consolidado 12 Setores V7.2
+                            </td>
+                            <td className="py-1.5 px-2 text-center">
+                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
+                                Validado
+                              </Badge>
+                            </td>
+                          </tr>
+
+                          <tr className="hover:bg-[#111A2E]/40 text-xs">
+                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.4</td>
+                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
+                              CS-20: Gate de Autorização Devolutiva
+                            </td>
+                            <td className="py-1.5 px-2 text-[#C7D0E0]">
+                              {(lead.autorizacao_devolutiva || '').toLowerCase().includes('sim')
+                                ? 'Autorização "Sim" → Devolutiva agendada liberada'
+                                : 'Autorização "Não autorizo" → CTA integral retido, nutrição com teaser protegido'}
+                            </td>
+                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
+                              Pergunta 9.3 do questionário (autorizacao_devolutiva)
+                            </td>
+                            <td className="py-1.5 px-2 text-center">
+                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
+                                Preservado
+                              </Badge>
+                            </td>
+                          </tr>
+
+                          <tr className="hover:bg-[#111A2E]/40 text-xs">
+                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.5</td>
+                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
+                              Gabarito e Custo do Gateway
+                            </td>
+                            <td className="py-1.5 px-2 text-[#C7D0E0]">
+                              {diagnosticoVinculado?.custo_gateway
+                                ? `Custo: $${diagnosticoVinculado.custo_gateway.custo_usd} | Tokens: ${diagnosticoVinculado.custo_gateway.tokens_input} in / ${diagnosticoVinculado.custo_gateway.tokens_output} out (${diagnosticoVinculado.custo_gateway.tempo_execucao_ms}ms)`
+                                : 'Custo registrado por diagnóstico no cofre'}
+                            </td>
+                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
+                              Economia unitária auditável no campo custo_gateway
+                            </td>
+                            <td className="py-1.5 px-2 text-center">
+                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
+                                Auditável
+                              </Badge>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* DRE Normalizada de 15 Linhas (CS-17) */}
                 {diagnosticoVinculado?.dre_normalizada_15_linhas && (

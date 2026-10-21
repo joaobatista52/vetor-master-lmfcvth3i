@@ -74,7 +74,8 @@ export default function AdminLeads() {
     | 'follow_up'
     | 'lista_espera'
     | 'todos'
-  >('ativos')  const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
+  >('ativos')
+  const [selectedLead, setSelectedLead] = useState<LeadRecord | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [credConfig, setCredConfig] = useState<IntegracaoSiteConfig | null>(null)
   const [feedback, setFeedback] = useState<{
@@ -218,11 +219,11 @@ export default function AdminLeads() {
   }).length
   const countDiagnosticoPronto = leads.filter((l) => {
     const s = (l.status || '').toLowerCase()
-    return s === 'diagnostico_pronto' || s === 'concluido' || s === 'concluído' || s === 'processado'
+    return (
+      s === 'diagnostico_pronto' || s === 'concluido' || s === 'concluído' || s === 'processado'
+    )
   }).length
-  const countNutricao = leads.filter(
-    (l) => (l.status || '').toLowerCase() === 'nutricao',
-  ).length
+  const countNutricao = leads.filter((l) => (l.status || '').toLowerCase() === 'nutricao').length
   const countParceiro = leads.filter(
     (l) => (l.status || '').toLowerCase() === 'parceiro_em_relacao',
   ).length
@@ -882,7 +883,9 @@ export default function AdminLeads() {
                                   onClick={async () => {
                                     setActionLoadingId(lead.id)
                                     try {
-                                      const res = await (await import('@/services/site-leads-sync')).confirmarParceiroLead(lead.id)
+                                      const res = await (
+                                        await import('@/services/site-leads-sync')
+                                      ).confirmarParceiroLead(lead.id)
                                       if (res.success) {
                                         setFeedback({
                                           type: 'success',
@@ -890,10 +893,16 @@ export default function AdminLeads() {
                                         })
                                         await loadLeads()
                                       } else {
-                                        setFeedback({ type: 'error', message: res.error || 'Falha ao confirmar parceria.' })
+                                        setFeedback({
+                                          type: 'error',
+                                          message: res.error || 'Falha ao confirmar parceria.',
+                                        })
                                       }
                                     } catch (err: any) {
-                                      setFeedback({ type: 'error', message: err?.message || 'Erro ao acionar backend.' })
+                                      setFeedback({
+                                        type: 'error',
+                                        message: err?.message || 'Erro ao acionar backend.',
+                                      })
                                     } finally {
                                       setActionLoadingId(null)
                                     }
