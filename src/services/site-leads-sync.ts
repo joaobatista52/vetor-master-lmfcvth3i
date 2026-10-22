@@ -147,11 +147,16 @@ export async function dispararTesteE2E(): Promise<E2ETestResult> {
 
 export async function processarLeadViaWorker(
   leadId: string,
+  options?: { dryRun?: boolean },
 ): Promise<{ success: boolean; message?: string; resultado?: any; error?: string }> {
   try {
+    const query = options?.dryRun ? '?dry_run=1' : ''
     const res = await pb.send<{ success: boolean; message?: string; resultado?: any }>(
-      `/backend/v1/worker/processar-lead/${leadId}`,
-      { method: 'POST' },
+      `/backend/v1/worker/processar-lead/${leadId}${query}`,
+      {
+        method: 'POST',
+        body: options?.dryRun ? { dry_run: true } : undefined,
+      },
     )
     return res
   } catch (err: any) {

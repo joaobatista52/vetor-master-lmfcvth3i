@@ -1143,6 +1143,12 @@ export function LeadDetailsDialog({
                 {lead.origem && (
                   <Badge className="bg-[#16213A] text-[#C7D0E0] border border-[#24334F] text-xs">
                     {lead.origem}
+                    {lead.origem_parceiro ? ` (${lead.origem_parceiro})` : ''}
+                  </Badge>
+                )}
+                {lead.parceiro_email && (
+                  <Badge className="bg-purple-950/60 text-purple-300 border border-purple-500/40 text-xs">
+                    Parceiro: {lead.parceiro_email}
                   </Badge>
                 )}
                 {totalAnexos > 0 && (
@@ -1555,19 +1561,29 @@ export function LeadDetailsDialog({
                         <span className="text-[#3DDC74]">Lead Direto (Site)</span>
                       )}
                     </div>
-                    {lead.origem_tipo === 'parceiro' && (
-                      <div className="mt-2 text-[11px] text-[#8B98B4]">
-                        Status Parceiro:{' '}
-                        {lead.parceiro_confirmou ? (
-                          <span className="text-[#3DDC74] font-medium">
-                            Confirmado em{' '}
-                            {new Date(lead.parceiro_confirmou_em || '').toLocaleDateString('pt-BR')}
-                          </span>
-                        ) : (
-                          <span className="text-[#FFB84D] font-medium">
-                            Aguardando confirmação do consultor
-                          </span>
+                    {(lead.origem_tipo === 'parceiro' || lead.origem_parceiro) && (
+                      <div className="mt-2 text-[11px] text-[#8B98B4] space-y-0.5">
+                        {lead.parceiro_email && (
+                          <div>
+                            E-mail Cadência:{' '}
+                            <span className="text-[#5B9DFF] font-mono">{lead.parceiro_email}</span>
+                          </div>
                         )}
+                        <div>
+                          Status Parceiro:{' '}
+                          {lead.parceiro_confirmou ? (
+                            <span className="text-[#3DDC74] font-medium">
+                              Confirmado em{' '}
+                              {new Date(lead.parceiro_confirmou_em || '').toLocaleDateString(
+                                'pt-BR',
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-emerald-400 font-medium">
+                              Fluxo unificado (cadência D+3/D+10/D+25 ao parceiro)
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </Card>

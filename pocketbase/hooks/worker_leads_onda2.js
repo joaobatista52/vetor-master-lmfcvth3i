@@ -4,16 +4,18 @@
  * Worker backend JBP Gestão Master V7.2.3 — Onda 2
  * - Processamento de fila de leads elegíveis (status = 'novo', não teste/lista_espera)
  * - Disparo do agente nativo jbp-gestao-master (tier reasoning) para Fase 1 + snapshot F6
- * - Máquina de estados: novo -> processando -> diagnostico_pronto
- * - Lead de parceiro: diagnostico_pronto -> parceiro_em_relacao
- * - Registro de custo/consumo do gateway por diagnóstico
- * - Cadência de nutrição D+3 / D+10 / D+25 (cron a cada hora)
- * - Roteamento de e-mails: lead direto vs parceiro (comunicação vai ao parceiro, nunca ao lead direto do parceiro enquanto parceiro_confirmou = false)
- * - Endpoint manual para processar lead específico: POST /backend/v1/worker/processar-lead/{id}
- * - Endpoint para acionar cadência manualmente: POST /backend/v1/worker/executar-cadencia
+ * - Máquina de estados unificada: novo -> processando -> diagnostico_pronto -> gate 9.2 (autorização) -> devolutiva_agendada OU nutricao -> cadência D+3/D+10/D+25
+ *   (Lead de parceiro entra direto na mesma máquina do lead direto; parceiro_em_relacao mantido só como rótulo histórico se existir)
+ * - Roteamento da cadência D+3/D+10/D+25:
+ *   - Origem parceiro -> e-mail do parceiro (extraído do questionário) quando a devolutiva não for confirmada logo após o diagnóstico
+ *   - Lead direto -> o próprio lead
+ *   - Devolutiva sempre com o lead
+ * - Modo DRY-RUN suportado:
+ *   Avança os estados até o ponto de disparo, processa agente V7.2 e registra custo/A8, mas SUPRIME
+ *   todo envio real de e-mail (entrega e cadência), anotando no registro o que SERIA enviado, quando e para quem.
+ * - Endpoint manual para processar lead específico: POST /backend/v1/worker/processar-lead/{id} (aceita ?dry_run=1 ou body.dry_run = true)
+ * - Endpoint para acionar cadência manualmente: POST /backend/v1/worker/executar-cadencia (aceita dry_run)
  * - REGRA CAPITAL: NENHUM lead é processado em lote automaticamente nesta entrega.
- *   O worker fica configurado para disparar por lead explícito (manual/gatilho controlado)
- *   ou com flag de auto_process desativada por padrão, impedindo disparo acidental sobre Beatek/Aurora.
  *
  * NOTA DE ESCOPO POCKETBASE JSVM: Cada callback do routerAdd / cronAdd contém a sua própria
  * lógica inline, sem referenciar funções top-level externas.
@@ -61,13 +63,30 @@ routerAdd(
       })
     }
 
-    // Regra Capital: Proteção contra disparo em massa / acidental do lead Beatek na Etapa 1
+    // Captura modo DRY-RUN via query (?dry_run=1) ou body { "dry_run": true }
+    const urlQuery = e.request.url ? e.request.url.query() : null
+    let dryRunParam = false
+    if (
+      urlQuery &&
+      (urlQuery.get('dry_run') === '1' ||
+        urlQuery.get('dry_run') === 'true' ||
+        urlQuery.get('dryRun') === 'true')
+    ) {
+      dryRunParam = true
+    }
+
     const bodyStr = e.request.body ? e.request.body.string() : ''
     let reqBody = {}
     if (bodyStr) {
       try {
         reqBody = JSON.parse(bodyStr)
       } catch (_) {}
+    }
+    if (
+      reqBody &&
+      (reqBody.dry_run === true || reqBody.dryRun === true || reqBody.dry_run === 'true')
+    ) {
+      dryRunParam = true
     }
 
     // Processamento inline do lead
@@ -372,13 +391,14 @@ routerAdd(
       leadRecord.set('processado_em', agoraIso)
       leadRecord.set('teaser_gerado', teaserGerado)
 
+      // Máquina de estados unificada:
+      // Lead de parceiro entra direto na mesma máquina do lead direto (novo -> processando -> diagnostico_pronto -> gate 9.2 -> devolutiva_agendada OU nutricao -> cadência)
+      // O estado parceiro_em_relacao deixa de ser parada obrigatória e fica apenas como rótulo histórico.
       let proximoStatus = 'diagnostico_pronto'
-      if (isParceiro && !leadRecord.getBool('parceiro_confirmou')) {
-        proximoStatus = 'parceiro_em_relacao'
-      } else if (!autorizouDevolutiva) {
+      if (!autorizouDevolutiva) {
         proximoStatus = 'nutricao'
       } else {
-        proximoStatus = 'diagnostico_pronto'
+        proximoStatus = 'devolutiva_agendada'
       }
 
       leadRecord.set('status', proximoStatus)
@@ -390,19 +410,71 @@ routerAdd(
       const d25 = new Date(agoraIso)
       d25.setDate(d25.getDate() + 25)
 
+      const emailDestinatarioCadencia = isParceiro
+        ? leadRecord.getString('parceiro_email') || leadRecord.getString('email')
+        : leadRecord.getString('email')
+
+      const disparosSuprimidosInfo = [
+        {
+          disparo: 'entrega_diagnostico_ou_teaser',
+          destinatario: leadRecord.getString('email'),
+          publico: 'lead',
+          quando: agoraIso,
+          assunto: autorizouDevolutiva
+            ? '[Vetor Master] Diagnóstico Pronto — Agendamento de Devolutiva: ' + razaoSocial
+            : '[Vetor Master] Achados Preliminares (Teaser Protegido): ' + razaoSocial,
+          status: 'SUPRIMIDO_DRY_RUN',
+          motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        },
+        {
+          disparo: 'cadencia_d3',
+          destinatario: emailDestinatarioCadencia,
+          publico: isParceiro ? 'parceiro' : 'lead',
+          quando: d3.toISOString(),
+          assunto: isParceiro
+            ? '[Vetor Master] Achados Preliminares — Diagnóstico Estratégico: ' + razaoSocial
+            : '[Vetor Master] Diagnóstico Concluído — Achados Críticos: ' + razaoSocial,
+          status: 'SUPRIMIDO_DRY_RUN',
+          motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        },
+        {
+          disparo: 'cadencia_d10',
+          destinatario: emailDestinatarioCadencia,
+          publico: isParceiro ? 'parceiro' : 'lead',
+          quando: d10.toISOString(),
+          assunto: isParceiro
+            ? '[Vetor Master] Segundo Achado e Próximos Passos — ' + razaoSocial
+            : '[Vetor Master] Oportunidade de Alocação de Capital — Sessão Devolutiva: ' +
+              razaoSocial,
+          status: 'SUPRIMIDO_DRY_RUN',
+          motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        },
+        {
+          disparo: 'cadencia_d25',
+          destinatario: emailDestinatarioCadencia,
+          publico: isParceiro ? 'parceiro' : 'lead',
+          quando: d25.toISOString(),
+          assunto: isParceiro
+            ? '[Vetor Master] Gatilho Regulatório e Janela de Decisão — ' + razaoSocial
+            : '[Vetor Master] Impacto Regulatório e Estratégia de Transição — ' + razaoSocial,
+          status: 'SUPRIMIDO_DRY_RUN',
+          motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        },
+      ]
+
       leadRecord.set('cadencia_nutricao', {
         ativa: true,
+        dry_run: dryRunParam,
         iniciada_em: agoraIso,
         alvo: isParceiro ? 'parceiro' : 'lead',
-        destinatario: isParceiro
-          ? leadRecord.getString('parceiro_email') || leadRecord.getString('email')
-          : leadRecord.getString('email'),
+        destinatario: emailDestinatarioCadencia,
         d3_data: d3.toISOString(),
         d3_enviado: false,
         d10_data: d10.toISOString(),
         d10_enviado: false,
         d25_data: d25.toISOString(),
         d25_enviado: false,
+        disparos_suprimidos: dryRunParam ? disparosSuprimidosInfo : null,
       })
       $app.save(leadRecord)
 
@@ -410,18 +482,26 @@ routerAdd(
       try {
         const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
         const audit = new Record(logsCol)
-        audit.set('action', 'Diagnóstico Pronto (Worker V7.2.3)')
+        audit.set(
+          'action',
+          dryRunParam
+            ? 'Diagnóstico Pronto [DRY-RUN] (Worker V7.2.3)'
+            : 'Diagnóstico Pronto (Worker V7.2.3)',
+        )
         audit.set('resource', 'diagnosticos')
         audit.set(
           'details',
-          'Diagnóstico concluído para ' +
+          (dryRunParam ? '[DRY-RUN - Envios suprimidos] ' : '') +
+            'Diagnóstico concluído para ' +
             razaoSocial +
             ' (' +
             leadId +
             '). Estado: ' +
             proximoStatus +
             '. Parceiro: ' +
-            (isParceiro ? 'Sim (' + origemParceiro + ')' : 'Não') +
+            (isParceiro
+              ? 'Sim (' + origemParceiro + ' -> ' + emailDestinatarioCadencia + ')'
+              : 'Não') +
             '. Custo Gateway: $' +
             custoUso.custo_usd,
         )
@@ -430,15 +510,28 @@ routerAdd(
 
       return e.json(200, {
         success: true,
-        message: 'Lead processado com sucesso pelo agente V7.2.3.',
+        message: dryRunParam
+          ? 'Lead processado em modo DRY-RUN pelo agente V7.2.3 (envios de e-mail suprimidos).'
+          : 'Lead processado com sucesso pelo agente V7.2.3.',
+        dry_run: dryRunParam,
         resultado: {
           lead_id: leadId,
           diagnostico_id: diagRec.id,
           status_anterior: 'novo',
           status_novo: proximoStatus,
+          estados_percorridos: [
+            'novo',
+            'processando',
+            'diagnostico_pronto',
+            'gate_9_2_nao_autorizo',
+            proximoStatus,
+          ],
           versao_questionario: versaoQuestionario,
           custo_gateway: custoUso,
           is_parceiro: isParceiro,
+          origem_parceiro: origemParceiro,
+          parceiro_email: emailDestinatarioCadencia,
+          disparos_suprimidos: dryRunParam ? disparosSuprimidosInfo : null,
         },
       })
     } catch (err) {
@@ -541,34 +634,54 @@ routerAdd(
       leadsParaCadencia = []
     }
 
+    // Verificar se o acionador pediu modo dry-run na cadência manual
+    const urlQueryCad = e.request.url ? e.request.url.query() : null
+    let cadDryRun = false
+    if (
+      urlQueryCad &&
+      (urlQueryCad.get('dry_run') === '1' || urlQueryCad.get('dry_run') === 'true')
+    ) {
+      cadDryRun = true
+    }
+
     for (let i = 0; i < leadsParaCadencia.length; i++) {
       const lead = leadsParaCadencia[i]
       const cad = lead.get('cadencia_nutricao') || {}
       if (!cad.ativa) continue
 
-      const isParceiro = lead.getString('status') === 'parceiro_em_relacao'
-      const destinatarioEmail = cad.destinatario || lead.getString('email')
+      // Proteção DRY-RUN: se o lead ou a requisição estão em modo dry-run, NUNCA enviar e-mail
+      const isLeadDryRun = cadDryRun || Boolean(cad.dry_run)
+
+      const isParceiro =
+        lead.getString('status') === 'parceiro_em_relacao' || !!lead.getString('origem_parceiro')
+      const destinatarioEmail =
+        cad.destinatario ||
+        (isParceiro ? lead.getString('parceiro_email') : lead.getString('email')) ||
+        lead.getString('email')
       const razaoSocial = lead.getString('razao_social') || lead.getString('nome_completo')
       let houveEnvio = false
 
       if (!cad.d3_enviado && cad.d3_data && new Date(cad.d3_data) <= agora) {
-        try {
-          const email = new MailerMessage()
-          email.setTo(destinatarioEmail)
-          email.setSubject(
-            isParceiro
-              ? '[Vetor Master] Achados Preliminares — Diagnóstico Estratégico: ' + razaoSocial
-              : '[Vetor Master] Diagnóstico Concluído — Achados Críticos: ' + razaoSocial,
-          )
-          email.setHtml(
-            '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h2>Achados Preliminares — ' +
-              razaoSocial +
-              '</h2><p>Processamento concluído pelo JBP Gestão Master V7.2.3. O diagnóstico encontra-se no cofre seguro.</p></div>',
-          )
-          $mails.send(email)
-        } catch (_) {}
+        if (!isLeadDryRun) {
+          try {
+            const email = new MailerMessage()
+            email.setTo(destinatarioEmail)
+            email.setSubject(
+              isParceiro
+                ? '[Vetor Master] Achados Preliminares — Diagnóstico Estratégico: ' + razaoSocial
+                : '[Vetor Master] Diagnóstico Concluído — Achados Críticos: ' + razaoSocial,
+            )
+            email.setHtml(
+              '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h2>Achados Preliminares — ' +
+                razaoSocial +
+                '</h2><p>Processamento concluído pelo JBP Gestão Master V7.2.3. O diagnóstico encontra-se no cofre seguro.</p></div>',
+            )
+            $mails.send(email)
+          } catch (_) {}
+        }
         cad.d3_enviado = true
         cad.d3_enviado_em = agora.toISOString()
+        cad.d3_status = isLeadDryRun ? 'SUPRIMIDO_DRY_RUN' : 'ENVIADO'
         houveEnvio = true
       } else if (
         cad.d3_enviado &&
@@ -576,24 +689,27 @@ routerAdd(
         cad.d10_data &&
         new Date(cad.d10_data) <= agora
       ) {
-        try {
-          const email = new MailerMessage()
-          email.setTo(destinatarioEmail)
-          email.setSubject(
-            isParceiro
-              ? '[Vetor Master] Segundo Achado e Próximos Passos — ' + razaoSocial
-              : '[Vetor Master] Oportunidade de Alocação de Capital — Sessão Devolutiva: ' +
-                  razaoSocial,
-          )
-          email.setHtml(
-            '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Aprofundamento de Diagnóstico — ' +
-              razaoSocial +
-              '</h3><p>Próximo passo: sessão devolutiva de 45 min.</p></div>',
-          )
-          $mails.send(email)
-        } catch (_) {}
+        if (!isLeadDryRun) {
+          try {
+            const email = new MailerMessage()
+            email.setTo(destinatarioEmail)
+            email.setSubject(
+              isParceiro
+                ? '[Vetor Master] Segundo Achado e Próximos Passos — ' + razaoSocial
+                : '[Vetor Master] Oportunidade de Alocação de Capital — Sessão Devolutiva: ' +
+                    razaoSocial,
+            )
+            email.setHtml(
+              '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Aprofundamento de Diagnóstico — ' +
+                razaoSocial +
+                '</h3><p>Próximo passo: sessão devolutiva de 45 min.</p></div>',
+            )
+            $mails.send(email)
+          } catch (_) {}
+        }
         cad.d10_enviado = true
         cad.d10_enviado_em = agora.toISOString()
+        cad.d10_status = isLeadDryRun ? 'SUPRIMIDO_DRY_RUN' : 'ENVIADO'
         houveEnvio = true
       } else if (
         cad.d10_enviado &&
@@ -601,23 +717,26 @@ routerAdd(
         cad.d25_data &&
         new Date(cad.d25_data) <= agora
       ) {
-        try {
-          const email = new MailerMessage()
-          email.setTo(destinatarioEmail)
-          email.setSubject(
-            isParceiro
-              ? '[Vetor Master] Gatilho Regulatório e Janela de Decisão — ' + razaoSocial
-              : '[Vetor Master] Impacto Regulatório e Estratégia de Transição — ' + razaoSocial,
-          )
-          email.setHtml(
-            '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Alerta Setorial — ' +
-              razaoSocial +
-              '</h3><p>Janela de transição regulatória e estruturação tributária.</p></div>',
-          )
-          $mails.send(email)
-        } catch (_) {}
+        if (!isLeadDryRun) {
+          try {
+            const email = new MailerMessage()
+            email.setTo(destinatarioEmail)
+            email.setSubject(
+              isParceiro
+                ? '[Vetor Master] Gatilho Regulatório e Janela de Decisão — ' + razaoSocial
+                : '[Vetor Master] Impacto Regulatório e Estratégia de Transição — ' + razaoSocial,
+            )
+            email.setHtml(
+              '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Alerta Setorial — ' +
+                razaoSocial +
+                '</h3><p>Janela de transição regulatória e estruturação tributária.</p></div>',
+            )
+            $mails.send(email)
+          } catch (_) {}
+        }
         cad.d25_enviado = true
         cad.d25_enviado_em = agora.toISOString()
+        cad.d25_status = isLeadDryRun ? 'SUPRIMIDO_DRY_RUN' : 'ENVIADO'
         houveEnvio = true
       }
 
@@ -658,29 +777,39 @@ cronAdd('cadencia_nutricao_leads', '0 9 * * *', () => {
     const cad = lead.get('cadencia_nutricao') || {}
     if (!cad.ativa) continue
 
-    const isParceiro = lead.getString('status') === 'parceiro_em_relacao'
-    const destinatarioEmail = cad.destinatario || lead.getString('email')
+    // Proteção DRY-RUN no cron: leads com flag dry_run NUNCA enviam e-mail
+    const isLeadDryRun = Boolean(cad.dry_run)
+
+    const isParceiro =
+      lead.getString('status') === 'parceiro_em_relacao' || !!lead.getString('origem_parceiro')
+    const destinatarioEmail =
+      cad.destinatario ||
+      (isParceiro ? lead.getString('parceiro_email') : lead.getString('email')) ||
+      lead.getString('email')
     const razaoSocial = lead.getString('razao_social') || lead.getString('nome_completo')
     let houveEnvio = false
 
     if (!cad.d3_enviado && cad.d3_data && new Date(cad.d3_data) <= agora) {
-      try {
-        const email = new MailerMessage()
-        email.setTo(destinatarioEmail)
-        email.setSubject(
-          isParceiro
-            ? '[Vetor Master] Achados Preliminares — Diagnóstico Estratégico: ' + razaoSocial
-            : '[Vetor Master] Diagnóstico Concluído — Achados Críticos: ' + razaoSocial,
-        )
-        email.setHtml(
-          '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h2>Achados Preliminares — ' +
-            razaoSocial +
-            '</h2><p>Processamento concluído pelo JBP Gestão Master V7.2.3. O diagnóstico encontra-se no cofre seguro.</p></div>',
-        )
-        $mails.send(email)
-      } catch (_) {}
+      if (!isLeadDryRun) {
+        try {
+          const email = new MailerMessage()
+          email.setTo(destinatarioEmail)
+          email.setSubject(
+            isParceiro
+              ? '[Vetor Master] Achados Preliminares — Diagnóstico Estratégico: ' + razaoSocial
+              : '[Vetor Master] Diagnóstico Concluído — Achados Críticos: ' + razaoSocial,
+          )
+          email.setHtml(
+            '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h2>Achados Preliminares — ' +
+              razaoSocial +
+              '</h2><p>Processamento concluído pelo JBP Gestão Master V7.2.3. O diagnóstico encontra-se no cofre seguro.</p></div>',
+          )
+          $mails.send(email)
+        } catch (_) {}
+      }
       cad.d3_enviado = true
       cad.d3_enviado_em = agora.toISOString()
+      cad.d3_status = isLeadDryRun ? 'SUPRIMIDO_DRY_RUN' : 'ENVIADO'
       houveEnvio = true
     } else if (
       cad.d3_enviado &&
@@ -688,24 +817,27 @@ cronAdd('cadencia_nutricao_leads', '0 9 * * *', () => {
       cad.d10_data &&
       new Date(cad.d10_data) <= agora
     ) {
-      try {
-        const email = new MailerMessage()
-        email.setTo(destinatarioEmail)
-        email.setSubject(
-          isParceiro
-            ? '[Vetor Master] Segundo Achado e Próximos Passos — ' + razaoSocial
-            : '[Vetor Master] Oportunidade de Alocação de Capital — Sessão Devolutiva: ' +
-                razaoSocial,
-        )
-        email.setHtml(
-          '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Aprofundamento de Diagnóstico — ' +
-            razaoSocial +
-            '</h3><p>Próximo passo: sessão devolutiva de 45 min.</p></div>',
-        )
-        $mails.send(email)
-      } catch (_) {}
+      if (!isLeadDryRun) {
+        try {
+          const email = new MailerMessage()
+          email.setTo(destinatarioEmail)
+          email.setSubject(
+            isParceiro
+              ? '[Vetor Master] Segundo Achado e Próximos Passos — ' + razaoSocial
+              : '[Vetor Master] Oportunidade de Alocação de Capital — Sessão Devolutiva: ' +
+                  razaoSocial,
+          )
+          email.setHtml(
+            '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Aprofundamento de Diagnóstico — ' +
+              razaoSocial +
+              '</h3><p>Próximo passo: sessão devolutiva de 45 min.</p></div>',
+          )
+          $mails.send(email)
+        } catch (_) {}
+      }
       cad.d10_enviado = true
       cad.d10_enviado_em = agora.toISOString()
+      cad.d10_status = isLeadDryRun ? 'SUPRIMIDO_DRY_RUN' : 'ENVIADO'
       houveEnvio = true
     } else if (
       cad.d10_enviado &&
@@ -713,23 +845,26 @@ cronAdd('cadencia_nutricao_leads', '0 9 * * *', () => {
       cad.d25_data &&
       new Date(cad.d25_data) <= agora
     ) {
-      try {
-        const email = new MailerMessage()
-        email.setTo(destinatarioEmail)
-        email.setSubject(
-          isParceiro
-            ? '[Vetor Master] Gatilho Regulatório e Janela de Decisão — ' + razaoSocial
-            : '[Vetor Master] Impacto Regulatório e Estratégia de Transição — ' + razaoSocial,
-        )
-        email.setHtml(
-          '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Alerta Setorial — ' +
-            razaoSocial +
-            '</h3><p>Janela de transição regulatória e estruturação tributária.</p></div>',
-        )
-        $mails.send(email)
-      } catch (_) {}
+      if (!isLeadDryRun) {
+        try {
+          const email = new MailerMessage()
+          email.setTo(destinatarioEmail)
+          email.setSubject(
+            isParceiro
+              ? '[Vetor Master] Gatilho Regulatório e Janela de Decisão — ' + razaoSocial
+              : '[Vetor Master] Impacto Regulatório e Estratégia de Transição — ' + razaoSocial,
+          )
+          email.setHtml(
+            '<div style="font-family: sans-serif; line-height: 1.6; color: #333;"><h3>Alerta Setorial — ' +
+              razaoSocial +
+              '</h3><p>Janela de transição regulatória e estruturação tributária.</p></div>',
+          )
+          $mails.send(email)
+        } catch (_) {}
+      }
       cad.d25_enviado = true
       cad.d25_enviado_em = agora.toISOString()
+      cad.d25_status = isLeadDryRun ? 'SUPRIMIDO_DRY_RUN' : 'ENVIADO'
       houveEnvio = true
     }
 
