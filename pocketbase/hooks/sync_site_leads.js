@@ -280,6 +280,14 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
         (itemRespostas && itemRespostas.parceiro_email) ||
         ''
 
+      // Se o registro local já possui origem_parceiro consolidada (ex: 'RGS'), PRESERVAR!
+      const localOrigemParceiro = localRecord
+        ? (localRecord.getString('origem_parceiro') || '').trim()
+        : ''
+      const localOrigemTipo = localRecord ? (localRecord.getString('origem_tipo') || '').trim() : ''
+      const localOrigem = localRecord ? (localRecord.getString('origem') || '').trim() : ''
+      const localProcessadoEm = localRecord ? localRecord.getString('processado_em') : ''
+
       const ehOrigemParceiro =
         itemOrigem.toLowerCase().includes('parceiro') ||
         itemOrigemTipo.toLowerCase().includes('parceiro') ||
@@ -287,22 +295,42 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
         respostasOrigem.toLowerCase().includes('parceiro') ||
         item.origem_tipo === 'parceiro' ||
         Boolean(extraOrigemParceiro) ||
-        (localRecord &&
-          (localRecord.getString('origem_tipo') === 'parceiro' ||
-            !!localRecord.getString('origem_parceiro')))
+        Boolean(localOrigemParceiro) ||
+        localOrigemTipo === 'parceiro'
 
-      if (ehOrigemParceiro) {
-        if (!extraOrigemParceiro) {
+      // Caso especial para Beatek / SmartCapex: parceiro canônico é 'RGS'
+      const leadEmailLower = (
+        item.email ||
+        cad.email ||
+        (localRecord ? localRecord.getString('email') : '') ||
+        ''
+      ).toLowerCase()
+      const isBeatekLead =
+        siteId === '1i96jjru3fwzv2o' ||
+        (localRecord && localRecord.id === '6e8y7ju5owgfpsl') ||
+        protocolo === '#VM-1i96jjru3fwzv2o' ||
+        leadEmailLower === 'gleverton@smartcapex.com.br'
+
+      if (isBeatekLead) {
+        extraOrigemParceiro = 'RGS'
+        extraParceiroEmail = 'gleverton@smartcapex.com.br'
+      } else if (localOrigemParceiro && localOrigemParceiro !== 'Parceiro') {
+        extraOrigemParceiro = localOrigemParceiro
+      } else if (ehOrigemParceiro) {
+        if (!extraOrigemParceiro || extraOrigemParceiro === 'Parceiro') {
           extraOrigemParceiro =
-            item.parceiro_nome ||
-            (item.dados_completos &&
-              (item.dados_completos.parceiro_nome || item.dados_completos.parceiro)) ||
-            (itemRespostas && (itemRespostas.parceiro || itemRespostas.parceiro_nome)) ||
-            (cad && (cad.parceiro || cad.parceiro_nome)) ||
-            'Parceiro'
+            localOrigemParceiro && localOrigemParceiro !== 'Parceiro'
+              ? localOrigemParceiro
+              : item.parceiro_nome ||
+                (item.dados_completos &&
+                  (item.dados_completos.parceiro_nome || item.dados_completos.parceiro)) ||
+                (itemRespostas && (itemRespostas.parceiro || itemRespostas.parceiro_nome)) ||
+                (cad && (cad.parceiro || cad.parceiro_nome)) ||
+                'Parceiro'
         }
         if (!extraParceiroEmail) {
           extraParceiroEmail =
+            (localRecord && localRecord.getString('parceiro_email')) ||
             item.parceiro_email ||
             (item.dados_completos &&
               (item.dados_completos.parceiro_email ||
@@ -344,14 +372,10 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
       rec.set('protocolo', protocolo)
       if (ehOrigemParceiro) {
-        rec.set(
-          'origem',
-          item.origem && item.origem.toLowerCase().includes('parceiro')
-            ? item.origem
-            : 'Parceiro ' + (extraOrigemParceiro || 'RGS'),
-        )
+        const parceiroNomeFinal = extraOrigemParceiro || 'RGS'
+        rec.set('origem', 'Parceiro ' + parceiroNomeFinal)
         rec.set('origem_tipo', 'parceiro')
-        rec.set('origem_parceiro', extraOrigemParceiro || 'RGS')
+        rec.set('origem_parceiro', parceiroNomeFinal)
       } else {
         rec.set('origem', item.origem || 'Site Institucional')
         rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
@@ -368,15 +392,16 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
       // Regras de Status:
       // 1. Preservar sempre status 'teste'
-      // 2. Se já estiver em processamento ou pós-diagnóstico ('processando', 'diagnostico_pronto', 'devolutiva_agendada', 'nutricao', 'membro_fundador_graduado'),
-      //    PRESERVAR o status avançado na máquina de estados para que o cron do sync não reverta o lead a 'novo'.
-      // 3. Se for lead 'lista_espera' (ou se Origem for Lista de Prioridade SaaS, ou sem respostas):
-      //    REGRA DE PROMOÇÃO: NUNCA promover automaticamente para 'novo'. Mantém lista_espera.
+      // 2. Se já foi processado (processado_em preenchido) ou estiver em processamento ou pós-diagnóstico:
+      //    PRESERVAR o status avançado na máquina de estados para que o cron do sync NUNCA reverta o lead a 'novo'.
+      // 3. Se for lead 'lista_espera': NUNCA promover automaticamente para 'novo'. Mantém lista_espera.
       if (isTest) {
         rec.set('status', 'teste')
       } else {
         const localStatusAtual = (rec.getString('status') || '').toLowerCase()
+        const jaFoiProcessado = Boolean(localProcessadoEm)
         if (
+          jaFoiProcessado ||
           localStatusAtual === 'processando' ||
           localStatusAtual === 'diagnostico_pronto' ||
           localStatusAtual === 'devolutiva_agendada' ||
@@ -384,7 +409,7 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
           localStatusAtual === 'parceiro_em_relacao'
         ) {
           // Preserva o estado avançado da máquina de estados
-          rec.set('status', localStatusAtual)
+          rec.set('status', localStatusAtual || 'nutricao')
         } else if (localStatusAtual === 'lista_espera') {
           // Mantém lista_espera mesmo se chegarem respostas do site
           rec.set('status', 'lista_espera')
@@ -824,6 +849,12 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       (itemRespostas && itemRespostas.parceiro_email) ||
       ''
 
+    const localOrigemParceiro = localRecord
+      ? (localRecord.getString('origem_parceiro') || '').trim()
+      : ''
+    const localOrigemTipo = localRecord ? (localRecord.getString('origem_tipo') || '').trim() : ''
+    const localProcessadoEm = localRecord ? localRecord.getString('processado_em') : ''
+
     const ehOrigemParceiro =
       itemOrigem.toLowerCase().includes('parceiro') ||
       itemOrigemTipo.toLowerCase().includes('parceiro') ||
@@ -831,22 +862,41 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       respostasOrigem.toLowerCase().includes('parceiro') ||
       item.origem_tipo === 'parceiro' ||
       Boolean(extraOrigemParceiro) ||
-      (localRecord &&
-        (localRecord.getString('origem_tipo') === 'parceiro' ||
-          !!localRecord.getString('origem_parceiro')))
+      Boolean(localOrigemParceiro) ||
+      localOrigemTipo === 'parceiro'
 
-    if (ehOrigemParceiro) {
-      if (!extraOrigemParceiro) {
+    const leadEmailLower = (
+      item.email ||
+      cad.email ||
+      (localRecord ? localRecord.getString('email') : '') ||
+      ''
+    ).toLowerCase()
+    const isBeatekLead =
+      siteId === '1i96jjru3fwzv2o' ||
+      (localRecord && localRecord.id === '6e8y7ju5owgfpsl') ||
+      protocolo === '#VM-1i96jjru3fwzv2o' ||
+      leadEmailLower === 'gleverton@smartcapex.com.br'
+
+    if (isBeatekLead) {
+      extraOrigemParceiro = 'RGS'
+      extraParceiroEmail = 'gleverton@smartcapex.com.br'
+    } else if (localOrigemParceiro && localOrigemParceiro !== 'Parceiro') {
+      extraOrigemParceiro = localOrigemParceiro
+    } else if (ehOrigemParceiro) {
+      if (!extraOrigemParceiro || extraOrigemParceiro === 'Parceiro') {
         extraOrigemParceiro =
-          item.parceiro_nome ||
-          (item.dados_completos &&
-            (item.dados_completos.parceiro_nome || item.dados_completos.parceiro)) ||
-          (itemRespostas && (itemRespostas.parceiro || itemRespostas.parceiro_nome)) ||
-          (cad && (cad.parceiro || cad.parceiro_nome)) ||
-          'Parceiro'
+          localOrigemParceiro && localOrigemParceiro !== 'Parceiro'
+            ? localOrigemParceiro
+            : item.parceiro_nome ||
+              (item.dados_completos &&
+                (item.dados_completos.parceiro_nome || item.dados_completos.parceiro)) ||
+              (itemRespostas && (itemRespostas.parceiro || itemRespostas.parceiro_nome)) ||
+              (cad && (cad.parceiro || cad.parceiro_nome)) ||
+              'Parceiro'
       }
       if (!extraParceiroEmail) {
         extraParceiroEmail =
+          (localRecord && localRecord.getString('parceiro_email')) ||
           item.parceiro_email ||
           (item.dados_completos &&
             (item.dados_completos.parceiro_email || item.dados_completos.contato_parceiro_email)) ||
@@ -885,14 +935,10 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
 
     rec.set('protocolo', protocolo)
     if (ehOrigemParceiro) {
-      rec.set(
-        'origem',
-        item.origem && item.origem.toLowerCase().includes('parceiro')
-          ? item.origem
-          : 'Parceiro ' + (extraOrigemParceiro || 'RGS'),
-      )
+      const parceiroNomeFinal = extraOrigemParceiro || 'RGS'
+      rec.set('origem', 'Parceiro ' + parceiroNomeFinal)
       rec.set('origem_tipo', 'parceiro')
-      rec.set('origem_parceiro', extraOrigemParceiro || 'RGS')
+      rec.set('origem_parceiro', parceiroNomeFinal)
     } else {
       rec.set('origem', item.origem || 'Site Institucional')
       rec.set('origem_tipo', item.origem_tipo || item.origemTipo || 'site')
@@ -911,14 +957,16 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
       rec.set('status', 'teste')
     } else {
       const localStatusAtual = (rec.getString('status') || '').toLowerCase()
+      const jaFoiProcessado = Boolean(localProcessadoEm)
       if (
+        jaFoiProcessado ||
         localStatusAtual === 'processando' ||
         localStatusAtual === 'diagnostico_pronto' ||
         localStatusAtual === 'devolutiva_agendada' ||
         localStatusAtual === 'nutricao' ||
         localStatusAtual === 'parceiro_em_relacao'
       ) {
-        rec.set('status', localStatusAtual)
+        rec.set('status', localStatusAtual || 'nutricao')
       } else if (localStatusAtual === 'lista_espera') {
         rec.set('status', 'lista_espera')
       } else if (localStatusAtual === 'membro_fundador_graduado') {
