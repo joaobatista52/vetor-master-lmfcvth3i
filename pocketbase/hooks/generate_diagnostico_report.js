@@ -39,11 +39,13 @@ onRecordAfterCreateSuccess((e) => {
 
     if (heatMap) {
       var existingDados = record.get('dados_entrada')
-      if (!existingDados || typeof existingDados !== 'object') {
+      if (!existingDados || typeof existingDados !== 'object' || Array.isArray(existingDados)) {
         existingDados = {}
       }
-      existingDados.heat_map = heatMap
-      record.set('dados_entrada', existingDados)
+      try {
+        existingDados.heat_map = heatMap
+        record.set('dados_entrada', existingDados)
+      } catch (_) {}
     }
 
     $app.save(record)
@@ -51,7 +53,7 @@ onRecordAfterCreateSuccess((e) => {
     var fallbackRecord = $app.findRecordById('diagnosticos', e.record.id)
     fallbackRecord.set(
       'relatorio_gerado',
-      '## Diagnostico em Processamento\n\nSeu diagnostico estrategico V6.5 esta sendo processado. Nossa equipe foi notificada e em breve seu relatorio estara disponivel.',
+      '## Diagnóstico em Processamento\n\nSeu diagnóstico estratégico V7.2.3 está sendo processado pela equipe especializada.',
     )
     $app.save(fallbackRecord)
     console.log('diagnosis report generation failed for record ' + e.record.id + ': ' + err.message)

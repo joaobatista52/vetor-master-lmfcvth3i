@@ -1500,7 +1500,7 @@ export function LeadDetailsDialog({
                           try {
                             const { processarLeadViaWorker } =
                               await import('@/services/site-leads-sync')
-                            const res = await processarLeadViaWorker(lead.id)
+                            const res = await processarLeadViaWorker(lead.id, { dryRun: true })
                             if (res.success) {
                               setFeedbackMsg({
                                 type: 'success',
