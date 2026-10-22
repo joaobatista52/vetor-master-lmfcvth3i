@@ -11,6 +11,17 @@ export interface HeatMap {
   areas: HeatMapArea[]
 }
 
+export interface FaseExecucaoPrompt {
+  fase: number // 1 a 8
+  titulo: string // ex: "Fase 1 — Diagnóstico Profundo"
+  prompt_id: string // "P2", "P5", "P6", "P7", "P8", "P9", "P10", "P11"
+  output_integral: string // texto completo gerado pelo agente na fase
+  evidencias_usadas: string[] // anexos/seções/dados que alimentaram a fase
+  duracao_ms: number
+  tokens_input: number
+  tokens_output: number
+}
+
 export interface Diagnostico {
   id: string
   user?: string
@@ -22,11 +33,14 @@ export interface Diagnostico {
   relatorio_gerado: string
   setor?: string
   fase_atual?: number
+  output_prompts?: FaseExecucaoPrompt[]
   dre_normalizada_15_linhas?: Array<{
     numero: number
     linha: string
     valor: string | number
+    fonte?: string
     nota?: string
+    status?: string
   }>
   estrutura_erec_a9?: Array<{ acao: string; item: string; base: string; dimensao: string }>
   gabarito_auditoria?: Record<string, any>
@@ -36,8 +50,11 @@ export interface Diagnostico {
     custo_usd: number
     tempo_execucao_ms: number
     executado_em: string
-    agente: string
-    versao: string
+    agente?: string
+    versao?: string
+    tier?: string
+    total_fases_executadas?: number
+    medicao_real_gateway?: boolean
   }
   origem_tipo?: 'direto' | 'parceiro'
   origem_parceiro?: string
@@ -71,6 +88,7 @@ export const getDiagnosticos = async (): Promise<Diagnostico[]> => {
     relatorio_gerado: r.relatorio_gerado || '',
     setor: r.setor || '',
     fase_atual: r.fase_atual,
+    output_prompts: r.output_prompts,
     dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
     estrutura_erec_a9: r.estrutura_erec_a9,
     gabarito_auditoria: r.gabarito_auditoria,
@@ -141,6 +159,7 @@ export const getLatestDiagnostico = async (): Promise<Diagnostico | null> => {
       relatorio_gerado: r.relatorio_gerado || '',
       setor: r.setor || '',
       fase_atual: r.fase_atual,
+      output_prompts: r.output_prompts,
       dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
       estrutura_erec_a9: r.estrutura_erec_a9,
       gabarito_auditoria: r.gabarito_auditoria,
@@ -170,6 +189,7 @@ export const getDiagnostico = async (id: string): Promise<Diagnostico> => {
     relatorio_gerado: r.relatorio_gerado || '',
     setor: r.setor || '',
     fase_atual: r.fase_atual,
+    output_prompts: r.output_prompts,
     dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
     estrutura_erec_a9: r.estrutura_erec_a9,
     gabarito_auditoria: r.gabarito_auditoria,
@@ -199,6 +219,7 @@ export const getDiagnosticoByLeadId = async (leadId: string): Promise<Diagnostic
       relatorio_gerado: r.relatorio_gerado || '',
       setor: r.setor || '',
       fase_atual: r.fase_atual,
+      output_prompts: r.output_prompts,
       dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
       estrutura_erec_a9: r.estrutura_erec_a9,
       gabarito_auditoria: r.gabarito_auditoria,

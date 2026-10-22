@@ -27,11 +27,19 @@ import {
   Sparkles,
   Play,
   ShieldCheck,
+  Cpu,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  FileDown,
+  AlertCircle,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
 import { getLeadById, updateLeadStatus } from '@/services/site-leads-sync'
 import { setores, type Setor, type PerguntaItemLiteral } from '@/data/setores-questionario'
+import type { FaseExecucaoPrompt } from '@/services/diagnosticos'
+import { gerarRelatorioCompletoPDF } from '@/services/relatorio-pdf'
 
 interface LeadDetailsDialogProps {
   lead: LeadRecord | null
@@ -586,12 +594,23 @@ export function LeadDetailsDialog({
   onOpenChange,
   onLeadUpdated,
 }: LeadDetailsDialogProps) {
-  const [activeTab, setActiveTab] = useState<'questionario' | 'diagnostico' | 'anexos' | 'bruto'>(
-    'questionario',
-  )
+  const [activeTab, setActiveTab] = useState<
+    'questionario' | 'diagnostico' | 'fases' | 'anexos' | 'bruto'
+  >('questionario')
   const [diagnosticoVinculado, setDiagnosticoVinculado] = useState<any | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState<boolean>(false)
   const [processandoWorker, setProcessandoWorker] = useState<boolean>(false)
+  const [gerandoPdf, setGerandoPdf] = useState<boolean>(false)
+  const [fasesExpandidas, setFasesExpandidas] = useState<Record<number, boolean>>({
+    1: true,
+    2: true,
+    3: true,
+    4: true,
+    5: true,
+    6: true,
+    7: true,
+    8: true,
+  })
   const [currentLead, setCurrentLead] = useState<LeadRecord | null>(initialLead)
   const [loadingFresh, setLoadingFresh] = useState<boolean>(false)
   const [savingStatus, setSavingStatus] = useState<boolean>(false)
@@ -1359,6 +1378,19 @@ export function LeadDetailsDialog({
                 <span>Diagnóstico V7.2 {diagnosticoVinculado ? '✓' : ''}</span>
               </TabsTrigger>
               <TabsTrigger
+                value="fases"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
+              >
+                <Cpu className="w-3.5 h-3.5 text-[#3DDC74]" />
+                <span>
+                  Execução das Fases (1–8)
+                  {diagnosticoVinculado?.output_prompts &&
+                  diagnosticoVinculado.output_prompts.length > 0
+                    ? ` (${diagnosticoVinculado.output_prompts.length}/8)`
+                    : ''}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
                 value="anexos"
                 className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
               >
@@ -1490,6 +1522,41 @@ export function LeadDetailsDialog({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Botão Relatório Completo (Gera PDF Consolidado de 7 Seções) */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={gerandoPdf}
+                      onClick={() => {
+                        setGerandoPdf(true)
+                        try {
+                          gerarRelatorioCompletoPDF({
+                            lead,
+                            diagnostico: diagnosticoVinculado,
+                          })
+                          setFeedbackMsg({
+                            type: 'success',
+                            text: 'Relatório Completo V7.2.3 em PDF gerado com sucesso!',
+                          })
+                        } catch (err: any) {
+                          setFeedbackMsg({
+                            type: 'error',
+                            text: err?.message || 'Erro ao gerar PDF do relatório.',
+                          })
+                        } finally {
+                          setGerandoPdf(false)
+                        }
+                      }}
+                      className="border-[#5B9DFF]/60 text-[#5B9DFF] hover:bg-[#0066CC]/20 rounded-[4px] text-xs h-7 px-2.5 gap-1.5"
+                    >
+                      {gerandoPdf ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5 text-[#3DDC74]" />
+                      )}
+                      <span>Relatório Completo (PDF)</span>
+                    </Button>
+
                     {/* Botão de Disparo Manual sob Controle do Admin (Sem disparo em lote) */}
                     {(lead.status || '').toLowerCase() !== 'teste' && (
                       <Button
@@ -1980,6 +2047,262 @@ export function LeadDetailsDialog({
                     <strong className="text-[#5B9DFF]">Processar Agora</strong> acima para acionar o
                     motor JBP Gestão Master V7.2.3.
                   </div>
+                )}
+              </TabsContent>
+
+              {/* ABA: EXECUÇÃO DAS FASES (1–8) — MASTER FRAMEWORK V2.4 */}
+              <TabsContent value="fases" className="mt-0 space-y-4 pb-4">
+                {/* Cabeçalho da Aba com Ações e Economia Unitária */}
+                <div className="p-3 bg-[#16213A] border border-[#5B9DFF]/40 rounded-[4px] flex items-center justify-between text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-[#3DDC74]" />
+                    <span className="font-semibold text-[#F8FAFC]">
+                      Linha do Tempo da Execução — 8 Fases do Master Framework V2.4
+                    </span>
+                    {diagnosticoVinculado?.output_prompts && (
+                      <Badge className="bg-[#3DDC74]/20 text-[#3DDC74] border border-[#3DDC74]/40 text-[10px]">
+                        {diagnosticoVinculado.output_prompts.length}/8 Fases Concluídas
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Botão de recolher/expandir todas */}
+                    {diagnosticoVinculado?.output_prompts &&
+                      diagnosticoVinculado.output_prompts.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const todasAbertas = Object.values(fasesExpandidas).every(Boolean)
+                            const novoEstado: Record<number, boolean> = {}
+                            ;[1, 2, 3, 4, 5, 6, 7, 8].forEach((f) => {
+                              novoEstado[f] = !todasAbertas
+                            })
+                            setFasesExpandidas(novoEstado)
+                          }}
+                          className="text-[#8B98B4] hover:text-[#F8FAFC] text-[11px] h-7 px-2"
+                        >
+                          {Object.values(fasesExpandidas).every(Boolean)
+                            ? 'Recolher Todas'
+                            : 'Expandir Todas'}
+                        </Button>
+                      )}
+
+                    {/* Botão Relatório Completo */}
+                    <Button
+                      size="sm"
+                      disabled={gerandoPdf}
+                      onClick={() => {
+                        setGerandoPdf(true)
+                        try {
+                          gerarRelatorioCompletoPDF({
+                            lead,
+                            diagnostico: diagnosticoVinculado,
+                          })
+                          setFeedbackMsg({
+                            type: 'success',
+                            text: 'Relatório Completo V7.2.3 gerado e baixado com sucesso!',
+                          })
+                        } catch (err: any) {
+                          setFeedbackMsg({
+                            type: 'error',
+                            text: err?.message || 'Erro ao gerar PDF do relatório.',
+                          })
+                        } finally {
+                          setGerandoPdf(false)
+                        }
+                      }}
+                      className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-[4px] text-xs h-7 px-2.5 gap-1.5 shadow"
+                    >
+                      {gerandoPdf ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5" />
+                      )}
+                      <span>Relatório Completo (PDF)</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Resumo de Métricas de Execução (Gateway) */}
+                {diagnosticoVinculado?.custo_gateway && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <Card className="bg-[#111A2E] border-[#24334F] p-2.5">
+                      <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                        Custo Total Gateway
+                      </span>
+                      <div className="text-sm font-bold text-[#3DDC74] mt-0.5">
+                        ${Number(diagnosticoVinculado.custo_gateway.custo_usd || 0).toFixed(4)} USD
+                      </div>
+                      <span className="text-[10px] text-[#8B98B4]">Tier reasoning</span>
+                    </Card>
+                    <Card className="bg-[#111A2E] border-[#24334F] p-2.5">
+                      <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                        Tempo de Execução
+                      </span>
+                      <div className="text-sm font-bold text-[#5B9DFF] mt-0.5">
+                        {diagnosticoVinculado.custo_gateway.tempo_execucao_ms} ms
+                      </div>
+                      <span className="text-[10px] text-[#8B98B4]">
+                        {(diagnosticoVinculado.custo_gateway.tempo_execucao_ms / 1000).toFixed(1)}s
+                        total
+                      </span>
+                    </Card>
+                    <Card className="bg-[#111A2E] border-[#24334F] p-2.5">
+                      <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                        Tokens de Entrada
+                      </span>
+                      <div className="text-sm font-bold text-[#F8FAFC] mt-0.5">
+                        {diagnosticoVinculado.custo_gateway.tokens_input?.toLocaleString('pt-BR')}
+                      </div>
+                      <span className="text-[10px] text-[#8B98B4]">Contexto & Prompts</span>
+                    </Card>
+                    <Card className="bg-[#111A2E] border-[#24334F] p-2.5">
+                      <span className="text-[10px] text-[#8B98B4] uppercase block font-medium">
+                        Tokens de Saída
+                      </span>
+                      <div className="text-sm font-bold text-[#FFB84D] mt-0.5">
+                        {diagnosticoVinculado.custo_gateway.tokens_output?.toLocaleString('pt-BR')}
+                      </div>
+                      <span className="text-[10px] text-[#8B98B4]">Geração Determinística</span>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Renderização Sequencial da Linha do Tempo (Fases 1 a 8) */}
+                {diagnosticoVinculado?.output_prompts &&
+                Array.isArray(diagnosticoVinculado.output_prompts) &&
+                diagnosticoVinculado.output_prompts.length > 0 ? (
+                  <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#24334F]">
+                    {diagnosticoVinculado.output_prompts.map(
+                      (faseItem: FaseExecucaoPrompt, idx: number) => {
+                        const isExpanded = fasesExpandidas[faseItem.fase] ?? true
+                        return (
+                          <div key={idx} className="relative group">
+                            {/* Ponto na Linha do Tempo */}
+                            <div className="absolute -left-6 top-3.5 w-5 h-5 rounded-full bg-[#16213A] border-2 border-[#0066CC] flex items-center justify-center text-[10px] font-bold text-[#5B9DFF] group-hover:border-[#3DDC74] transition-colors">
+                              {faseItem.fase}
+                            </div>
+
+                            {/* Card da Fase */}
+                            <Card className="bg-[#16213A] border-[#24334F] overflow-hidden">
+                              <CardHeader
+                                onClick={() =>
+                                  setFasesExpandidas((prev) => ({
+                                    ...prev,
+                                    [faseItem.fase]: !prev[faseItem.fase],
+                                  }))
+                                }
+                                className="py-2.5 px-4 bg-[#111A2E]/80 border-b border-[#24334F]/70 cursor-pointer hover:bg-[#111A2E] transition-colors flex flex-row items-center justify-between"
+                              >
+                                <div className="flex items-center gap-2.5 flex-wrap">
+                                  <Badge className="bg-[#0066CC] text-white font-mono text-[10px] font-bold">
+                                    Fase {faseItem.fase}
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="border-[#FFB84D]/60 text-[#FFB84D] bg-[#FFB84D]/10 font-mono text-[10px] font-bold"
+                                  >
+                                    Prompt {faseItem.prompt_id}
+                                  </Badge>
+                                  <span className="text-xs font-bold text-[#F8FAFC]">
+                                    {faseItem.titulo}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[11px] text-[#8B98B4] hidden sm:inline">
+                                    {faseItem.duracao_ms}ms •{' '}
+                                    {faseItem.tokens_input + faseItem.tokens_output} tokens
+                                  </span>
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-[#8B98B4]" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-[#8B98B4]" />
+                                  )}
+                                </div>
+                              </CardHeader>
+
+                              {isExpanded && (
+                                <CardContent className="p-4 space-y-3 text-xs">
+                                  {/* Evidências Usadas (Chips) */}
+                                  {faseItem.evidencias_usadas &&
+                                    faseItem.evidencias_usadas.length > 0 && (
+                                      <div className="space-y-1.5">
+                                        <span className="text-[10px] text-[#8B98B4] uppercase tracking-wider font-semibold block">
+                                          Evidências e Dados-Fonte Utilizados:
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {faseItem.evidencias_usadas.map((ev, evIdx) => (
+                                            <Badge
+                                              key={evIdx}
+                                              variant="secondary"
+                                              className="bg-[#111A2E] text-[#93C5FD] border border-[#24334F] text-[10px] font-normal"
+                                            >
+                                              {ev}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  {/* Output Integral Completo (sem truncar) */}
+                                  <div className="space-y-1.5">
+                                    <span className="text-[10px] text-[#8B98B4] uppercase tracking-wider font-semibold block">
+                                      Output Integral do Agente na Fase:
+                                    </span>
+                                    <div className="p-3 bg-[#0B1120] rounded border border-[#24334F]">
+                                      <pre className="text-[11px] font-mono text-[#C7D0E0] whitespace-pre-wrap leading-relaxed break-words overflow-x-auto selection:bg-[#0066CC] selection:text-white">
+                                        {faseItem.output_integral}
+                                      </pre>
+                                    </div>
+                                  </div>
+
+                                  {/* Rodapé do Bloco da Fase */}
+                                  <div className="pt-2 border-t border-[#24334F]/40 flex items-center justify-between text-[11px] text-[#8B98B4] flex-wrap gap-2">
+                                    <div className="flex items-center gap-3">
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="w-3.5 h-3.5 text-[#5B9DFF]" />
+                                        <span>
+                                          Duração:{' '}
+                                          <strong className="text-[#F8FAFC]">
+                                            {faseItem.duracao_ms} ms
+                                          </strong>
+                                        </span>
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Cpu className="w-3.5 h-3.5 text-[#3DDC74]" />
+                                        <span>
+                                          Tokens:{' '}
+                                          <strong className="text-[#F8FAFC]">
+                                            {faseItem.tokens_input} in / {faseItem.tokens_output}{' '}
+                                            out
+                                          </strong>
+                                        </span>
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-[#8B98B4] font-mono">
+                                      Prompt ID: {faseItem.prompt_id}
+                                    </span>
+                                  </div>
+                                </CardContent>
+                              )}
+                            </Card>
+                          </div>
+                        )
+                      },
+                    )}
+                  </div>
+                ) : (
+                  <Card className="bg-[#16213A] border-[#24334F] p-8 text-center">
+                    <AlertCircle className="w-8 h-8 text-[#FFB84D] mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-[#F8FAFC]">
+                      Nenhuma execução de fases gravada para este diagnóstico
+                    </p>
+                    <p className="text-xs text-[#8B98B4] mt-1 max-w-md mx-auto">
+                      Este registro pode ter sido gerado em versão anterior ou ainda não foi
+                      processado com o Master Framework V2.4 de 8 fases.
+                    </p>
+                  </Card>
                 )}
               </TabsContent>
 
