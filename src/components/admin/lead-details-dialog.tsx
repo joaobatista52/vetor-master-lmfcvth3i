@@ -1556,60 +1556,62 @@ export function LeadDetailsDialog({
                       )}
                       <span>Relatório Completo (PDF)</span>
                     </Button>
-
-                    {/* Botão de Disparo Manual sob Controle do Admin (Sem disparo em lote) */}
-                    {(lead.status || '').toLowerCase() !== 'teste' && (
-                      <Button
-                        size="sm"
-                        disabled={processandoWorker}
-                        onClick={async () => {
-                          setProcessandoWorker(true)
-                          try {
-                            const { processarLeadViaWorker } =
-                              await import('@/services/site-leads-sync')
-                            const res = await processarLeadViaWorker(lead.id, { dryRun: true })
-                            if (res.success) {
-                              setFeedbackMsg({
-                                type: 'success',
-                                text: 'Diagnóstico processado com sucesso pelo agente V7.2.3! Status atualizado no cofre.',
-                              })
-                              const { getLeadById } = await import('@/services/site-leads-sync')
-                              const fresh = await getLeadById(lead.id)
-                              if (fresh) setCurrentLead(fresh)
-                              const { getDiagnosticoByLeadId } =
-                                await import('@/services/diagnosticos')
-                              const freshDiag = await getDiagnosticoByLeadId(lead.id)
-                              if (freshDiag) setDiagnosticoVinculado(freshDiag)
-                              if (onLeadUpdated) onLeadUpdated()
-                            } else {
-                              setFeedbackMsg({
-                                type: 'error',
-                                text: res.error || 'Falha ao acionar worker.',
-                              })
-                            }
-                          } catch (err: any) {
+                    {/* Botão de Disparo Manual sob Controle do Admin (Sem disparo em lote) — suporta modo de teste */}
+                    <Button
+                      size="sm"
+                      disabled={processandoWorker}
+                      onClick={async () => {
+                        setProcessandoWorker(true)
+                        try {
+                          const isLeadTeste = (lead.status || '').toLowerCase() === 'teste'
+                          const { processarLeadViaWorker } =
+                            await import('@/services/site-leads-sync')
+                          const res = await processarLeadViaWorker(lead.id, {
+                            dryRun: true,
+                          })
+                          if (res.success) {
+                            setFeedbackMsg({
+                              type: 'success',
+                              text: 'Diagnóstico processado com sucesso pelo agente V7.2.3! Status atualizado no cofre.',
+                            })
+                            const { getLeadById } = await import('@/services/site-leads-sync')
+                            const fresh = await getLeadById(lead.id)
+                            if (fresh) setCurrentLead(fresh)
+                            const { getDiagnosticoByLeadId } =
+                              await import('@/services/diagnosticos')
+                            const freshDiag = await getDiagnosticoByLeadId(lead.id)
+                            if (freshDiag) setDiagnosticoVinculado(freshDiag)
+                            if (onLeadUpdated) onLeadUpdated()
+                          } else {
                             setFeedbackMsg({
                               type: 'error',
-                              text: err?.message || 'Erro ao comunicar com worker.',
+                              text: res.error || 'Falha ao acionar worker.',
                             })
-                          } finally {
-                            setProcessandoWorker(false)
                           }
-                        }}
-                        className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs h-7 px-2.5 gap-1.5"
-                      >
-                        {processandoWorker ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Play className="w-3.5 h-3.5" />
-                        )}
-                        <span>
-                          {diagnosticoVinculado
+                        } catch (err: any) {
+                          setFeedbackMsg({
+                            type: 'error',
+                            text: err?.message || 'Erro ao comunicar com worker.',
+                          })
+                        } finally {
+                          setProcessandoWorker(false)
+                        }
+                      }}
+                      className="bg-[#0066CC] hover:bg-[#22B14C] text-white rounded-[4px] text-xs h-7 px-2.5 gap-1.5"
+                    >
+                      {processandoWorker ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {(lead.status || '').toLowerCase() === 'teste'
+                          ? 'Processar Cópia de Teste (Worker V7.2 - Modo Teste)'
+                          : diagnosticoVinculado
                             ? 'Reprocessar Diagnóstico'
                             : 'Processar Agora (Worker V7.2)'}
-                        </span>
-                      </Button>
-                    )}
+                      </span>
+                    </Button>{' '}
                   </div>
                 </div>
 

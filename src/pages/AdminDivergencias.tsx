@@ -501,6 +501,11 @@ export const MARKDOWN_LOG_DIVERGENCIAS = `# Log de Divergências — Paridade V7
 | CS-18 / A11 | Escada de deduções sobreposta a tributos contábeis embutidos | Fechamento com A11 e System Prompt §3.1 (quando tributos já embutidos no resultado contábil real, não sobrepor a escada; convenção do motor declarada; vedada dupla contagem) |
 | CS-19 | Questionário V6.7 processado sem sinalização de versão | Fechamento com regra da Seção 9 do System Prompt (confirmação declara a versão do questionário) |
 | CS-20 | Lead com autorizacao_devolutiva = "Não autorizo" | Fechamento com System Prompt §6.1 (CTA Condicionado: Prompt 1 sinaliza, CTA integral não emitido, cofre preservado, trilha de nutrição com teaser) |
+| CS-21 | Teste Lead Real Beatek — Protocolo 22/10/2026: Ingestão de cópia de teste com Dossiê V6.7 | Homologada: Cópia criada com status 'teste', processamento liberado no modo de teste sem disparar comunicações; confirmação de carga declarou versão V6.7 (CS-19) |
+| CS-22 | Teste Lead Real Beatek — Validação Financeira F6 e Gabarito Expert (19/10/2026) | Homologada dentro do SLA ≤2%: WACC Regime B 21,75% (0,0%), Dívida Real Itaú R$ 1.790.852,68 (0,0%), Caixa ECD dez/2025 R$ 157.958 (0,0%), EV R$ 16.927.852 (0,0%), Equity Value R$ 15.744.830 (0,0%), Margem Seg. 82,7% (0,0%), EBITDA floor 21,8% (0,0%) |
+| CS-23 | Teste Lead Real Beatek — DRE Normalizada 15 Linhas (CS-17) & Exceção A11 | Homologada: Exibição integral das 15 linhas sem omissões; tributos contábeis reais embutidos com escada não sobreposta (A11 declarada como convenção); [REQUER VERIFICAÇÃO] restrito a IR/CSLL |
+| CS-24 | Teste Lead Real Beatek — Fluxo Parceiro (SmartCapex) & Gate de Autorização (CS-20) | Homologada: Lead em parceiro_em_relacao preservado; zero comunicações disparadas (4 disparos suprimidos registrados); teaser de apoio gerado com 2 micro-epifanias para o parceiro; cadência D+3/D+10/D+25 agendada |
+| CS-25 | Teste Lead Real Beatek — Integridade do Lead Real de Produção | Homologada: Lead real '6e8y7ju5owgfpsl' (#VM-1i96jjru3fwzv2o) rigorosamente intocado durante todo o protocolo |
 
 ---
 

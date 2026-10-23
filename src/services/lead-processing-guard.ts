@@ -16,14 +16,17 @@ import type { LeadRecord } from '@/services/site-leads-sync'
 export interface ProcessingEligibilityResult {
   podeProcessar: boolean
   motivoBloqueio?: string
+  modoTestePermitido?: boolean
 }
 
 /**
  * Guarda central de elegibilidade de processamento.
- * Garante que leads em 'lista_espera' ou 'teste' NUNCA sejam disparados para processamento automático.
+ * Garante que leads em 'lista_espera' ou 'teste' NUNCA sejam disparados para processamento automático
+ * em produção, exceto quando explicitamente executados sob modo de teste / dry-run controlado.
  */
 export function verificarElegibilidadeProcessamento(
   lead: Partial<LeadRecord> | null | undefined,
+  opcoes?: { permitirModoTeste?: boolean },
 ): ProcessingEligibilityResult {
   if (!lead) {
     return {
@@ -43,15 +46,22 @@ export function verificarElegibilidadeProcessamento(
     }
   }
 
-  // Leads de teste
+  // Leads de teste: bloqueados na fila automática de produção;
+  // contudo, no modo de teste explícito (dry-run com supressão de envios), o processamento da cópia é liberado.
   if (status === 'teste') {
+    if (opcoes?.permitirModoTeste) {
+      return {
+        podeProcessar: true,
+        modoTestePermitido: true,
+      }
+    }
     return {
       podeProcessar: false,
-      motivoBloqueio: 'Lead marcado como teste.',
+      motivoBloqueio: 'Lead marcado como teste (modo de teste não ativado na rotina automática).',
     }
   }
 
-  // Apenas 'novo' pode entrar na fila de processamento
+  // Apenas 'novo' pode entrar na fila de processamento padrão
   if (status !== 'novo') {
     return {
       podeProcessar: false,

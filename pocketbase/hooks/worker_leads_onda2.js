@@ -61,11 +61,13 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
   const razaoSocial = leadRecord.getString('razao_social') || leadRecord.getString('nome_completo')
 
   // Guardas de integridade
-  if (leadStatus === 'teste') {
-    return e.json(403, {
-      success: false,
-      error: 'Lead com status "teste" jamais pode ser processado pelo motor de produção.',
-    })
+  // Suporte ao Protocolo de Teste: se o lead for marcado como 'teste',
+  // o processamento é PERMITIDO exclusivamente se executado em modo DRY-RUN (ou modo de teste),
+  // garantindo que nenhuma comunicação seja disparada.
+  const isLeadTeste = leadStatus === 'teste'
+  if (isLeadTeste && !dryRunParam) {
+    // Forçar modo de teste / dry-run para leads teste, garantindo supressão total de comunicações
+    dryRunParam = true
   }
   if (leadStatus === 'lista_espera') {
     return e.json(403, {
