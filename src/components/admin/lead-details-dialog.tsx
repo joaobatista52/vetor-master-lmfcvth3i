@@ -1515,11 +1515,17 @@ export function LeadDetailsDialog({
               {/* ABA DIAGNÓSTICO V7.2 & COFRE (ONDA 2) */}
               <TabsContent value="diagnostico" className="mt-0 space-y-4 pb-4">
                 <div className="p-3 bg-[#16213A] border border-[#5B9DFF]/40 rounded-[4px] flex items-center justify-between text-xs flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Sparkles className="w-4 h-4 text-[#FFB84D]" />
                     <span className="font-semibold text-[#F8FAFC]">
                       Ativo Estratégico no Cofre — JBP Gestão Master V7.2.3
                     </span>
+                    <Badge
+                      variant="outline"
+                      className="border-[#FFB84D]/60 text-[#FFB84D] bg-[#FFB84D]/10 text-[10px] font-semibold"
+                    >
+                      Homologação: pendente do expert
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Botão Relatório Completo (Gera PDF Consolidado de 7 Seções) */}
@@ -1554,7 +1560,7 @@ export function LeadDetailsDialog({
                       ) : (
                         <FileDown className="w-3.5 h-3.5 text-[#3DDC74]" />
                       )}
-                      <span>Relatório Completo (PDF)</span>
+                      <span>Gerar PDF p/ Auditoria do Expert</span>
                     </Button>
                     {/* Botão de Disparo Manual sob Controle do Admin (Sem disparo em lote) — suporta modo de teste */}
                     <Button
@@ -1605,11 +1611,9 @@ export function LeadDetailsDialog({
                         <Play className="w-3.5 h-3.5" />
                       )}
                       <span>
-                        {(lead.status || '').toLowerCase() === 'teste'
-                          ? 'Processar Cópia de Teste (Worker V7.2 - Modo Teste)'
-                          : diagnosticoVinculado
-                            ? 'Reprocessar Diagnóstico'
-                            : 'Processar Agora (Worker V7.2)'}
+                        {(lead.status || '').toLowerCase() === 'teste' || diagnosticoVinculado
+                          ? 'Reprocessar cópia (dry-run garantido)'
+                          : 'Processar Agora (Worker V7.2)'}
                       </span>
                     </Button>{' '}
                   </div>
@@ -2104,7 +2108,7 @@ export function LeadDetailsDialog({
                           })
                           setFeedbackMsg({
                             type: 'success',
-                            text: 'Relatório Completo V7.2.3 gerado e baixado com sucesso!',
+                            text: 'PDF para Auditoria do Expert gerado e baixado com sucesso!',
                           })
                         } catch (err: any) {
                           setFeedbackMsg({
@@ -2122,7 +2126,7 @@ export function LeadDetailsDialog({
                       ) : (
                         <FileDown className="w-3.5 h-3.5" />
                       )}
-                      <span>Relatório Completo (PDF)</span>
+                      <span>Gerar PDF p/ Auditoria do Expert</span>
                     </Button>
                   </div>
                 </div>
