@@ -289,6 +289,7 @@ export function gerarRelatorioCompletoPDF({ lead, diagnostico }: GerarPdfParams)
   cursorY += 5
 
   const sumarioItens = [
+    'Resumo do Diagnóstico (Síntese Executiva) — Síntese executiva integral gerada pelo motor determinístico',
     'Seção 1: Entradas — Respostas do Questionário, Lista de Anexos e Metadados do Lead/Parceiro',
     'Seção 2: Outputs Integrais das 8 Fases P1–P13 gravados no diagnóstico (sem cortes, sem resumo)',
     'Seção 3: DRE Canônica Normalizada de 15 Linhas (CS-17) com Fonte Documental por Linha',
@@ -312,6 +313,106 @@ export function gerarRelatorioCompletoPDF({ lead, diagnostico }: GerarPdfParams)
   doc.addPage()
   cursorY = 20
   adicionarCabecalhoPagina()
+
+  // ==========================================
+  // RESUMO DO DIAGNÓSTICO (SÍNTESE EXECUTIVA)
+  // Inserido logo após cabeçalho/governança da capa, antes da Seção 1 (Entradas)
+  // ==========================================
+  checkNewPage(16)
+  doc.setFillColor(15, 23, 42) // Slate 900
+  doc.rect(marginX, cursorY, maxLineWidth, 7.5, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.setTextColor(255, 255, 255)
+  doc.text('RESUMO DO DIAGNÓSTICO (SÍNTESE EXECUTIVA)', marginX + 3, cursorY + 5.2)
+  cursorY += 11
+
+  const resumoTexto =
+    diagnostico?.relatorio_gerado && diagnostico.relatorio_gerado.trim().length > 0
+      ? diagnostico.relatorio_gerado.trim()
+      : 'Resumo não disponível para este run'
+
+  if (resumoTexto === 'Resumo não disponível para este run') {
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(8.5)
+    doc.setTextColor(100, 116, 139)
+    doc.text(resumoTexto, marginX, cursorY)
+    cursorY += 7
+  } else {
+    // Renderiza como texto integral (quebrar páginas se necessário, não cortar/truncar)
+    const paragrafos = resumoTexto.split(/\r?\n/)
+    paragrafos.forEach((paragrafo) => {
+      const pTrim = paragrafo.trim()
+      if (!pTrim) {
+        cursorY += 2
+        return
+      }
+
+      // Detecta títulos ou marcadores Markdown para formatação visual limpa e hierárquica
+      const isHeader1 = pTrim.startsWith('# ')
+      const isHeader2 = pTrim.startsWith('## ')
+      const isHeader3 = pTrim.startsWith('### ')
+      const isHeader4 = pTrim.startsWith('#### ')
+
+      if (isHeader1 || isHeader2 || isHeader3 || isHeader4) {
+        const nivelTitulo = isHeader1 ? 1 : isHeader2 ? 2 : isHeader3 ? 3 : 4
+        const textoTitulo = pTrim.replace(/^#+\s*/, '')
+        const fontSize = nivelTitulo === 1 ? 10 : nivelTitulo === 2 ? 9 : 8.5
+        const topMargin = nivelTitulo === 1 ? 5 : 3.5
+
+        checkNewPage(topMargin + 6)
+        cursorY += topMargin
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(fontSize)
+        if (nivelTitulo <= 2) {
+          doc.setTextColor(0, 102, 204)
+        } else {
+          doc.setTextColor(15, 23, 42)
+        }
+        const linhasTit = doc.splitTextToSize(textoTitulo, maxLineWidth)
+        linhasTit.forEach((lt: string) => {
+          checkNewPage(4.5)
+          doc.text(lt, marginX, cursorY)
+          cursorY += 4.2
+        })
+        cursorY += 1.5
+      } else {
+        const isBullet = pTrim.startsWith('- ') || pTrim.startsWith('* ') || pTrim.startsWith('• ')
+        const textoLinha = isBullet ? pTrim.replace(/^[-*•]\s*/, '') : pTrim
+        const indentX = isBullet ? marginX + 4 : marginX
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(51, 65, 85)
+
+        const linhasCorpo = doc.splitTextToSize(
+          textoLinha,
+          isBullet ? maxLineWidth - 4 : maxLineWidth,
+        )
+        linhasCorpo.forEach((lc: string, idx: number) => {
+          checkNewPage(4.2)
+          if (isBullet && idx === 0) {
+            doc.setFont('helvetica', 'bold')
+            doc.setTextColor(0, 102, 204)
+            doc.text('•', marginX + 1, cursorY)
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(51, 65, 85)
+          }
+          doc.text(lc, indentX, cursorY)
+          cursorY += 3.7
+        })
+        cursorY += 1
+      }
+    })
+    cursorY += 5
+  }
+
+  // Linha divisória antes da Seção 1
+  checkNewPage(8)
+  doc.setDrawColor(226, 232, 240)
+  doc.setLineWidth(0.3)
+  doc.line(marginX, cursorY, pageWidth - marginX, cursorY)
+  cursorY += 6
 
   // ==========================================
   // SEÇÃO 1: ENTRADAS, RESPOSTAS, ANEXOS E METADADOS
