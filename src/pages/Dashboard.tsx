@@ -660,13 +660,13 @@ export default function Dashboard() {
                   </Badge>
                 ) : (
                   <Badge className="bg-[#22B14C] text-white text-[9px] font-mono border-none">
-                    Dado Real V7.2
+                    Serviço de Diagnóstico V7.2.3
                   </Badge>
                 )}
               </div>
               <p className="text-xs text-[#808080] mt-0.5">
-                Exibição integral das 15 linhas canônicas. Linhas não segregadas ou declaradas
-                recebem o marcador obrigatório{' '}
+                Exibição integral das 15 linhas canônicas consumidas do Serviço de Diagnóstico.
+                Rastreabilidade: Fase 6 (Prompt P9). Linhas não segregadas recebem{' '}
                 <code className="text-amber-800 font-bold">[REQUER VERIFICAÇÃO]</code>.
               </p>
             </div>

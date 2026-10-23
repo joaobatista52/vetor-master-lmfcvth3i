@@ -207,6 +207,40 @@ export async function executarCadenciaNutricaoManual(): Promise<{
   }
 }
 
+/**
+ * Invocação direta do Serviço de Diagnóstico JBP V7.2.3 (Trilha A)
+ * Exposto como endpoint de serviço para consumo do App como Casca Transacional
+ */
+export async function invocarServicoDiagnostico(params: {
+  dossie: any
+  metadados?: {
+    lead_id?: string
+    versao_questionario?: string
+    autorizacao_devolutiva?: string
+    origem_tipo?: string
+    origem_parceiro?: string
+  }
+  dry_run?: boolean
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const res = await pb.send<any>('/backend/v1/servico-diagnostico', {
+      method: 'POST',
+      body: {
+        dossie: params.dossie,
+        metadados: params.metadados || {},
+        dry_run: Boolean(params.dry_run),
+      },
+    })
+    return { success: true, data: res }
+  } catch (err: any) {
+    console.error('Falha ao invocar Serviço de Diagnóstico:', err)
+    return {
+      success: false,
+      error: err?.message || 'Falha na comunicação com o Serviço de Diagnóstico.',
+    }
+  }
+}
+
 export async function getIntegracaoSiteConfig(): Promise<IntegracaoSiteConfig | null> {
   try {
     const record = await pb

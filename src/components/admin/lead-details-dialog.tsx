@@ -2059,11 +2059,12 @@ export function LeadDetailsDialog({
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-[#3DDC74]" />
                     <span className="font-semibold text-[#F8FAFC]">
-                      Linha do Tempo da Execução — 8 Fases do Master Framework V2.4
+                      Linha do Tempo da Execução — 8 Fases do Master Framework V2.4 (Serviço Trilha
+                      A)
                     </span>
                     {diagnosticoVinculado?.output_prompts && (
                       <Badge className="bg-[#3DDC74]/20 text-[#3DDC74] border border-[#3DDC74]/40 text-[10px]">
-                        {diagnosticoVinculado.output_prompts.length}/8 Fases Concluídas
+                        {diagnosticoVinculado.output_prompts.length}/8 Fases Concluídas via Serviço
                       </Badge>
                     )}
                   </div>
