@@ -4,6 +4,9 @@ onRecordAfterCreateSuccess((e) => {
   var relatorio = e.record.getString('relatorio_gerado')
   var text = (dadosStr + '\n' + relatorio).trim()
   if (!text) return e.next()
+  if (text.length > 12000) {
+    text = text.substring(0, 12000)
+  }
   try {
     var res = $ai.embed({ input: text })
     var record = $app.findRecordById('diagnosticos', e.record.id)

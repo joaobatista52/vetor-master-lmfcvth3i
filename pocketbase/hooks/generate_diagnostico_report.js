@@ -1,4 +1,9 @@
 onRecordAfterCreateSuccess((e) => {
+  // Se o registro já possui status concluído ou output_prompts gerados por outro hook/worker (ex.: Trilha A), não sobrescrever
+  if (e.record.getString('status') === 'concluido' || e.record.get('output_prompts')) {
+    return e.next()
+  }
+
   var dados = e.record.get('dados_entrada')
   if (!dados) return e.next()
 

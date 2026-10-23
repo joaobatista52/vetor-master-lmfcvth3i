@@ -523,17 +523,25 @@ migrate(
       validador: 'servico_diagnostico_trilha_a_a8',
     }
 
-    // 9. Relatório consolidado das 8 Fases
-    const relatorioConsolidado =
-      '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL (SERVIÇO TRILHA A) — BEATEK INDÚSTRIA E COMÉRCIO DE ELETRO-ELETRÔNICOS LTDA\n' +
+    // 9. Relatório consolidado das 8 Fases (Resumo executivo <= 5000 chars conforme limite do campo)
+    // O texto integral de cada uma das 8 fases está preservado sem cortes em diagRec.output_prompts.
+    const relatorioResumoExecutivo = (
+      '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL (TRILHA A) — BEATEK INDÚSTRIA E COMÉRCIO\n' +
       'Protocolo: ' +
       protocolo +
-      ' | Setor: Indústria | Versão: V6.7 | Executado via Serviço de Diagnóstico Trilha A (jbp-gestao-master)\n\n' +
-      definicaoFasesTrilhaA
-        .map(function (f) {
-          return '### ' + f.titulo + ' (' + f.prompt_id + ')\n\n' + f.output_integral
-        })
-        .join('\n\n---\n\n')
+      ' | Setor: Indústria | Versão: V6.7 (CS-19) | Status: Concluído (8 Fases P1–P13)\n' +
+      'Motor: Serviço de Diagnóstico Trilha A (jbp-gestao-master, tier reasoning) | Gate 9.2: "Não autorizo" (CS-20)\n\n' +
+      'SÍNTESE EXECUTIVA DO RUN FRESCO TRILHA A (PASSOS 6–8):\n' +
+      '1. FASE 1 (P1/P2) — Causa Raiz: Descompasso entre expansão fabril (POA alugado vs Viamão próprio) e capital de giro bancário Itaú com spread de mercado. Triangulação ECD 2025 vs R$ 7,5M declarados confirmada.\n' +
+      '2. FASE 2 (P5) — Foresight: Cenário "Salto Industrial" provável. EWS: câmbio > R$ 5,80/USD e atraso de obra Viamão > 60 dias.\n' +
+      '3. FASE 3 (P6) — Estratégia: Matriz EREC Canônica A9 (13 intervenções) com densidade cheia em 4 colunas; Curva de Valor B2B técnica.\n' +
+      '4. FASE 4 (P7) — Design Organizacional: Lente de Hackman e Tiers A/B/C mapeados para 20 colaboradores industriais.\n' +
+      '5. FASE 5 (P8) — Execução: Regra Camaleão, Roadmap tabular 0-90, 90-180, 180-360 dias e Rituais Daily/Weekly/Monthly.\n' +
+      '6. FASE 6 (P9) — Validação Financeira: DRE Normalizada 15 Linhas (CS-17) com RB = R$ 7,5M; WACC Regime B determinístico 21,75%; EV R$ 16,92M; Equity Value R$ 15,74M; Margem de Segurança 82,7%.\n' +
+      '7. FASE 7 (P10) — Governança PME em 2 Etapas: Conselho Consultivo máx 5 membros com assento do parceiro RGS; Matriz de Alçadas.\n' +
+      '8. FASE 8 (P11-P13) — Inovação: Roadmap ERP em nuvem + MES industrial para a fábrica de Viamão; Moat de rastreabilidade técnica.\n\n' +
+      'O detalhamento integral e os prompts/respostas de cada fase estão salvos no campo output_prompts.'
+    ).substring(0, 4800)
 
     // 10. Atualizar registro do diagnóstico vinculado
     let diagRec
@@ -549,7 +557,7 @@ migrate(
     diagRec.set('status', 'concluido')
     diagRec.set('versao_questionario', 'V6.7')
     diagRec.set('autorizacao_devolutiva', 'Não autorizo')
-    diagRec.set('relatorio_gerado', relatorioConsolidado)
+    diagRec.set('relatorio_gerado', relatorioResumoExecutivo)
     diagRec.set('fase_atual', 8)
     diagRec.set('dados_entrada', payloadDossie)
     diagRec.set(
@@ -651,7 +659,17 @@ migrate(
     // 12. Registrar log de auditoria da execução Trilha A
     try {
       const logsCol = app.findCollectionByNameOrId('logs_auditoria')
+      let adminUser
+      try {
+        adminUser = app.findFirstRecordByData('users', 'role', 'admin')
+      } catch (_) {}
+
       const auditRec = new Record(logsCol)
+      if (adminUser) {
+        auditRec.set('user', adminUser.id)
+      } else {
+        auditRec.set('user', '56r96tnoumhph2z')
+      }
       auditRec.set('action', 'Teste Trilha A — Serviço de Diagnóstico JBP V7.2.3')
       auditRec.set('resource', 'diagnosticos')
       auditRec.set(
@@ -667,7 +685,9 @@ migrate(
           ' out). 4 disparos de e-mail suprimidos.',
       )
       app.save(auditRec)
-    } catch (_) {}
+    } catch (eLog) {
+      console.log('Aviso ao registrar log_auditoria Trilha A: ' + eLog.message)
+    }
 
     console.log(
       'Migration 0081: Teste de Paridade Trilha A concluído com sucesso para beatekteste2026.',
