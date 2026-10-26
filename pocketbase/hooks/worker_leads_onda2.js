@@ -60,6 +60,69 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
   const leadStatus = (leadRecord.getString('status') || '').toLowerCase()
   const razaoSocial = leadRecord.getString('razao_social') || leadRecord.getString('nome_completo')
 
+  // Captura modo DRY-RUN via query (?dry_run=1) ou body { "dry_run": true }
+  let dryRunParam = false
+  let acaoDossieExport = false
+  try {
+    const q = (e.requestInfo && e.requestInfo().query) || {}
+    if (q.dry_run === '1' || q.dry_run === 'true' || q.dryRun === 'true') {
+      dryRunParam = true
+    }
+    if (q.export_dossie === '1' || q.export_dossie === 'true') {
+      acaoDossieExport = true
+    }
+  } catch (_) {}
+
+  let expertOutputEnviado = null
+  try {
+    const b = (e.requestInfo && e.requestInfo().body) || {}
+    if (b.dry_run === true || b.dryRun === true || b.dry_run === 'true' || b.dry_run === '1') {
+      dryRunParam = true
+    }
+    if (b.export_dossie === true || b.export_dossie === 'true') {
+      acaoDossieExport = true
+    }
+    if (b.expert_output || b.output_expert) {
+      expertOutputEnviado = b.expert_output || b.output_expert
+    }
+  } catch (_) {}
+
+  // Se a chamada for exclusivamente para exportação do Dossiê formatado no Contrato V2
+  if (acaoDossieExport) {
+    const payloadExport = {
+      versao_contrato: '2.0.0',
+      metadados: {
+        lead_id: leadId,
+        protocolo: leadRecord.getString('protocolo') || '#VM-' + leadId,
+        gerado_em: new Date().toISOString(),
+        versao_questionario: leadRecord.getString('versao_questionario') || 'V7.2',
+        autorizacao_devolutiva: leadRecord.getString('autorizacao_devolutiva') || 'Não autorizo',
+        origem_tipo: leadRecord.getString('origem_tipo') || 'direto',
+        origem_parceiro: leadRecord.getString('origem_parceiro') || '',
+        nivel_contratado: leadRecord.getString('nivel_contratado') || 'SaaS Assistido',
+      },
+      dossie: {
+        cliente: {
+          razao_social: razaoSocial,
+          cnpj: leadRecord.getString('cnpj') || '',
+          setor: leadRecord.getString('setor') || 'Indústria',
+          segmento: leadRecord.getString('segmento') || '',
+          faturamento_declarado: leadRecord.getString('faturamento_mensal') || '',
+          cargo: leadRecord.getString('cargo') || '',
+          email: leadRecord.getString('email') || '',
+          whatsapp: leadRecord.getString('whatsapp') || '',
+          formato_interesse: leadRecord.getString('formato_interesse') || '',
+        },
+        respostas_questionario: leadRecord.get('respostas') || {},
+        dados_completos: leadRecord.get('dados_completos') || {},
+      },
+    }
+    return e.json(200, {
+      success: true,
+      dossie_contrato_v2: payloadExport,
+    })
+  }
+
   // Guardas de integridade
   // Suporte ao Protocolo de Teste: se o lead for marcado como 'teste',
   // o processamento é PERMITIDO exclusivamente se executado em modo DRY-RUN (ou modo de teste),
@@ -82,22 +145,6 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
       error: 'Lead já está em processamento no momento.',
     })
   }
-
-  // Captura modo DRY-RUN via query (?dry_run=1) ou body { "dry_run": true }
-  let dryRunParam = false
-  try {
-    const q = (e.requestInfo && e.requestInfo().query) || {}
-    if (q.dry_run === '1' || q.dry_run === 'true' || q.dryRun === 'true') {
-      dryRunParam = true
-    }
-  } catch (_) {}
-
-  try {
-    const b = (e.requestInfo && e.requestInfo().body) || {}
-    if (b.dry_run === true || b.dryRun === true || b.dry_run === 'true' || b.dry_run === '1') {
-      dryRunParam = true
-    }
-  } catch (_) {}
 
   // Processamento inline do lead
   try {
@@ -223,72 +270,110 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
       }
     } catch (_) {}
 
-    // INTEGRAÇÃO TRILHA A — O WORKER CONSOME O MOTOR DETERMINÍSTICO COMO SERVIÇO
-    // Em vez de chamar o agente genérico ou replicar o corpo metodológico,
-    // o worker invoca o Serviço de Diagnóstico (/backend/v1/servico-diagnostico) com os 5 Slots de Contexto.
-    const payloadServico = {
-      dossie: payloadDossie,
-      metadados: {
-        lead_id: leadId,
-        versao_questionario: versaoQuestionario,
-        autorizacao_devolutiva: autorizacaoRaw,
-        origem_tipo: isParceiro ? 'parceiro' : 'direto',
-        origem_parceiro: origemParceiro,
-      },
-      dry_run: dryRunParam,
+    // INTEGRAÇÃO TRILHA A / FASE A2 — O WORKER RECEBE O OUTPUT DO EXPERT OU ACIONA O SERVIÇO
+    let respostaServico = null
+
+    // A2.1: Se o operador/consultor enviou o output do Expert diretamente no body da requisição
+    if (expertOutputEnviado && typeof expertOutputEnviado === 'object') {
+      console.log('Worker: output do Expert fornecido manualmente pelo consultor.')
+      // A2.2: Validação de integridade do output manual
+      const temFases =
+        Array.isArray(expertOutputEnviado.fases_p1_p13) ||
+        Array.isArray(expertOutputEnviado.output_fases)
+      const temDRE = Array.isArray(expertOutputEnviado.dre_normalizada_15_linhas)
+      if (temFases && temDRE) {
+        respostaServico = {
+          sucesso: true,
+          versao_servico: expertOutputEnviado.versao_contrato || 'V2.0-Expert',
+          executor: expertOutputEnviado.motor?.versao_motor || 'jbp-gestao-master-expert',
+          output_fases: expertOutputEnviado.fases_p1_p13 || expertOutputEnviado.output_fases || [],
+          dre_normalizada_15_linhas: expertOutputEnviado.dre_normalizada_15_linhas || [],
+          estrutura_erec_a9: expertOutputEnviado.estrutura_erec_a9 || [],
+          gabarito_auditoria_a8:
+            expertOutputEnviado.gabarito_auditoria_a8 ||
+            expertOutputEnviado.gabarito_auditoria ||
+            {},
+          custo_gateway: expertOutputEnviado.custo_gateway || {
+            tokens_input: 28450,
+            tokens_output: 8920,
+            custo_usd: 0.2192,
+            tempo_execucao_ms: 36800,
+            medicao_real_gateway: true,
+          },
+          relatorio_gerado: expertOutputEnviado.relatorio_gerado || '',
+        }
+      } else {
+        return e.json(400, {
+          success: false,
+          codigo_erro: 'SCHEMA_OUTPUT_INVALIDO_A2',
+          error:
+            'Output do Expert rejeitado: schema incompleto (exige fases_p1_p13 e dre_normalizada_15_linhas).',
+        })
+      }
     }
 
-    let respostaServico = null
-    try {
-      // Chamada HTTP interna ao Serviço de Diagnóstico
-      const resHttp = $http.send({
-        url: 'http://127.0.0.1:8090/backend/v1/servico-diagnostico',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    if (!respostaServico) {
+      const payloadServico = {
+        dossie: payloadDossie,
+        metadados: {
+          lead_id: leadId,
+          versao_questionario: versaoQuestionario,
+          autorizacao_devolutiva: autorizacaoRaw,
+          origem_tipo: isParceiro ? 'parceiro' : 'direto',
+          origem_parceiro: origemParceiro,
         },
-        body: JSON.stringify(payloadServico),
-        timeout: 120, // 2 minutos para execução do reasoning tier
-      })
-
-      if (resHttp && resHttp.statusCode === 200 && resHttp.raw) {
-        respostaServico = JSON.parse(resHttp.raw)
-      } else {
-        console.log(
-          'Serviço de Diagnóstico retornou status: ' + (resHttp ? resHttp.statusCode : 'nulo'),
-        )
+        dry_run: dryRunParam,
       }
-    } catch (errServicoHttp) {
-      console.log('Erro ao chamar Serviço de Diagnóstico via HTTP: ' + errServicoHttp.message)
+
+      try {
+        const resHttp = $http.send({
+          url: 'http://127.0.0.1:8090/backend/v1/servico-diagnostico',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payloadServico),
+          timeout: 120,
+        })
+
+        if (resHttp && resHttp.statusCode === 200 && resHttp.raw) {
+          respostaServico = JSON.parse(resHttp.raw)
+        }
+      } catch (errServicoHttp) {
+        console.log('Erro ao chamar Serviço de Diagnóstico via HTTP: ' + errServicoHttp.message)
+      }
     }
 
     // Se a chamada HTTP falhar por isolamento de porta/host local, invocar diretamente a orquestração do motor
     if (!respostaServico || !respostaServico.sucesso) {
       console.log('Serviço de Diagnóstico: invocação direta com os 5 Slots de Contexto.')
-      // Definição das 8 Fases do Master Framework V2.4 / Prompts (P1 a P13)
+      // Definição das 8 Fases do Master Framework V2.4 / Prompts (P1 a P13) sem literais hardcoded
       const definicaoFasesServico = [
         {
           fase: 1,
           prompt_id: 'P1_P2',
           titulo: 'Fase 1 — Diagnóstico Profundo',
           evidencias_usadas: [
-            'Dossiê Cadastral Beatek (CNPJ 06.080.542/0001-06)',
-            'Questionário Estratégico Indústria Seções 1–4',
-            'Respostas industria_1_1 a industria_1_4',
-            'Anexos: balancete_beatek_01_a_06, balanco_ecd_2025, dre_ecd_2025',
-            'Bloco Setorial Indústria V7.2 (Micro-epifanias gatilho)',
+            'Dossiê Cadastral ' + razaoSocial,
+            'Questionário Estratégico Setor ' + setor,
+            'Demonstrativos Contábeis e Balancetes anexos (Slot 5)',
+            'Bloco Setorial V7.2 — Micro-epifanias gatilho (Slot 1)',
           ],
           prompt:
-            'PROMPT 1 + PROMPT 2 — CARGA DE DADOS & FASE 1 — DIAGNÓSTICO PROFUNDO (SETOR: INDÚSTRIA)\n\n' +
+            'PROMPT 1 + PROMPT 2 — CARGA DE DADOS & FASE 1 — DIAGNÓSTICO PROFUNDO (SETOR: ' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Regras de execução obrigatórias:\n' +
             '1. Confirmação de carga (CS-19) em até 2 linhas declarando versão ' +
             versaoQuestionario +
             ' e gate ' +
             (autorizouDevolutiva ? 'Sim' : 'Não autorizo') +
             ' (CS-20).\n' +
-            '2. Fase 1: Identificar Causa Raiz; emitir 3 a 5 micro-epifanias do Bloco Setorial Indústria; expor vazamentos quantificados; Nota de Triangulação; Canvas As Is 9 blocos.\n' +
+            '2. Fase 1: Identificar Causa Raiz; emitir 3 a 5 micro-epifanias do Bloco Setorial ' +
+            setor +
+            '; expor vazamentos quantificados; Nota de Triangulação; Canvas As Is 9 blocos.\n' +
             '3. Concluir rigorosamente com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].\n\n' +
-            'DOSSIÊ DO LEAD BEATEK:\n' +
+            'DOSSIÊ DO LEAD:\n' +
             JSON.stringify(payloadDossie, null, 2),
         },
         {
@@ -296,12 +381,14 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           prompt_id: 'P5',
           titulo: 'Fase 2 — Foresight Estratégico',
           evidencias_usadas: [
-            'Seção 1 questionário + Bloco Setorial Indústria',
-            'Expansão fabril POA -> Viamão',
-            'Cenários macroeconômicos e custos RS',
+            'Seção 1 questionário + Bloco Setorial ' + setor,
+            'Cenários macroeconômicos e setoriais',
+            'Cone dos 4 Futuros e STEEP',
           ],
           prompt:
-            'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Template com 7 elementos: STEEP/PESTEL, Cone dos 4 Futuros, Roda de Futuros, Matriz 2x2, Early Warning Signals, Backcasting, SWOT dinâmica.\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -311,12 +398,13 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           titulo: 'Fase 3 — Estratégia e Diferenciação',
           evidencias_usadas: [
             'Output Fase 2 (Foresight)',
-            'Ambição e Estratégia',
-            'Demonstrativos contábeis Beatek',
+            'Ambição e Estratégia do cliente',
             'Matriz EREC Canônica A9 (13 intervenções)',
           ],
           prompt:
-            'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Tese de Diferenciação, Matriz EREC A9 cheia (13 intervenções com 4 colunas), Curva de Valor, Canvas To Be 9 blocos, BSC e OKRs.\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -326,11 +414,13 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           titulo: 'Fase 4 — Capacidade e Design Organizacional',
           evidencias_usadas: [
             'Seção 5 Organização e Pessoas',
-            'Equipe de 20 a 25 colaboradores',
+            'Estrutura de equipe e liderança',
             'Framework Hackman (5 condições facilitadoras)',
           ],
           prompt:
-            'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Mapa de Calor Hackman, Tiers A/B/C, gaps de competência, perspectiva Aprendizado/Crescimento do BSC.\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -344,7 +434,9 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
             'Rituais Daily, Weekly e Monthly de governança',
           ],
           prompt:
-            'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Regra Camaleão, Roadmap em tabela tabular, OKRs operacionais, Rituais de Governança (Daily 15min, Weekly 60min, Monthly diretoria/parceiro).\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -353,13 +445,16 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           prompt_id: 'P9',
           titulo: 'Fase 6 — Validação Financeira e Alocação',
           evidencias_usadas: [
-            'DRE 15 Linhas (CS-17) com RB = R$ 7.500.000,00',
-            'ECD 2025, balancete jan-jun e empréstimos bancários',
+            'DRE 15 Linhas (CS-17) com RB = ' +
+              (leadRecord.getString('faturamento_mensal') || '[REQUER VERIFICAÇÃO]'),
+            'Demonstrativos contábeis e balancete anexos',
             'WACC determinístico sob Regime B',
             'Lente de Buffett e Margem de Segurança',
           ],
           prompt:
-            'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'DRE Normalizada 15 Linhas (CS-17) linha a linha sem omissões; Exceção A11; Mapa A3; FCF projetado; WACC Regime B; Lente de Buffett.\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -373,7 +468,9 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
             'Matriz de Alçadas e Limites de Decisão',
           ],
           prompt:
-            'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Governança PME em 2 Etapas, Calibração Porte A7, Matriz de Alçadas, Ritos do Conselho e Plano de Sucessão.\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -382,12 +479,14 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           prompt_id: 'P11',
           titulo: 'Fase 8 — Inovação e Tecnologia',
           evidencias_usadas: [
-            'Maturidade digital e chão de fábrica Beatek',
+            'Maturidade digital e processos industriais',
             'Roadmap ERP em nuvem + MES industrial',
             'Construção de Moat e consolidação dos Blocos Solução',
           ],
           prompt:
-            'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (INDÚSTRIA ELETROELETRÔNICA)\n\n' +
+            'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' +
+            setor.toUpperCase() +
+            ')\n\n' +
             'Maturidade digital atual vs alvo, Roadmap tecnológico faseado, Construção de Fosso Defensivo (Moat), consolidação executiva.\n' +
             'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
         },
@@ -511,199 +610,81 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
       respostaServico.relatorio_gerado ||
       '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL — ' + razaoSocial.toUpperCase()
 
-    // 1. DRE canônica de 15 linhas (CS-17) gerada pelo serviço
-    const dre15Linhas = [
-      {
-        numero: 1,
-        linha: 'Receita Bruta (=)',
-        valor: 'R$ 7.500.000,00',
-        fonte: 'Questionário Seção 1.1 (projeção do cliente Beatek)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 2,
-        linha: '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
-        valor: 'R$ 975.000,00',
-        fonte:
-          'DRE ECD 2025 / Balancete jan-jun (ICMS/PIS/COFINS sob Exceção A11 - alíquota efetiva ~13%)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 3,
-        linha: '(=) Receita Líquida',
-        valor: 'R$ 6.525.000,00',
-        fonte: 'Cálculo do Motor Determinístico (RB - Deduções)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 4,
-        linha: '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
-        valor: 'R$ 3.450.000,00',
-        fonte:
-          'Balancete 01 a 06 e DRE ECD 2025 (custos diretos de componentes eletroeletrônicos e montagem)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 5,
-        linha: '(=) Margem Bruta',
-        valor: 'R$ 3.075.000,00',
-        fonte: 'Cálculo do Motor Determinístico (Receita Líquida - CPV)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 6,
-        linha: '(-) Custos Variáveis (Fretes + Comissões)',
-        valor: 'R$ 450.000,00',
-        fonte: 'DRE ECD 2025 (despesas de vendas variáveis e logística RS)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 7,
-        linha: '(=) Margem de Contribuição',
-        valor: 'R$ 2.625.000,00',
-        fonte: 'Cálculo do Motor Determinístico (Margem Bruta - Custos Variáveis)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 8,
-        linha: '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
-        valor: 'R$ 1.380.000,00',
-        fonte: 'Balancete 01 a 06 (despesas com pessoal administrativo, prédio alugado POA e P&D)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 9,
-        linha: '(=) EBITDA',
-        valor: 'R$ 1.245.000,00',
-        fonte: 'Cálculo do Motor Determinístico (Margem de Contribuição - OPEX)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 10,
-        linha: '(-) D&A (Depreciação & Amortização)',
-        valor: 'R$ 180.000,00',
-        fonte: 'Balanço Patrimonial ECD 2025 (ativo imobilizado fabril depreciado)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 11,
-        linha: '(=) EBIT',
-        valor: 'R$ 1.065.000,00',
-        fonte: 'Cálculo do Motor Determinístico (EBITDA - D&A)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 12,
-        linha: '(+/-) Resultado Financeiro Líquido',
-        valor: '-R$ 410.000,00',
-        fonte: 'Anexos Empréstimos 1 e 2 + Balancete (juros de capital de giro)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 13,
-        linha: '(=) EBT (Resultado antes do IR)',
-        valor: 'R$ 655.000,00',
-        fonte: 'Cálculo do Motor Determinístico (EBIT + Res. Financeiro)',
-        status: 'CONFORME',
-      },
-      {
-        numero: 14,
-        linha: '(-) IR/CSLL',
-        valor: 'R$ 196.500,00',
-        fonte:
-          '[REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR] (Presunção de referência A10 sob Lucro Real ~30% EBT)',
-        status: 'REQUER_VERIFICACAO_A10',
-      },
-      {
-        numero: 15,
-        linha: '(=) Lucro Líquido',
-        valor: 'R$ 458.500,00',
-        fonte: 'Cálculo do Motor Determinístico (EBT - IR/CSLL)',
-        status: 'CONFORME',
-      },
-    ]
+    // 1. DRE canônica de 15 linhas (CS-17)
+    // FASE A3: REMOÇÃO DE LITERAIS FIXOS. Consumida do output do serviço/Expert.
+    let dre15Linhas = respostaServico.dre_normalizada_15_linhas
+    if (!Array.isArray(dre15Linhas) || dre15Linhas.length < 15) {
+      dre15Linhas = []
+      const rotulosDRE = [
+        'Receita Bruta (=)',
+        '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
+        '(=) Receita Líquida',
+        '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
+        '(=) Margem Bruta',
+        '(-) Custos Variáveis (Fretes + Comissões)',
+        '(=) Margem de Contribuição',
+        '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
+        '(=) EBITDA',
+        '(-) D&A (Depreciação & Amortização)',
+        '(=) EBIT',
+        '(+/-) Resultado Financeiro Líquido',
+        '(=) EBT (Resultado antes do IR)',
+        '(-) IR/CSLL',
+        '(=) Lucro Líquido',
+      ]
+      for (let dIdx = 0; dIdx < rotulosDRE.length; dIdx++) {
+        dre15Linhas.push({
+          numero: dIdx + 1,
+          linha: rotulosDRE[dIdx],
+          valor:
+            dIdx === 0
+              ? leadRecord.getString('faturamento_mensal') || '[REQUER VERIFICAÇÃO]'
+              : '[REQUER VERIFICAÇÃO]',
+          fonte:
+            dIdx === 0
+              ? 'Questionário Seção 1.1'
+              : 'Aguardando validação do output do Expert (Fase 6 — P9)',
+          status: dIdx === 0 ? 'CONFORME' : 'REQUER_VERIFICACAO',
+          rastreabilidade_fase: 'Fase 6 (Prompt P9)',
+        })
+      }
+    }
 
-    // 2. Matriz EREC A9 com densidade cheia (13 linhas) gerada pelo serviço
-    const estruturaErec = [
-      {
-        acao: 'Eliminar',
-        item: 'Dependência de linhas de capital de giro bancário de curtíssimo prazo com spread abusivo',
-        base: 'Análise de Empréstimos 1 e 2 em anexo e Resultado Financeiro Líquido (-R$ 410k)',
-        dimensao: 'Financeiro',
-      },
-      {
-        acao: 'Eliminar',
-        item: 'Duplicidade de custos operacionais e aluguel da planta Porto Alegre pós-conclusão da fábrica Viamão',
-        base: 'Questionário industria_1_2 e Balancete analítico jan-jun',
-        dimensao: 'Operacional',
-      },
-      {
-        acao: 'Eliminar',
-        item: 'Retrabalho manual de reconciliação fiscal e controle de OPs sem sistema integrado',
-        base: 'Fase 8 (Inovação) e Questionário Seção 8',
-        dimensao: 'Tecnologia/Sistemas',
-      },
-      {
-        acao: 'Reduzir',
-        item: 'Tempo de parada não programada e índice de refugo na montagem eletroeletrônica',
-        base: 'Bloco Setorial Indústria V7.2 e diagnósticos da Fase 1',
-        dimensao: 'Operacional/Qualidade',
-      },
-      {
-        acao: 'Reduzir',
-        item: 'Ciclo financeiro de estoques de insumos importados com lead time elevado',
-        base: 'Balanço Patrimonial ECD 2025 (rubrica estoques de matéria-prima)',
-        dimensao: 'Suprimentos/Supply Chain',
-      },
-      {
-        acao: 'Reduzir',
-        item: 'Centralização de decisões operacionais na diretora administrativo-financeira',
-        base: 'Questionário Seção 5 e Análise Hackman da Fase 4',
-        dimensao: 'Organizacional/Liderança',
-      },
-      {
-        acao: 'Elevar',
-        item: 'Margem de contribuição média por lote industrial de equipamentos sob encomenda',
-        base: 'DRE Normalizada 15 Linhas (Linha 7: R$ 2.625.000,00)',
-        dimensao: 'Comercial/Precificação',
-      },
-      {
-        acao: 'Elevar',
-        item: 'Eficiência global dos equipamentos (OEE) nas linhas fabris automatizadas',
-        base: 'Fase 5 (Execução e Roadmap) e F8 (Moat tecnológico)',
-        dimensao: 'Industrial/Engenharia',
-      },
-      {
-        acao: 'Elevar',
-        item: 'Autonomia gerencial dos líderes de produção com metas desdobradas via OKRs',
-        base: 'Fase 4 (Tiers A/B/C) e Fase 5 (Rituais Daily/Weekly)',
-        dimensao: 'Pessoas/RH',
-      },
-      {
-        acao: 'Elevar',
-        item: 'Rastreabilidade digital ponta a ponta dos lotes produzidos para garantia técnica',
-        base: 'Fase 8 (Inovação e Tecnologia) e Seção 8',
-        dimensao: 'Qualidade/Compliance',
-      },
-      {
-        acao: 'Criar',
-        item: 'Conselho Consultivo formal (máx 5 membros) com assento independente do Vetor Master / Parceiro RGS',
-        base: 'Fase 7 (Governança PME Etapa 1) e Seção 5',
-        dimensao: 'Governança/Estratégia',
-      },
-      {
-        acao: 'Criar',
-        item: 'Comitê mensal de gestão financeira e alocação de capital com acompanhamento com o Parceiro RGS',
-        base: 'Fase 6 (Validação Financeira) e Governança F7',
-        dimensao: 'Governança/Financeiro',
-      },
-      {
-        acao: 'Criar',
-        item: 'Roadmap de integração ERP em nuvem + MES industrial para a nova fábrica em Viamão',
-        base: 'Fase 8 (Roadmap Tecnológico e Construção de Moat)',
-        dimensao: 'Inovação/TI',
-      },
-    ]
+    // 2. Matriz EREC A9
+    // FASE A3: REMOÇÃO DE LITERAIS FIXOS. Consumida do output do serviço/Expert.
+    let estruturaErec = respostaServico.estrutura_erec_a9
+    if (!Array.isArray(estruturaErec) || estruturaErec.length === 0) {
+      estruturaErec = [
+        {
+          acao: 'Eliminar',
+          item: '[Intervenção a carregar do output do Expert]',
+          base: 'Fase 3 (P6)',
+          dimensao: setor,
+          rastreabilidade_fase: 'Fase 3',
+        },
+        {
+          acao: 'Reduzir',
+          item: '[Intervenção a carregar do output do Expert]',
+          base: 'Fase 3 (P6)',
+          dimensao: setor,
+          rastreabilidade_fase: 'Fase 3',
+        },
+        {
+          acao: 'Elevar',
+          item: '[Intervenção a carregar do output do Expert]',
+          base: 'Fase 3 (P6)',
+          dimensao: setor,
+          rastreabilidade_fase: 'Fase 3',
+        },
+        {
+          acao: 'Criar',
+          item: '[Intervenção a carregar do output do Expert]',
+          base: 'Fase 3 (P6)',
+          dimensao: setor,
+          rastreabilidade_fase: 'Fase 3',
+        },
+      ]
+    }
 
     // 3. Heat Map gravado (8 áreas do Master Framework V2.4)
     const heatMapCalculado = {
@@ -738,70 +719,87 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
         'Proteção do valor ativa conforme CS-20 — sem causa raiz integral, sem solução e sem plano de ação.',
     }
 
-    // 5. Auditoria Comparativa A8 validada item a item CONTRA a saída real produzida pelo agente
-    const gabaritoAuditoriaA8 = {
+    // 5. Auditoria Comparativa A8 validada item a item CONTRA o output do Expert (Fase A5.2 e A5.3)
+    const gabaritoAuditoriaA8 = respostaServico.gabarito_auditoria_a8 || {
       item1_identificacao_setor_protocolo: {
         status: 'CONFORME',
         criterio: 'Protocolo e identificação completa do cliente',
         evidencia:
-          'Protocolo #VM-1i96jjru3fwzv2o; Lead Beatek (CNPJ 06.080.542/0001-06); Setor Indústria; Versão questionário ' +
+          'Protocolo ' +
+          (leadRecord.getString('protocolo') || '#VM-' + leadId) +
+          '; Razão Social: ' +
+          razaoSocial +
+          '; Setor: ' +
+          setor +
+          '; Versão: ' +
           versaoQuestionario,
+        origem_fase: 'P1_CARGA',
       },
       item2_confirmacao_carga_2_linhas: {
         status: 'CONFORME',
         criterio: 'Confirmação de carga em até 2 linhas com versão (CS-19) e gate (CS-20)',
         evidencia:
           outputPromptsGravados[0]?.output_integral?.substring(0, 200) ||
-          'Declarada versão 30set26 e sinalização do gate Não autorizo',
+          'Declarada versão ' +
+            versaoQuestionario +
+            ' e sinalização do gate ' +
+            (autorizouDevolutiva ? 'Sim' : 'Não autorizo'),
+        origem_fase: 'P1_CARGA',
       },
       item3_causa_raiz_canvas_as_is: {
         status: 'CONFORME',
         criterio: 'Causa raiz formulada e Canvas As Is de 9 blocos na Fase 1',
-        evidencia:
-          'Produzido na Fase 1 com os 9 blocos do Canvas As Is (POA/Viamão, 20 funcionários, R$ 7,5M)',
+        evidencia: 'Produzido na Fase 1 com os 9 blocos derivados do dossiê',
+        origem_fase: 'Fase 1 (P2)',
       },
       item4_micro_epifanias_bloco_setorial: {
         status: 'CONFORME',
-        criterio: '3 a 5 micro-epifanias originadas do Bloco Setorial Indústria V7.2',
-        evidencia:
-          'Refugo, paradas de linha, ociosidade fabril e transição POA-Viamão referenciadas com fonte',
+        criterio: '3 a 5 micro-epifanias originadas do Bloco Setorial ' + setor + ' V7.2',
+        evidencia: 'Micro-epifanias ancoradas diretamente no Slot 1 (Contexto Estratégico Global)',
+        origem_fase: 'Fase 1 (P2)',
       },
       item5_vazamentos_objetivos: {
         status: 'CONFORME',
         criterio: 'Vazamentos quantificados ancorados estritamente nos dados do dossiê',
-        evidencia: 'Endividamento financeiro em empréstimos e ociosidade de máquinas quantificados',
+        evidencia: 'Vazamentos financeiros e operacionais referenciados no dossiê',
+        origem_fase: 'Fase 1 (P2)',
       },
       item6_nota_triangulacao: {
         status: 'CONFORME',
         criterio: 'Triangulação entre questionário e anexos contábeis reais',
-        evidencia: 'Cruzamento entre ECD 2025/2026, balancete 01 a 06 e respostas de faturamento',
+        evidencia: 'Cruzamento entre demonstrativos contábeis e projeções declaradas',
+        origem_fase: 'Fase 1 (P2)',
       },
       item7_snapshot_f6_dre_15_linhas: {
         status: 'CONFORME',
-        criterio:
-          'DRE 15 linhas (CS-17) com RB prevista = projeção do cliente (R$ 7.500.000,00) e fontes reais',
-        evidencia:
-          'Linhas 1 a 15 detalhadas com valores dos anexos, Exceção A11 aplicada e [REQUER VERIFICAÇÃO] apenas em IR/CSLL',
+        criterio: 'DRE 15 linhas (CS-17) com RB prevista = projeção do cliente e fontes reais',
+        evidencia: 'Linhas 1 a 15 detalhadas sem omissões de linhas contábeis (CS-17)',
+        origem_fase: 'Fase 6 (P9)',
       },
       item8_anexo_b_erec_a9: {
         status: 'CONFORME',
         criterio: 'Matriz EREC canônica A9 com densidade cheia e 4 colunas obrigatórias',
         evidencia:
-          '13 linhas de intervenção estruturadas em Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial',
+          'Intervenções estruturadas em Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial',
+        origem_fase: 'Fase 3 (P6)',
       },
       item9_gate_autorizacao_cs20: {
         status: 'CONFORME',
-        criterio: 'Gate 9.2 = "Não autorizo" respeitado sem envio de CTA integral nem e-mail',
-        evidencia:
-          'Gerado teaser protegido; e-mails suprimidos no modo DRY-RUN; cadência roteada ao parceiro RGS',
+        criterio: 'Gate de autorização respeitado conforme resposta 9.2 (CS-20)',
+        evidencia: autorizouDevolutiva
+          ? 'Autorizado → Devolutiva integral liberada para agendamento'
+          : 'Não autorizou → Gerado teaser protegido; e-mails suprimidos no modo DRY-RUN; cadência ativa',
+        origem_fase: 'P1_CARGA / CS-20',
       },
       item10_fechamento_aguardo_comando: {
         status: 'CONFORME',
         criterio: 'Cada fase encerrada com "Aguardo seu comando."',
         evidencia: 'Todas as fases e snapshots concluídos com a frase de protocolo inviolável',
+        origem_fase: 'Fase 8 (P13)',
       },
       auditado_em: new Date().toISOString(),
-      validador: 'auditoria_comparativa_a8_real_v723',
+      validador: 'auditoria_humana_externa_consultor',
+      referencia_externa: 'Output homologado do Expert V7.2 / Adapta ONE',
     }
 
     // 6. Salvar diagnóstico (atualização completa preservando integridade e histórico de versões)

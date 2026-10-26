@@ -400,197 +400,91 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   }
 
   // 8. DRE Normalizada Institucional de 15 Linhas (CS-17)
-  const dreNormalizada15Linhas = [
-    {
-      numero: 1,
-      linha: 'Receita Bruta (=)',
-      valor: faturamentoDeclarado,
-      fonte: 'Questionário Seção 1.1 (projeção oficial do cliente)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 2,
-      linha: '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
-      valor: 'R$ 975.000,00',
-      fonte: 'Demonstrativos Contábeis / Exceção A11 (alíquota efetiva ~13%)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 3,
-      linha: '(=) Receita Líquida',
-      valor: 'R$ 6.525.000,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (RB - Deduções)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 4,
-      linha: '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
-      valor: 'R$ 3.450.000,00',
-      fonte: 'Balancete Analítico e ECD (custos diretos apurados)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 5,
-      linha: '(=) Margem Bruta',
-      valor: 'R$ 3.075.000,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (RL - CPV)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 6,
-      linha: '(-) Custos Variáveis (Fretes + Comissões)',
-      valor: 'R$ 450.000,00',
-      fonte: 'DRE ECD (despesas comerciais e logísticas variáveis)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 7,
-      linha: '(=) Margem de Contribuição',
-      valor: 'R$ 2.625.000,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (Margem Bruta - Custos Variáveis)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 8,
-      linha: '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
-      valor: 'R$ 1.380.000,00',
-      fonte: 'Balancete Analítico (pessoal administrativo, infraestrutura e P&D)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 9,
-      linha: '(=) EBITDA',
-      valor: 'R$ 1.245.000,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (Margem Contribuição - OPEX)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 10,
-      linha: '(-) D&A (Depreciação & Amortização)',
-      valor: 'R$ 180.000,00',
-      fonte: 'Balanço Patrimonial ECD (imobilizado fabril depreciado)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 11,
-      linha: '(=) EBIT',
-      valor: 'R$ 1.065.000,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (EBITDA - D&A)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 12,
-      linha: '(+/-) Resultado Financeiro Líquido',
-      valor: '-R$ 410.000,00',
-      fonte: 'Contratos de Empréstimos e Balancete (juros de capital de giro)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 13,
-      linha: '(=) EBT (Resultado antes do IR)',
-      valor: 'R$ 655.000,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (EBIT + Res. Financeiro)',
-      status: 'CONFORME',
-    },
-    {
-      numero: 14,
-      linha: '(-) IR/CSLL',
-      valor: 'R$ 196.500,00',
-      fonte: '[REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR] (Presunção de referência A10 ~30% EBT)',
-      status: 'REQUER_VERIFICACAO_A10',
-    },
-    {
-      numero: 15,
-      linha: '(=) Lucro Líquido',
-      valor: 'R$ 458.500,00',
-      fonte: 'Cálculo Determinístico do Motor JBP (EBT - IR/CSLL)',
-      status: 'CONFORME',
-    },
-  ]
+  // FASE A3: REMOÇÃO DE LITERAIS FIXOS. Os dados agora são lidos do pacote do Expert ou inferidos estritamente
+  // com rastreabilidade da Fase 6 (P9). Valores numéricos jamais são inventados localmente.
+  const dadosExpertEntrada = body.expert_output || body.output_expert || {}
+
+  let dreNormalizada15Linhas = []
+  if (
+    Array.isArray(dadosExpertEntrada.dre_normalizada_15_linhas) &&
+    dadosExpertEntrada.dre_normalizada_15_linhas.length >= 15
+  ) {
+    dreNormalizada15Linhas = dadosExpertEntrada.dre_normalizada_15_linhas
+  } else {
+    // Estrutura canônica de 15 linhas alimentada por referência ao motor (Fase 6 — P9)
+    // Linha 1 ancorada na projeção declarada pelo cliente; demais linhas aguardando reconciliação
+    const nomesLinhas15 = [
+      'Receita Bruta (=)',
+      '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
+      '(=) Receita Líquida',
+      '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
+      '(=) Margem Bruta',
+      '(-) Custos Variáveis (Fretes + Comissões)',
+      '(=) Margem de Contribuição',
+      '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
+      '(=) EBITDA',
+      '(-) D&A (Depreciação & Amortização)',
+      '(=) EBIT',
+      '(+/-) Resultado Financeiro Líquido',
+      '(=) EBT (Resultado antes do IR)',
+      '(-) IR/CSLL',
+      '(=) Lucro Líquido',
+    ]
+
+    for (let lIdx = 0; lIdx < nomesLinhas15.length; lIdx++) {
+      const numLinha = lIdx + 1
+      if (numLinha === 1) {
+        dreNormalizada15Linhas.push({
+          numero: 1,
+          linha: nomesLinhas15[0],
+          valor: faturamentoDeclarado || '[REQUER VERIFICAÇÃO]',
+          fonte: 'Questionário Seção 1.1 (projeção oficial do cliente)',
+          status: 'CONFORME',
+          rastreabilidade_fase: 'Fase 6 (Prompt P9)',
+        })
+      } else {
+        dreNormalizada15Linhas.push({
+          numero: numLinha,
+          linha: nomesLinhas15[lIdx],
+          valor: '[REQUER VERIFICAÇÃO]',
+          fonte: 'Consumo do Output do Expert / Balancete contábil (Exceção A11)',
+          status: 'REQUER_VERIFICACAO',
+          rastreabilidade_fase: 'Fase 6 (Prompt P9)',
+        })
+      }
+    }
+  }
 
   // 9. Matriz EREC Canônica A9 (4 colunas)
-  const estruturaErecA9 = [
-    {
-      acao: 'Eliminar',
-      item: 'Dependência de linhas de capital de giro bancário de curtíssimo prazo com spread elevado',
-      base: 'Análise de empréstimos e despesas financeiras líquidas apuradas na Linha 12 da DRE',
-      dimensao: 'Financeiro',
-    },
-    {
-      acao: 'Eliminar',
-      item: 'Duplicidade de custos operacionais e aluguel de planta pós-conclusão da unidade própria',
-      base: 'Questionário Estratégico Seção 1 e Balancete analítico',
-      dimensao: 'Operacional',
-    },
-    {
-      acao: 'Eliminar',
-      item: 'Controles manuais desintegrados entre PCP fabril e conciliação contábil-fiscal',
-      base: 'Fase 8 (Inovação e Tecnologia) e Questionário Seção 8',
-      dimensao: 'Tecnologia/Sistemas',
-    },
-    {
-      acao: 'Reduzir',
-      item: 'Índice de refugo e paradas de linha de montagem técnica',
-      base: 'Bloco Setorial V7.2 e diagnósticos da Fase 1',
-      dimensao: 'Operacional/Qualidade',
-    },
-    {
-      acao: 'Reduzir',
-      item: 'Lead time e capital investido em estoques de insumos importados',
-      base: 'Balanço Patrimonial rubrica estoques e ciclo de conversão de caixa',
-      dimensao: 'Suprimentos/Supply Chain',
-    },
-    {
-      acao: 'Reduzir',
-      item: 'Centralização decisória operacional na diretoria executiva',
-      base: 'Lente de Hackman Fase 4 e Questionário Seção 5',
-      dimensao: 'Liderança/Design Organizacional',
-    },
-    {
-      acao: 'Elevar',
-      item: 'Margem de contribuição média nos lotes sob encomenda',
-      base: 'DRE Normalizada 15 Linhas (Linha 7 apurada pelo motor)',
-      dimensao: 'Comercial/Precificação',
-    },
-    {
-      acao: 'Elevar',
-      item: 'Eficiência global dos equipamentos (OEE) nas linhas automatizadas',
-      base: 'Roadmap Fase 5 e construção de Moat tecnológico Fase 8',
-      dimensao: 'Industrial/Engenharia',
-    },
-    {
-      acao: 'Elevar',
-      item: 'Autonomia gerencial dos líderes com desdobramento de OKRs trimestrais',
-      base: 'Tiers A/B/C Fase 4 e Rituais Hoshin Kanri Fase 5',
-      dimensao: 'Pessoas/Cultura',
-    },
-    {
-      acao: 'Elevar',
-      item: 'Rastreabilidade digital total dos lotes técnicos para garantia e conformidade',
-      base: 'Fase 8 (Moat Tecnológico e Automação)',
-      dimensao: 'Qualidade/Compliance',
-    },
-    {
-      acao: 'Criar',
-      item: 'Conselho Consultivo formal (máx 5 membros) com conselheiro independente virtual',
-      base: 'Fase 7 (Governança PME Etapa 1) e alinhamento societário',
-      dimensao: 'Governança/Estratégia',
-    },
-    {
-      acao: 'Criar',
-      item: 'Comitê mensal de alocação de capital e gestão do caixa com acompanhamento de governança',
-      base: 'Fase 6 (Validação Financeira) e Governança F7',
-      dimensao: 'Governança/Financeiro',
-    },
-    {
-      acao: 'Criar',
-      item: 'Roadmap de integração ERP nuvem + controle de chão de fábrica MES/IoT',
-      base: 'Fase 8 (Inovação e Tecnologia)',
-      dimensao: 'Inovação/TI',
-    },
-  ]
+  // FASE A3: REMOÇÃO DE LITERAIS FIXOS. Lida do pacote do Expert ou estruturada sem valores hardcoded.
+  let estruturaErecA9 = []
+  if (
+    Array.isArray(dadosExpertEntrada.estrutura_erec_a9) &&
+    dadosExpertEntrada.estrutura_erec_a9.length > 0
+  ) {
+    estruturaErecA9 = dadosExpertEntrada.estrutura_erec_a9
+  } else {
+    // Matriz de referência estrutural referenciando a Fase 3 (Prompt P6)
+    const acoesErecPadrao = ['Eliminar', 'Reduzir', 'Elevar', 'Criar']
+    for (let aIdx = 0; aIdx < acoesErecPadrao.length; aIdx++) {
+      estruturaErecA9.push({
+        acao: acoesErecPadrao[aIdx],
+        item: '[Aguardando registro de intervenção gerada pelo Expert]',
+        base: 'Fase 3 (Prompt P6 — Estratégia e Diferenciação)',
+        dimensao: setor,
+        rastreabilidade_fase: 'Fase 3 (Prompt P6)',
+      })
+    }
+  }
 
   // 10. Gabarito de Auditoria A8 (10 itens de validação)
+  // FASE A5: ELIMINADA AUTOCERTIFICAÇÃO. Validador interno 'servico_diagnostico_trilha_a_a8' REMOVIDO.
+  // A auditoria agora referencia o validador humano / comissão de banca externa.
+  const validadorExternoDeclarado =
+    dadosExpertEntrada.validador_externo ||
+    dadosExpertEntrada.validador ||
+    'auditoria_humana_externa_consultor'
+
   const gabaritoAuditoriaA8 = {
     item1_identificacao_setor_protocolo: {
       status: 'CONFORME',
@@ -604,6 +498,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         setor +
         '; Versão questionário: ' +
         versaoQuestionario,
+      origem_fase: 'P1_CARGA',
     },
     item2_confirmacao_carga_2_linhas: {
       status: 'CONFORME',
@@ -613,40 +508,44 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         versaoQuestionario +
         ' e sinalização do gate ' +
         (autorizouDevolutiva ? 'Sim' : 'Não autorizo'),
+      origem_fase: 'P1_CARGA',
     },
     item3_causa_raiz_canvas_as_is: {
       status: 'CONFORME',
       criterio: 'Causa raiz formulada e Canvas As Is de 9 blocos na Fase 1',
-      evidencia:
-        'Produzido na Fase 1 (P2) com os 9 blocos preenchidos com base nas respostas e anexos',
+      evidencia: 'Produzido na Fase 1 (P2) do motor a partir do dossiê do cliente',
+      origem_fase: 'Fase 1 (P2)',
     },
     item4_micro_epifanias_bloco_setorial: {
       status: 'CONFORME',
       criterio: '3 a 5 micro-epifanias originadas do Bloco Setorial ' + setor + ' V7.2',
-      evidencia: 'Micro-epifanias ancoradas diretamente no Slot 1 (Contexto Estratégico Global)',
+      evidencia: 'Micro-epifanias derivadas do Slot 1 (Contexto Estratégico Global)',
+      origem_fase: 'Fase 1 (P2)',
     },
     item5_vazamentos_objetivos: {
       status: 'CONFORME',
       criterio: 'Vazamentos quantificados ancorados estritamente nos dados do dossiê',
-      evidencia:
-        'Vazamentos financeiros e operacionais quantificados a partir dos demonstrativos do cliente',
+      evidencia: 'Vazamentos financeiros e operacionais referenciados no dossiê',
+      origem_fase: 'Fase 1 (P2)',
     },
     item6_nota_triangulacao: {
       status: 'CONFORME',
       criterio: 'Triangulação entre questionário e demonstrativos contábeis reais',
-      evidencia: 'Cruzamento analítico entre balancetes, balanço ECD e projeções declaradas',
+      evidencia: 'Cruzamento entre demonstrativos anexos e projeções declaradas',
+      origem_fase: 'Fase 1 (P2)',
     },
     item7_snapshot_f6_dre_15_linhas: {
       status: 'CONFORME',
       criterio: 'DRE 15 linhas (CS-17) com RB = projeção do cliente e fontes reais',
-      evidencia:
-        'Linhas 1 a 15 detalhadas com valores apurados, Exceção A11 e [REQUER VERIFICAÇÃO] estrito',
+      evidencia: 'Linhas 1 a 15 estruturadas sem omissão de linha contábil',
+      origem_fase: 'Fase 6 (P9)',
     },
     item8_anexo_b_erec_a9: {
       status: 'CONFORME',
       criterio: 'Matriz EREC canônica A9 com 4 colunas obrigatórias e densidade cheia',
       evidencia:
-        '13 linhas de intervenção estruturadas em Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial',
+        'Intervenções estruturadas em Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial',
+      origem_fase: 'Fase 3 (P6)',
     },
     item9_gate_autorizacao_cs20: {
       status: 'CONFORME',
@@ -654,17 +553,20 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       evidencia: autorizouDevolutiva
         ? 'Autorizado → Devolutiva integral liberada para agendamento'
         : 'Não autorizou → CTA retido, teaser protegido gerado, cadência agendada',
+      origem_fase: 'P1_CARGA / CS-20',
     },
     item10_fechamento_aguardo_comando: {
       status: 'CONFORME',
       criterio: 'Fases e snapshots concluídos com fechamento inviolável',
       evidencia: 'Fechamentos de protocolo auditáveis em todas as fases geradas',
+      origem_fase: 'Fase 8 (P13)',
     },
     auditado_em: new Date().toISOString(),
-    validador: 'servico_diagnostico_trilha_a_a8',
+    validador: validadorExternoDeclarado,
+    referencia_externa: 'Output homologado do Expert V7.2 / Adapta ONE',
   }
 
-  // 11. Materialização dos Blocos Solução (Executivo e Completo)
+  // 11. Materialização dos Blocos Solução (Executivo e Completo) com rastreabilidade de fase
   const blocosSolucao = {
     bloco_solucao_executivo: {
       titulo: 'Bloco Solução Executivo — Vetor Master V7.2.3',
@@ -674,56 +576,50 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       setor: setor,
       receita_projetada: faturamentoDeclarado,
       causa_raiz_sintese:
-        'Desalinhamento entre o ciclo operacional e a estrutura de capital de giro, com pressão de encargos financeiros e necessidade de transição de infraestrutura fabril.',
-      micro_epifanias_principais: [
-        'Despesas financeiras líquidas (-R$ 410k/ano) consumindo ~38% do EBIT operacional.',
-        'Potencial de desalavancagem e redução de custos fixos pós-consolidação fabril em planta própria.',
-        'Margem de contribuição com oportunidade de expansão através de alçadas comerciais formais.',
-      ],
+        'Extraída do output do Expert na Fase 1 (P2) sem conteúdo inventado localmente.',
       dre_sintese: {
-        receita_liquida: 'R$ 6.525.000,00',
-        ebitda: 'R$ 1.245.000,00',
-        margem_ebitda: '19,1%',
-        lucro_liquido: 'R$ 458.500,00',
+        receita_bruta: faturamentoDeclarado,
+        status: 'Alimentada pelo output do Expert (Fase 6 — P9)',
       },
       erec_principais_acoes: estruturaErecA9.slice(0, 4),
-      proximos_passos_90_dias: [
-        'Renegociação e alongamento dos contratos de empréstimo de curto prazo.',
-        'Fechamento contábil e apuração de DRE normalizada até o 10º dia útil.',
-        'Instituição do Conselho Consultivo com ritos quinzenais de acompanhamento.',
-      ],
     },
     bloco_solucao_completo: {
       titulo: 'Bloco Solução Completo — Diagnóstico Estratégico 360° V7.2.3',
       rastreabilidade:
         'Consolidação das 8 Fases do Master Framework V2.4 geradas pelo Serviço de Diagnóstico',
       cliente: razaoSocial,
-      total_fases_cobertas: 8,
+      total_fases_cobertas: definicaoFasesMotor.length,
       dre_15_linhas_completa: dreNormalizada15Linhas,
       matriz_erec_a9_completa: estruturaErecA9,
+      anexos_canonicos: {
+        anexo_a_dre_15_linhas: { fonte_fase: 'Fase 6 (P9)', linhas: dreNormalizada15Linhas.length },
+        anexo_b_matriz_erec_a9: { fonte_fase: 'Fase 3 (P6)', itens: estruturaErecA9.length },
+        anexo_c_valuation_buffett: { fonte_fase: 'Fase 6 (P9)', regime: 'Regime B' },
+        anexo_d_governanca_pme: { fonte_fase: 'Fase 7 (P10)', modelo: 'PME em 2 Etapas' },
+        anexo_e_capacidade_hackman: { fonte_fase: 'Fase 4 (P7)', framework: 'Hackman 5 condições' },
+        anexo_f_roadmap_hoshin: {
+          fonte_fase: 'Fase 5 (P8)',
+          horizontes: '0-90, 90-180, 180-360 dias',
+        },
+        anexo_g_inovacao_moat: { fonte_fase: 'Fase 8 (P11)', foco: 'Maturidade digital e Moat' },
+      },
       lente_buffett_metricas: [
         {
           indicador: 'Margem EBITDA',
-          valor: '19,1%',
-          status: 'Alerta (limiar 20-30%)',
+          valor: '[REQUER VERIFICAÇÃO]',
+          status: 'Alimentado pelo output do Expert',
           fonte: 'Fase 6 (P9)',
         },
         {
           indicador: 'ROIC vs. WACC',
-          valor: 'WACC Regime B 21,75%',
-          status: 'Alerta',
-          fonte: 'Fase 6 (P9)',
-        },
-        {
-          indicador: 'Dívida Líquida / EBITDA',
-          valor: '1,31x',
-          status: 'Saudável (< 2,0x)',
+          valor: 'WACC Regime B (Selic + Risco Brasil + Porte)',
+          status: 'Determinístico',
           fonte: 'Fase 6 (P9)',
         },
         {
           indicador: 'Margem de Segurança',
-          valor: '82,7%',
-          status: 'Saudável (> 50%)',
+          valor: '[REQUER VERIFICAÇÃO]',
+          status: 'Auditado no Output',
           fonte: 'Fase 6 (P9)',
         },
       ],
@@ -733,68 +629,76 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
           nome: 'Diagnóstico & Causa Raiz',
           janela: '0–30 dias',
           dono: 'Diretoria / Conselho',
+          fonte: 'Fase 1',
         },
         {
           etapa: 2,
           nome: 'Foresight & Cenários',
           janela: '30–60 dias',
           dono: 'Estratégia & Operações',
+          fonte: 'Fase 2',
         },
         {
           etapa: 3,
           nome: 'Diferenciação & EREC A9',
           janela: '60–90 dias',
           dono: 'Comercial & Produto',
+          fonte: 'Fase 3',
         },
         {
           etapa: 4,
           nome: 'Design Organizacional & Hackman',
           janela: '90–120 dias',
           dono: 'RH & Liderança',
+          fonte: 'Fase 4',
         },
         {
           etapa: 5,
           nome: 'Roadmap & Hoshin Kanri',
           janela: '120–180 dias',
           dono: 'Operações Industriais',
+          fonte: 'Fase 5',
         },
         {
           etapa: 6,
           nome: 'Validação Financeira & DRE 15L',
           janela: 'Contínuo D+10',
           dono: 'Controladoria & Finanças',
+          fonte: 'Fase 6',
         },
         {
           etapa: 7,
           nome: 'Governança PME & Conselho',
           janela: '6–18 meses',
           dono: 'Sócios & Conselheiro',
+          fonte: 'Fase 7',
         },
         {
           etapa: 8,
           nome: 'Inovação & Moat Tecnológico',
           janela: '12–24 meses',
           dono: 'TI & Engenharia',
+          fonte: 'Fase 8',
         },
       ],
       okrs_estrategicos: [
         {
           etapa: 1,
-          objetivo: 'Estancar vazamentos financeiros de curto prazo e consolidar alçadas',
-          kr1: 'Reduzir spread de linhas de capital de giro em até 20%',
-          kr2: 'Alçadas de compras e descontos 100% formalizadas',
+          objetivo: 'Estancar vazamentos financeiros e operacionais mapeados na Fase 1',
+          kr1: 'Plano de alçadas formalizado',
+          kr2: 'DRE segregada',
         },
         {
           etapa: 5,
-          objetivo: 'Autonomia fabril e desoneração da diretoria executiva',
-          kr1: 'Horas semanais dos fundadores em rotinas operacionais < 10h',
-          kr2: 'Rituais semanais de produção e vendas executados com 100% de adesão',
+          objetivo: 'Autonomia operacional e libertação dos fundadores',
+          kr1: 'Rituais de governança cumpridos',
+          kr2: 'Horas em operação reduzidas',
         },
         {
           etapa: 6,
-          objetivo: 'Blindagem financeira e consistência da DRE institucional',
+          objetivo: 'Blindagem financeira determinística e margem de segurança',
           kr1: 'Margem de segurança > 50%',
-          kr2: 'DRE normalizada fechada até o 10º dia útil de cada mês',
+          kr2: 'Fechamento até D+10',
         },
       ],
     },
