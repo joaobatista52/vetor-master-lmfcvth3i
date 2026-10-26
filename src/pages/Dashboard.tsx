@@ -271,11 +271,19 @@ export default function Dashboard() {
   const temOKRsReais = okrs.length > 0
   const semDadosReais = !temDiagnosticoReal && !temPlanosReais && !temOKRsReais
 
-  // Extrair indicadores calculados pelo motor do diagnóstico (Fase 6 / Gabarito / Dados de Entrada)
+  // Extrair indicadores calculados pelo motor do diagnóstico (Fase 6 / Gabarito / Dados de Entrada / Bloco Solução)
+  const blocoSolucaoCompleto = useMemo(() => {
+    if (!temDiagnosticoReal || !ultimoDiagnostico) return null
+    return (
+      ultimoDiagnostico.dados_entrada?.bloco_solucao_completo ||
+      ultimoDiagnostico.blocos_solucao?.bloco_solucao_completo ||
+      null
+    )
+  }, [temDiagnosticoReal, ultimoDiagnostico])
+
   const metricasFinanceirasReais = useMemo(() => {
     if (!temDiagnosticoReal || !ultimoDiagnostico) return null
     const de = ultimoDiagnostico.dados_entrada || {}
-    const gab = ultimoDiagnostico.gabarito_auditoria || {}
     const faturamentoStr = de.cliente?.faturamento_declarado || de.faturamento || ''
     return {
       faturamento: faturamentoStr,
@@ -289,8 +297,9 @@ export default function Dashboard() {
       temEREC: !!(
         ultimoDiagnostico.estrutura_erec_a9 && ultimoDiagnostico.estrutura_erec_a9.length > 0
       ),
+      blocoSolucao: blocoSolucaoCompleto,
     }
-  }, [temDiagnosticoReal, ultimoDiagnostico])
+  }, [temDiagnosticoReal, ultimoDiagnostico, blocoSolucaoCompleto])
 
   // DRE a exibir: se houver dado real no diagnóstico, alimenta a tabela; senão, usa a canônica com [REQUER VERIFICAÇÃO]
   const dreExibicao = useMemo(() => {
@@ -641,6 +650,91 @@ export default function Dashboard() {
             </div>
           </div>
         </Card>
+
+        {/* Bloco Solução Completo — Anexos Canônicos A a G (Fase A4) */}
+        {blocoSolucaoCompleto && (
+          <Card className="bg-[#111A2E] text-white border border-[#0066CC]/40 rounded-[4px] p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#24334F] pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-[#3DDC74] bg-[#3DDC74]/10 px-2 py-0.5 rounded border border-[#3DDC74]/30">
+                    BLOCO SOLUÇÃO COMPLETO
+                  </span>
+                  <CardTitle className="text-sm font-bold text-[#F8FAFC]">
+                    {blocoSolucaoCompleto.titulo ||
+                      'Diagnóstico Estratégico 360° V7.2 — Anexos A–G'}
+                  </CardTitle>
+                </div>
+                <p className="text-xs text-[#8B98B4] mt-0.5">
+                  Materialização canônica dos 7 Anexos Metodológicos a partir do output registrado
+                  do Expert.
+                </p>
+              </div>
+              <Badge className="bg-[#0066CC] text-white text-[10px] font-mono self-start sm:self-auto border-none">
+                Contrato V2.0 / A4
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#5B9DFF] font-bold block">
+                  ANEXO A — DRE 15L (CS-17)
+                </span>
+                <div className="font-bold text-[#F8FAFC]">15 Linhas Canônicas</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 6 (Prompt P9)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#3DDC74] font-bold block">
+                  ANEXO B — MATRIZ EREC A9
+                </span>
+                <div className="font-bold text-[#F8FAFC]">Eliminar / Reduzir / Elevar / Criar</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 3 (Prompt P6)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#FFB84D] font-bold block">
+                  ANEXO C — VALUATION BUFFETT
+                </span>
+                <div className="font-bold text-[#F8FAFC]">WACC Regime B & Margem Seg.</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 6 (Prompt P9)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#C7D0E0] font-bold block">
+                  ANEXO D — GOVERNANÇA PME
+                </span>
+                <div className="font-bold text-[#F8FAFC]">Comitê Consultivo 2 Etapas</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 7 (Prompt P10)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#C7D0E0] font-bold block">
+                  ANEXO E — HACKMAN CAPACIDADE
+                </span>
+                <div className="font-bold text-[#F8FAFC]">5 Condições de Liderança</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 4 (Prompt P7)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#5B9DFF] font-bold block">
+                  ANEXO F — ROADMAP HOSHIN
+                </span>
+                <div className="font-bold text-[#F8FAFC]">0-90, 90-180, 180-360 dias</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 5 (Prompt P8)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#3DDC74] font-bold block">
+                  ANEXO G — INOVAÇÃO & MOAT
+                </span>
+                <div className="font-bold text-[#F8FAFC]">Maturidade Digital & Barreira</div>
+                <div className="text-[10px] text-[#8B98B4]">Fonte: Fase 8 (Prompt P11)</div>
+              </div>
+              <div className="p-3 bg-[#16213A] rounded border border-[#24334F] space-y-1">
+                <span className="text-[10px] text-[#FFB84D] font-bold block">
+                  TOTAL FASES COBERTAS
+                </span>
+                <div className="font-bold text-[#F8FAFC]">8 Fases Canônicas</div>
+                <div className="text-[10px] text-[#8B98B4]">Master Framework V2.4</div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* DRE Institucional de 15 Linhas com [REQUER VERIFICAÇÃO] (CS-17) */}
         <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs space-y-3">
