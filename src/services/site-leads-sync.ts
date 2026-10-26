@@ -147,25 +147,86 @@ export async function dispararTesteE2E(): Promise<E2ETestResult> {
 
 export async function processarLeadViaWorker(
   leadId: string,
-  options?: { dryRun?: boolean },
-): Promise<{ success: boolean; message?: string; resultado?: any; error?: string }> {
+  options?: { dryRun?: boolean; expertOutput?: any },
+): Promise<{
+  success: boolean
+  message?: string
+  resultado?: any
+  error?: string
+  codigo_erro?: string
+  detalhes?: any
+}> {
   try {
     const query = options?.dryRun ? '?dry_run=1' : ''
-    const res = await pb.send<{ success: boolean; message?: string; resultado?: any }>(
-      `/backend/v1/worker/processar-lead/${leadId}${query}`,
+    const reqBody: any = {}
+    if (options?.dryRun) reqBody.dry_run = true
+    if (options?.expertOutput) reqBody.expert_output = options.expertOutput
+
+    const res = await pb.send<{
+      success: boolean
+      message?: string
+      resultado?: any
+      error?: string
+    }>(`/backend/v1/worker/processar-lead/${leadId}${query}`, {
+      method: 'POST',
+      body: Object.keys(reqBody).length > 0 ? reqBody : undefined,
+    })
+    return res
+  } catch (err: any) {
+    console.error('Falha ao processar lead via worker:', err)
+    const respData = err?.response || err?.data || {}
+    return {
+      success: false,
+      codigo_erro:
+        respData.codigo_erro || (err?.status === 408 ? 'TIMEOUT_EXECUCAO_EXPERT' : 'ERRO_WORKER'),
+      error: respData.error || err?.message || 'Erro ao comunicar com o worker de processamento.',
+      detalhes: respData.detalhes,
+    }
+  }
+}
+
+/**
+ * Exporta o Dossiê do Lead no formato do Contrato V2 (JSON de Entrada A1)
+ */
+export async function exportarDossieContratoV2(
+  leadId: string,
+): Promise<{ success: boolean; dossie_contrato_v2?: any; error?: string }> {
+  try {
+    const res = await pb.send<{ success: boolean; dossie_contrato_v2?: any }>(
+      `/backend/v1/worker/processar-lead/${leadId}?export_dossie=1`,
       {
         method: 'POST',
-        body: options?.dryRun ? { dry_run: true } : undefined,
       },
     )
     return res
   } catch (err: any) {
-    console.error('Falha ao processar lead via worker:', err)
+    console.error('Falha ao exportar dossiê V2:', err)
     return {
       success: false,
-      error: err?.message || 'Erro ao comunicar com o worker de processamento.',
+      error: err?.message || 'Erro ao exportar dossiê no contrato V2.',
     }
   }
+}
+
+/**
+ * Registra manualmente o Output do Expert no App (Fase A2.1)
+ */
+export async function registrarOutputExpertManual(
+  leadId: string,
+  expertOutput: any,
+  options?: { dryRun?: boolean },
+): Promise<{
+  success: boolean
+  message?: string
+  resultado?: any
+  error?: string
+  codigo_erro?: string
+  detalhes?: any
+}> {
+  return processarLeadViaWorker(leadId, {
+    dryRun: options?.dryRun ?? true,
+    expertOutput,
+  })
 }
 
 export async function confirmarParceiroLead(

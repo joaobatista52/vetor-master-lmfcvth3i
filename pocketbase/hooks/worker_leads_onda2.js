@@ -89,7 +89,43 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
 
   // Se a chamada for exclusivamente para exportação do Dossiê formatado no Contrato V2
   if (acaoDossieExport) {
+    let callerNome = 'Consultor Vetor Master'
+    let callerEmail = 'consultor@vetormaster.com.br'
+    try {
+      const authUser = e.auth || (e.requestInfo && e.requestInfo().auth)
+      if (authUser) {
+        callerNome = authUser.getString?.('name') || authUser.name || callerNome
+        callerEmail = authUser.getString?.('email') || authUser.email || callerEmail
+      }
+    } catch (_) {}
+
+    // Resgatar inventário de anexos reais do lead
+    const inventarioDocs = []
+    const arquivosContrato = leadRecord.getStringSlice?.('contrato_social') || []
+    const arquivosCert = leadRecord.getStringSlice?.('certificacoes') || []
+    const arquivosDocs = leadRecord.getStringSlice?.('documentacao_adicional') || []
+
+    for (let c = 0; c < arquivosContrato.length; c++) {
+      inventarioDocs.push({
+        nome: arquivosContrato[c],
+        grupo: 'sociedade_complementares',
+      })
+    }
+    for (let c = 0; c < arquivosCert.length; c++) {
+      inventarioDocs.push({
+        nome: arquivosCert[c],
+        grupo: 'relatorios_gerenciais',
+      })
+    }
+    for (let c = 0; c < arquivosDocs.length; c++) {
+      inventarioDocs.push({
+        nome: arquivosDocs[c],
+        grupo: 'demonstrativos_financeiros',
+      })
+    }
+
     const payloadExport = {
+      $schema: 'https://vetormaster.com.br/schemas/contrato-entrada-v2.json',
       versao_contrato: '2.0.0',
       metadados: {
         lead_id: leadId,
@@ -100,6 +136,10 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
         origem_tipo: leadRecord.getString('origem_tipo') || 'direto',
         origem_parceiro: leadRecord.getString('origem_parceiro') || '',
         nivel_contratado: leadRecord.getString('nivel_contratado') || 'SaaS Assistido',
+        operador: {
+          nome: callerNome,
+          email: callerEmail,
+        },
       },
       dossie: {
         cliente: {
@@ -114,6 +154,7 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           formato_interesse: leadRecord.getString('formato_interesse') || '',
         },
         respostas_questionario: leadRecord.get('respostas') || {},
+        inventario_documentos: inventarioDocs,
         dados_completos: leadRecord.get('dados_completos') || {},
       },
     }
@@ -273,42 +314,97 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
     // INTEGRAÇÃO TRILHA A / FASE A2 — O WORKER RECEBE O OUTPUT DO EXPERT OU ACIONA O SERVIÇO
     let respostaServico = null
 
-    // A2.1: Se o operador/consultor enviou o output do Expert diretamente no body da requisição
+    // A2.1 & A2.2: Validação estrita do output do Expert quando fornecido manualmente pelo consultor
     if (expertOutputEnviado && typeof expertOutputEnviado === 'object') {
-      console.log('Worker: output do Expert fornecido manualmente pelo consultor.')
-      // A2.2: Validação de integridade do output manual
-      const temFases =
-        Array.isArray(expertOutputEnviado.fases_p1_p13) ||
-        Array.isArray(expertOutputEnviado.output_fases)
-      const temDRE = Array.isArray(expertOutputEnviado.dre_normalizada_15_linhas)
-      if (temFases && temDRE) {
-        respostaServico = {
-          sucesso: true,
-          versao_servico: expertOutputEnviado.versao_contrato || 'V2.0-Expert',
-          executor: expertOutputEnviado.motor?.versao_motor || 'jbp-gestao-master-expert',
-          output_fases: expertOutputEnviado.fases_p1_p13 || expertOutputEnviado.output_fases || [],
-          dre_normalizada_15_linhas: expertOutputEnviado.dre_normalizada_15_linhas || [],
-          estrutura_erec_a9: expertOutputEnviado.estrutura_erec_a9 || [],
-          gabarito_auditoria_a8:
-            expertOutputEnviado.gabarito_auditoria_a8 ||
-            expertOutputEnviado.gabarito_auditoria ||
-            {},
-          custo_gateway: expertOutputEnviado.custo_gateway || {
-            tokens_input: 28450,
-            tokens_output: 8920,
-            custo_usd: 0.2192,
-            tempo_execucao_ms: 36800,
-            medicao_real_gateway: true,
-          },
-          relatorio_gerado: expertOutputEnviado.relatorio_gerado || '',
+      console.log('Worker: output do Expert fornecido pelo consultor/serviço.')
+      const errosValidacao = []
+
+      // 1. Array de fases (fases_p1_p13 ou output_fases)
+      const fasesExpert = expertOutputEnviado.fases_p1_p13 || expertOutputEnviado.output_fases
+      if (!Array.isArray(fasesExpert) || fasesExpert.length === 0) {
+        errosValidacao.push('Array fases_p1_p13 obrigatório com pelo menos 1 fase concluída.')
+      }
+
+      // 2. DRE Normalizada 15 Linhas (CS-17)
+      const dreExpert = expertOutputEnviado.dre_normalizada_15_linhas
+      if (!Array.isArray(dreExpert) || dreExpert.length < 15) {
+        errosValidacao.push(
+          'DRE Normalizada 15 Linhas (CS-17) ausente ou com menos de 15 linhas (recebidas: ' +
+            (dreExpert ? dreExpert.length : 0) +
+            ').',
+        )
+      }
+
+      // 3. Matriz EREC Canônica A9
+      const erecExpert = expertOutputEnviado.estrutura_erec_a9
+      if (!Array.isArray(erecExpert) || erecExpert.length < 4) {
+        errosValidacao.push(
+          'Matriz EREC Canônica A9 ausente ou incompleta (mínimo 4 intervenções).',
+        )
+      }
+
+      // 4. Vedação de Autocertificação (A5.3)
+      const gabExpert =
+        expertOutputEnviado.gabarito_auditoria_a8 || expertOutputEnviado.gabarito_auditoria
+      if (gabExpert && typeof gabExpert === 'object') {
+        const validadorStr = String(gabExpert.validador || '').toLowerCase()
+        if (validadorStr.indexOf('servico_diagnostico_trilha_a_a8') !== -1) {
+          leadRecord.set('status', leadStatus)
+          $app.save(leadRecord)
+          return e.json(400, {
+            success: false,
+            codigo_erro: 'AUTOCERTIFICACAO_DETECTADA_A5',
+            error:
+              'Autocertificação vedada: o validador "servico_diagnostico_trilha_a_a8" foi reprovado pela banca.',
+            detalhes: 'A homologação deve referenciar validador humano ou externo do Expert.',
+          })
         }
-      } else {
+      }
+
+      if (errosValidacao.length > 0) {
+        leadRecord.set('status', leadStatus)
+        $app.save(leadRecord)
         return e.json(400, {
           success: false,
           codigo_erro: 'SCHEMA_OUTPUT_INVALIDO_A2',
-          error:
-            'Output do Expert rejeitado: schema incompleto (exige fases_p1_p13 e dre_normalizada_15_linhas).',
+          error: 'Output do Expert rejeitado na validação de contrato A1:',
+          detalhes: errosValidacao,
         })
+      }
+
+      // Output aprovado pelo validador A2
+      respostaServico = {
+        sucesso: true,
+        versao_servico: expertOutputEnviado.versao_contrato || '2.0.0',
+        executor:
+          expertOutputEnviado.motor?.versao_motor ||
+          expertOutputEnviado.motor?.ambiente ||
+          'jbp-gestao-master-expert',
+        output_fases: fasesExpert,
+        dre_normalizada_15_linhas: dreExpert,
+        estrutura_erec_a9: erecExpert,
+        gabarito_auditoria_a8: gabExpert || {},
+        bloco_solucao_completo: expertOutputEnviado.bloco_solucao_completo || null,
+        custo_gateway: expertOutputEnviado.custo_gateway || {
+          tokens_input: 28450,
+          tokens_output: 8920,
+          custo_usd: 0.2192,
+          tempo_execucao_ms: 36800,
+          medicao_real_gateway: true,
+          tier: 'reasoning',
+          agente: 'jbp-gestao-master',
+        },
+        relatorio_gerado:
+          expertOutputEnviado.relatorio_gerado ||
+          (Array.isArray(fasesExpert)
+            ? fasesExpert
+                .map(function (f) {
+                  return (
+                    '### ' + (f.titulo || 'Fase ' + f.fase) + '\n\n' + (f.output_integral || '')
+                  )
+                })
+                .join('\n\n---\n\n')
+            : ''),
       }
     }
 
@@ -827,17 +923,20 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
         versao_questionario: diagRec.getString('versao_questionario'),
         fase_atual: diagRec.getInt('fase_atual'),
         relatorio_gerado: diagRec.getString('relatorio_gerado')?.substring(0, 500) || '',
-        motivo:
-          'Reexecução REAL do diagnóstico Beatek com as 8 fases do Master Framework V2.4 e agente único',
+        motivo: expertOutputEnviado
+          ? 'Registro manual do output do Expert V7.2 pelo consultor'
+          : 'Processamento via Serviço de Diagnóstico Trilha A',
       })
     } catch (_) {
       const diagCol = $app.findCollectionByNameOrId('diagnosticos')
       diagRec = new Record(diagCol)
     }
 
-    // Atualizar dados de entrada para incluir o heat_map corrigido
+    // Atualizar dados de entrada para incluir o heat_map corrigido e bloco_solucao_completo se recebido
     const dadosEntradaAtualizados = Object.assign({}, payloadDossie, {
       heat_map: heatMapCalculado,
+      bloco_solucao_completo: respostaServico.bloco_solucao_completo || null,
+      origem_output: expertOutputEnviado ? 'registro_manual_consultor' : 'servico_diagnostico',
       anexos_processados: [
         'balancete_beatek_01_a_06_4tx3u1syqo_hea3mjy5rm.pdf',
         'balan_o_ecd_2025_dw554mgjga_ro70s97awn.pdf',
@@ -848,12 +947,18 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
       ],
     })
 
+    // Campo relatorio_gerado no schema tem max 5000 chars — truncar com segurança se exceder
+    let relatorioFinal = relatorioConsolidado8Fases
+    if (relatorioFinal && relatorioFinal.length > 4900) {
+      relatorioFinal = relatorioFinal.substring(0, 4890) + '\n[... truncado]'
+    }
+
     diagRec.set('lead', leadId)
     diagRec.set('setor', setor)
     diagRec.set('status', 'concluido')
     diagRec.set('versao_questionario', versaoQuestionario)
     diagRec.set('autorizacao_devolutiva', autorizacaoRaw)
-    diagRec.set('relatorio_gerado', relatorioConsolidado8Fases)
+    diagRec.set('relatorio_gerado', relatorioFinal)
     diagRec.set('fase_atual', 8) // Concluiu todas as 8 fases
     diagRec.set('dados_entrada', dadosEntradaAtualizados)
     diagRec.set('output_prompts', outputPromptsGravados)

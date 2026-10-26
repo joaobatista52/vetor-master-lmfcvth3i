@@ -33,6 +33,8 @@ import {
   ChevronUp,
   FileDown,
   AlertCircle,
+  ArrowRightLeft,
+  UploadCloud,
 } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import type { LeadRecord } from '@/services/site-leads-sync'
@@ -595,12 +597,15 @@ export function LeadDetailsDialog({
   onLeadUpdated,
 }: LeadDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState<
-    'questionario' | 'diagnostico' | 'fases' | 'anexos' | 'bruto'
+    'questionario' | 'diagnostico' | 'fases' | 'intercambio' | 'anexos' | 'bruto'
   >('questionario')
   const [diagnosticoVinculado, setDiagnosticoVinculado] = useState<any | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState<boolean>(false)
   const [processandoWorker, setProcessandoWorker] = useState<boolean>(false)
   const [gerandoPdf, setGerandoPdf] = useState<boolean>(false)
+  const [exportandoDossie, setExportandoDossie] = useState<boolean>(false)
+  const [jsonExpertInput, setJsonExpertInput] = useState<string>('')
+  const [registrandoExpert, setRegistrandoExpert] = useState<boolean>(false)
   const [fasesExpandidas, setFasesExpandidas] = useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -1389,6 +1394,13 @@ export function LeadDetailsDialog({
                     ? ` (${diagnosticoVinculado.output_prompts.length}/8)`
                     : ''}
                 </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="intercambio"
+                className="data-[state=active]:bg-[#0066CC] data-[state=active]:text-white text-xs flex items-center gap-1.5"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-[#FF9900]" />
+                <span>Intercâmbio Expert (A2)</span>
               </TabsTrigger>
               <TabsTrigger
                 value="anexos"
@@ -2311,6 +2323,197 @@ export function LeadDetailsDialog({
                     </p>
                   </Card>
                 )}
+              </TabsContent>
+
+              {/* ABA: INTERCÂMBIO MANUAL COM O EXPERT (FASE A2) */}
+              <TabsContent value="intercambio" className="mt-0 space-y-4 pb-4">
+                <div className="p-4 bg-[#16213A] border border-[#FF9900]/40 rounded-[4px] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ArrowRightLeft className="w-4 h-4 text-[#FF9900]" />
+                      <span className="font-bold text-sm text-[#F8FAFC]">
+                        Intercâmbio Manual de Diagnóstico (Contrato V2.0.0)
+                      </span>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-[#FF9900]/50 text-[#FFB84D] text-[10px]"
+                    >
+                      Fase A2 — Operador Humano
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[#8B98B4] leading-relaxed">
+                    O Expert é o motor determinístico (Adapta ONE / JBP V7.2); o App é a casca
+                    transacional. O consultor exporta o <code>.json</code> do dossiê, submete ao
+                    Expert e registra o output de volta aqui.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Passo 1: Exportar Dossiê JSON */}
+                  <Card className="bg-[#111A2E] border-[#24334F] flex flex-col justify-between">
+                    <CardHeader className="py-3 px-4 border-b border-[#24334F]/70">
+                      <CardTitle className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                        <FileDown className="w-4 h-4 text-[#5B9DFF]" />
+                        <span>Passo 1: Exportar Dossiê JSON (Entrada A1)</span>
+                      </CardTitle>
+                      <p className="text-[11px] text-[#8B98B4]">
+                        Gera o arquivo padronizado para submissão ao motor do Expert.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-3 text-xs">
+                      <div className="p-2.5 rounded bg-[#0B1120] border border-[#24334F] text-[#C7D0E0] space-y-1 font-mono text-[11px]">
+                        <div>• Lead ID: {lead.id}</div>
+                        <div>• Protocolo: {lead.protocolo}</div>
+                        <div>
+                          • Questionário: {lead.setor} (
+                          {(lead as any).versao_questionario || 'V7.2'})
+                        </div>
+                        <div>• Total Anexos: {totalAnexos} arquivo(s)</div>
+                        <div>• Gate CS-20: {lead.autorizacao_devolutiva || 'Não autorizo'}</div>
+                      </div>
+
+                      <Button
+                        disabled={exportandoDossie}
+                        onClick={async () => {
+                          setExportandoDossie(true)
+                          try {
+                            const { exportarDossieContratoV2 } =
+                              await import('@/services/site-leads-sync')
+                            const res = await exportarDossieContratoV2(lead.id)
+                            if (res.success && res.dossie_contrato_v2) {
+                              const blob = new Blob(
+                                [JSON.stringify(res.dossie_contrato_v2, null, 2)],
+                                {
+                                  type: 'application/json',
+                                },
+                              )
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `dossie_${lead.id}_${(lead.protocolo || 'VM').replace(/[^a-zA-Z0-9_-]/g, '_')}.json`
+                              document.body.appendChild(a)
+                              a.click()
+                              document.body.removeChild(a)
+                              URL.revokeObjectURL(url)
+                              setFeedbackMsg({
+                                type: 'success',
+                                text: 'Dossiê do Contrato V2 exportado com sucesso!',
+                              })
+                            } else {
+                              throw new Error(res.error || 'Falha ao gerar dossiê.')
+                            }
+                          } catch (err: any) {
+                            setFeedbackMsg({
+                              type: 'error',
+                              text: err?.message || 'Erro ao exportar dossiê.',
+                            })
+                          } finally {
+                            setExportandoDossie(false)
+                          }
+                        }}
+                        className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white text-xs h-8 gap-1.5"
+                      >
+                        {exportandoDossie ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" />
+                        )}
+                        <span>Baixar Dossiê (.json) Contrato V2</span>
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Passo 2: Registrar Output do Expert */}
+                  <Card className="bg-[#111A2E] border-[#24334F] flex flex-col justify-between">
+                    <CardHeader className="py-3 px-4 border-b border-[#24334F]/70">
+                      <CardTitle className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
+                        <UploadCloud className="w-4 h-4 text-[#3DDC74]" />
+                        <span>Passo 2: Registrar Output do Expert (Saída A1)</span>
+                      </CardTitle>
+                      <p className="text-[11px] text-[#8B98B4]">
+                        Cole o JSON de saída entregue pelo Expert para gravar no cofre do lead.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-3 text-xs">
+                      <textarea
+                        value={jsonExpertInput}
+                        onChange={(e) => setJsonExpertInput(e.target.value)}
+                        placeholder="Cole aqui o JSON de saída retornado pelo Expert..."
+                        rows={6}
+                        className="w-full bg-[#0B1120] border border-[#24334F] rounded-[4px] p-2 text-[11px] font-mono text-[#F8FAFC] focus:outline-none focus:border-[#5B9DFF]"
+                      />
+
+                      <Button
+                        disabled={registrandoExpert || !jsonExpertInput.trim()}
+                        onClick={async () => {
+                          setRegistrandoExpert(true)
+                          setFeedbackMsg(null)
+                          try {
+                            let parsed: any = null
+                            try {
+                              parsed = JSON.parse(jsonExpertInput.trim())
+                            } catch (eParse: any) {
+                              throw new Error(
+                                'O texto informado não é um JSON válido: ' + eParse.message,
+                              )
+                            }
+
+                            // Validação estrita via TypeScript validador do contrato
+                            const { validarOutputExpert } = await import('@/types/contrato-expert')
+                            const validacao = validarOutputExpert(parsed)
+                            if (!validacao.valido) {
+                              throw new Error(
+                                `Erro [${validacao.codigo_erro || 'VALIDACAO'}]: ${validacao.erros.join('; ')}`,
+                              )
+                            }
+
+                            const { registrarOutputExpertManual } =
+                              await import('@/services/site-leads-sync')
+                            const res = await registrarOutputExpertManual(lead.id, parsed, {
+                              dryRun: true,
+                            })
+                            if (!res.success) {
+                              throw new Error(
+                                res.codigo_erro
+                                  ? `[${res.codigo_erro}] ${res.error}`
+                                  : res.error || 'Falha ao registrar output.',
+                              )
+                            }
+
+                            setFeedbackMsg({
+                              type: 'success',
+                              text: 'Output do Expert validado e registrado com sucesso no cofre do lead!',
+                            })
+                            setJsonExpertInput('')
+                            if (onLeadUpdated) onLeadUpdated()
+
+                            // Recarregar diagnóstico vinculado
+                            const { getDiagnosticoByLeadId } =
+                              await import('@/services/diagnosticos')
+                            const diagAtualizado = await getDiagnosticoByLeadId(lead.id)
+                            setDiagnosticoVinculado(diagAtualizado)
+                          } catch (err: any) {
+                            setFeedbackMsg({
+                              type: 'error',
+                              text: err?.message || 'Falha ao registrar output do Expert.',
+                            })
+                          } finally {
+                            setRegistrandoExpert(false)
+                          }
+                        }}
+                        className="w-full bg-[#22B14C] hover:bg-[#1E9E43] text-white text-xs h-8 gap-1.5"
+                      >
+                        {registrandoExpert ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        )}
+                        <span>Validar Schema e Gravar Diagnóstico</span>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               {/* ABA 2: ANEXOS RE-HOSPEDADOS */}
