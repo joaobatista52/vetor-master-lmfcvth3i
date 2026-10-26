@@ -44,6 +44,7 @@ export interface Diagnostico {
   }>
   estrutura_erec_a9?: Array<{ acao: string; item: string; base: string; dimensao: string }>
   gabarito_auditoria?: Record<string, any>
+  blocos_solucao?: Record<string, any>
   custo_gateway?: {
     tokens_input: number
     tokens_output: number
@@ -92,6 +93,7 @@ export const getDiagnosticos = async (): Promise<Diagnostico[]> => {
     dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
     estrutura_erec_a9: r.estrutura_erec_a9,
     gabarito_auditoria: r.gabarito_auditoria,
+    blocos_solucao: r.blocos_solucao,
     custo_gateway: r.custo_gateway,
     origem_tipo: r.origem_tipo,
     origem_parceiro: r.origem_parceiro,
@@ -163,6 +165,7 @@ export const getLatestDiagnostico = async (): Promise<Diagnostico | null> => {
       dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
       estrutura_erec_a9: r.estrutura_erec_a9,
       gabarito_auditoria: r.gabarito_auditoria,
+      blocos_solucao: r.blocos_solucao,
       custo_gateway: r.custo_gateway,
       origem_tipo: r.origem_tipo,
       origem_parceiro: r.origem_parceiro,
@@ -193,6 +196,7 @@ export const getDiagnostico = async (id: string): Promise<Diagnostico> => {
     dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
     estrutura_erec_a9: r.estrutura_erec_a9,
     gabarito_auditoria: r.gabarito_auditoria,
+    blocos_solucao: r.blocos_solucao,
     custo_gateway: r.custo_gateway,
     origem_tipo: r.origem_tipo,
     origem_parceiro: r.origem_parceiro,
@@ -223,6 +227,7 @@ export const getDiagnosticoByLeadId = async (leadId: string): Promise<Diagnostic
       dre_normalizada_15_linhas: r.dre_normalizada_15_linhas,
       estrutura_erec_a9: r.estrutura_erec_a9,
       gabarito_auditoria: r.gabarito_auditoria,
+      blocos_solucao: r.blocos_solucao,
       custo_gateway: r.custo_gateway,
       origem_tipo: r.origem_tipo,
       origem_parceiro: r.origem_parceiro,
