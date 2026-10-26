@@ -479,92 +479,114 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   }
 
   // 10. Gabarito de Auditoria A8 (10 itens de validação)
-  // FASE A5: ELIMINADA AUTOCERTIFICAÇÃO. Validador interno 'servico_diagnostico_trilha_a_a8' REMOVIDO.
-  // A auditoria agora referencia o validador humano / comissão de banca externa.
-  const validadorExternoDeclarado =
-    dadosExpertEntrada.validador_externo ||
-    dadosExpertEntrada.validador ||
-    'auditoria_humana_externa_consultor'
+  // FASE A5: ELIMINAÇÃO TOTAL DA AUTOCERTIFICAÇÃO.
+  // O motor NUNCA se auto-certifica como CONFORME. Cada item nasce como PENDENTE_VALIDACAO_HUMANA
+  // aguardando conferência do consultor contra o Output registrado do Expert no Painel A5.
+  // Se o Expert externo já tiver fornecido gabarito auditado externamente, preserva-o.
+  const gabaritoExpertExterno =
+    dadosExpertEntrada.gabarito_auditoria_a8 || dadosExpertEntrada.gabarito_auditoria || null
 
-  const gabaritoAuditoriaA8 = {
-    item1_identificacao_setor_protocolo: {
-      status: 'CONFORME',
-      criterio: 'Protocolo e identificação completa do cliente',
-      evidencia:
-        'Protocolo ' +
-        protocolo +
-        '; Cliente: ' +
-        razaoSocial +
-        '; Setor: ' +
-        setor +
-        '; Versão questionário: ' +
-        versaoQuestionario,
-      origem_fase: 'P1_CARGA',
-    },
-    item2_confirmacao_carga_2_linhas: {
-      status: 'CONFORME',
-      criterio: 'Confirmação de carga em até 2 linhas com versão (CS-19) e gate (CS-20)',
-      evidencia:
-        'Confirmação emitida declarando versão ' +
-        versaoQuestionario +
-        ' e sinalização do gate ' +
-        (autorizouDevolutiva ? 'Sim' : 'Não autorizo'),
-      origem_fase: 'P1_CARGA',
-    },
-    item3_causa_raiz_canvas_as_is: {
-      status: 'CONFORME',
-      criterio: 'Causa raiz formulada e Canvas As Is de 9 blocos na Fase 1',
-      evidencia: 'Produzido na Fase 1 (P2) do motor a partir do dossiê do cliente',
-      origem_fase: 'Fase 1 (P2)',
-    },
-    item4_micro_epifanias_bloco_setorial: {
-      status: 'CONFORME',
-      criterio: '3 a 5 micro-epifanias originadas do Bloco Setorial ' + setor + ' V7.2',
-      evidencia: 'Micro-epifanias derivadas do Slot 1 (Contexto Estratégico Global)',
-      origem_fase: 'Fase 1 (P2)',
-    },
-    item5_vazamentos_objetivos: {
-      status: 'CONFORME',
-      criterio: 'Vazamentos quantificados ancorados estritamente nos dados do dossiê',
-      evidencia: 'Vazamentos financeiros e operacionais referenciados no dossiê',
-      origem_fase: 'Fase 1 (P2)',
-    },
-    item6_nota_triangulacao: {
-      status: 'CONFORME',
-      criterio: 'Triangulação entre questionário e demonstrativos contábeis reais',
-      evidencia: 'Cruzamento entre demonstrativos anexos e projeções declaradas',
-      origem_fase: 'Fase 1 (P2)',
-    },
-    item7_snapshot_f6_dre_15_linhas: {
-      status: 'CONFORME',
-      criterio: 'DRE 15 linhas (CS-17) com RB = projeção do cliente e fontes reais',
-      evidencia: 'Linhas 1 a 15 estruturadas sem omissão de linha contábil',
-      origem_fase: 'Fase 6 (P9)',
-    },
-    item8_anexo_b_erec_a9: {
-      status: 'CONFORME',
-      criterio: 'Matriz EREC canônica A9 com 4 colunas obrigatórias e densidade cheia',
-      evidencia:
-        'Intervenções estruturadas em Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial',
-      origem_fase: 'Fase 3 (P6)',
-    },
-    item9_gate_autorizacao_cs20: {
-      status: 'CONFORME',
-      criterio: 'Gate CS-20 respeitado conforme autorização da devolutiva',
-      evidencia: autorizouDevolutiva
-        ? 'Autorizado → Devolutiva integral liberada para agendamento'
-        : 'Não autorizou → CTA retido, teaser protegido gerado, cadência agendada',
-      origem_fase: 'P1_CARGA / CS-20',
-    },
-    item10_fechamento_aguardo_comando: {
-      status: 'CONFORME',
-      criterio: 'Fases e snapshots concluídos com fechamento inviolável',
-      evidencia: 'Fechamentos de protocolo auditáveis em todas as fases geradas',
-      origem_fase: 'Fase 8 (P13)',
-    },
-    auditado_em: new Date().toISOString(),
-    validador: validadorExternoDeclarado,
-    referencia_externa: 'Output homologado do Expert V7.2 / Adapta ONE',
+  let gabaritoAuditoriaA8
+  if (gabaritoExpertExterno && typeof gabaritoExpertExterno === 'object') {
+    gabaritoAuditoriaA8 = Object.assign({}, gabaritoExpertExterno, {
+      auditado_em: gabaritoExpertExterno.auditado_em || new Date().toISOString(),
+      validador:
+        gabaritoExpertExterno.validador ||
+        dadosExpertEntrada.validador_externo ||
+        'auditoria_humana_externa_consultor',
+      referencia_externa: 'Output homologado do Expert V7.2 (Contrato Fase A2)',
+      autocertificacao_vedada: true,
+    })
+  } else {
+    gabaritoAuditoriaA8 = {
+      item1_identificacao_setor_protocolo: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Protocolo e identificação completa do cliente',
+        evidencia:
+          'Protocolo ' +
+          protocolo +
+          '; Cliente: ' +
+          razaoSocial +
+          '; Setor: ' +
+          setor +
+          '; Versão: ' +
+          versaoQuestionario +
+          '. Requer conferência humana contra o Output do Expert.',
+        origem_fase: 'P1_CARGA',
+      },
+      item2_confirmacao_carga_2_linhas: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Confirmação de carga em até 2 linhas com versão (CS-19) e gate (CS-20)',
+        evidencia:
+          'Versão ' +
+          versaoQuestionario +
+          ' declarada; gate ' +
+          (autorizouDevolutiva ? 'Sim' : 'Não autorizo') +
+          '. Requer conferência humana contra o Output do Expert.',
+        origem_fase: 'P1_CARGA',
+      },
+      item3_causa_raiz_canvas_as_is: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Causa raiz formulada e Canvas As Is de 9 blocos na Fase 1',
+        evidencia:
+          'Saída produzida na Fase 1 (P2) aguardando conferência humana contra o Bloco Solução do Expert.',
+        origem_fase: 'Fase 1 (P2)',
+      },
+      item4_micro_epifanias_bloco_setorial: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: '3 a 5 micro-epifanias originadas do Bloco Setorial ' + setor + ' V7.2',
+        evidencia:
+          'Micro-epifanias emitidas aguardando aprovação humana frente ao referencial do Expert.',
+        origem_fase: 'Fase 1 (P2)',
+      },
+      item5_vazamentos_objetivos: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Vazamentos quantificados ancorados estritamente nos dados do dossiê',
+        evidencia:
+          'Vazamentos mapeados na Fase 1 aguardando conferência humana com dados do dossiê.',
+        origem_fase: 'Fase 1 (P2)',
+      },
+      item6_nota_triangulacao: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Triangulação entre questionário e demonstrativos contábeis reais',
+        evidencia:
+          'Cruzamento de demonstrativos aguardando conferência humana contra balancete real do Expert.',
+        origem_fase: 'Fase 1 (P2)',
+      },
+      item7_snapshot_f6_dre_15_linhas: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'DRE 15 linhas (CS-17) com RB = projeção do cliente e fontes reais',
+        evidencia:
+          'Linhas contábeis geradas aguardando conciliação humana com a DRE homologada do Expert.',
+        origem_fase: 'Fase 6 (P9)',
+      },
+      item8_anexo_b_erec_a9: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Matriz EREC canônica A9 com 4 colunas obrigatórias e densidade cheia',
+        evidencia:
+          'Intervenções EREC aguardando aprovação humana frente à matriz homologada do Expert.',
+        origem_fase: 'Fase 3 (P6)',
+      },
+      item9_gate_autorizacao_cs20: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Gate CS-20 respeitado conforme autorização da devolutiva',
+        evidencia:
+          'Direcionamento de CTA/nutrição aguardando validação humana de conformidade com a resposta 9.2.',
+        origem_fase: 'P1_CARGA / CS-20',
+      },
+      item10_fechamento_aguardo_comando: {
+        status: 'PENDENTE_VALIDACAO_HUMANA',
+        criterio: 'Fases e snapshots concluídos com fechamento inviolável "Aguardo seu comando."',
+        evidencia: 'Encerramentos de fases aguardando conferência humana de conformidade formal.',
+        origem_fase: 'Fase 8 (P13)',
+      },
+      auditado_em: new Date().toISOString(),
+      validador: 'auditoria_humana_externa_consultor',
+      status_global: 'pendente_validacao_humana',
+      referencia_externa:
+        'Output homologado do Expert V7.2 / Adapta ONE (requer aprovação manual no Painel A5)',
+      autocertificacao_vedada: true,
+    }
   }
 
   // 11. Materialização dos Blocos Solução (Executivo e Completo) com rastreabilidade de fase

@@ -679,16 +679,45 @@ export function LeadDetailsDialog({
 
   const lead = currentLead || initialLead
 
-  // Estado dos itens da Auditoria Humana A8 contra o Expert (Fase A5)
+  // Estado dos itens da Auditoria Humana A8 contra o Expert (Fase A5) — para os 3 níveis (SaaS, MaaS, Bespoke)
   const [statusItensA8, setStatusItensA8] = useState<
     Record<string, 'CONFORME' | 'REJEITADO' | 'PENDENTE'>
   >({
-    a8_1: 'CONFORME',
-    a8_2: 'CONFORME',
-    a8_3: 'CONFORME',
-    a8_4: 'CONFORME',
-    a8_5: 'CONFORME',
+    a8_1: 'PENDENTE',
+    a8_2: 'PENDENTE',
+    a8_3: 'PENDENTE',
+    a8_4: 'PENDENTE',
+    a8_5: 'PENDENTE',
+    a8_6: 'PENDENTE',
+    a8_7: 'PENDENTE',
+    a8_8: 'PENDENTE',
+    a8_9: 'PENDENTE',
+    a8_10: 'PENDENTE',
   })
+  const [nivelPortaoA8, setNivelPortaoA8] = useState<'saas' | 'maas' | 'bespoke'>('maas')
+
+  // Sincronizar status dos itens caso o diagnóstico já possua gabarito_auditoria gravado
+  useEffect(() => {
+    if (diagnosticoVinculado?.gabarito_auditoria) {
+      const gab = diagnosticoVinculado.gabarito_auditoria
+      setStatusItensA8((prev) => ({
+        ...prev,
+        a8_1: (gab.item1_identificacao_setor_protocolo?.status as any) || prev.a8_1,
+        a8_2: (gab.item2_confirmacao_carga_2_linhas?.status as any) || prev.a8_2,
+        a8_3: (gab.item3_causa_raiz_canvas_as_is?.status as any) || prev.a8_3,
+        a8_4: (gab.item4_micro_epifanias_bloco_setorial?.status as any) || prev.a8_4,
+        a8_5: (gab.item5_vazamentos_objetivos?.status as any) || prev.a8_5,
+        a8_6: (gab.item6_nota_triangulacao?.status as any) || prev.a8_6,
+        a8_7: (gab.item7_snapshot_f6_dre_15_linhas?.status as any) || prev.a8_7,
+        a8_8: (gab.item8_anexo_b_erec_a9?.status as any) || prev.a8_8,
+        a8_9: (gab.item9_gate_autorizacao_cs20?.status as any) || prev.a8_9,
+        a8_10: (gab.item10_fechamento_aguardo_comando?.status as any) || prev.a8_10,
+      }))
+      if (gab.observacoes_consultor) {
+        setObsConsultorA8(gab.observacoes_consultor)
+      }
+    }
+  }, [diagnosticoVinculado])
 
   if (!lead && !open) return null
   if (!lead) return null
@@ -1784,149 +1813,382 @@ export function LeadDetailsDialog({
                   </CardContent>
                 </Card>
 
-                {/* PAINEL DE VALIDAÇÃO HUMANA A8 — MAAS / BESPOKE (Vedada Autocertificação do Motor) */}
+                {/* PAINEL DE VALIDAÇÃO HUMANA A8 — 3 NÍVEIS (SaaS, MaaS, Bespoke) — VEDADA AUTOCERTIFICAÇÃO */}
                 <Card className="bg-[#16213A] border-[#24334F]">
-                  <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/60 flex-row items-center justify-between">
+                  <CardHeader className="py-2.5 px-4 border-b border-[#24334F]/70 bg-[#111A2E]/60 flex-row items-center justify-between flex-wrap gap-2">
                     <div>
                       <CardTitle className="text-xs font-bold text-[#F8FAFC] flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-[#3DDC74]" />
                         <span>
-                          Painel de Validação Humana A8 (Portão MaaS Híbrido & Bespoke CaaS)
+                          Painel de Validação Humana A8 (Portões Metodológicos — SaaS, MaaS &
+                          Bespoke)
                         </span>
                       </CardTitle>
                       <p className="text-[11px] text-[#8B98B4]">
-                        Auditoria comparativa: critério × saída produzida item a item com evidência
-                        no dossiê — <strong>vedada a autocertificação do motor</strong>
+                        Auditoria comparativa: <strong>Motor vs. Output do Expert</strong> como
+                        referência externa. Aprovação manual item a item —{' '}
+                        <strong>vedada a autocertificação do motor</strong>.
                       </p>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="border-[#3DDC74]/60 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px] font-semibold"
-                    >
-                      Portão A8
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-[#0B1120] p-0.5 rounded border border-[#24334F]">
+                        <button
+                          type="button"
+                          onClick={() => setNivelPortaoA8('saas')}
+                          className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${
+                            nivelPortaoA8 === 'saas'
+                              ? 'bg-[#0066CC] text-white'
+                              : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                          }`}
+                        >
+                          SaaS Puro
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNivelPortaoA8('maas')}
+                          className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${
+                            nivelPortaoA8 === 'maas'
+                              ? 'bg-[#3DDC74] text-[#0B1120] font-bold'
+                              : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                          }`}
+                        >
+                          MaaS Híbrido
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNivelPortaoA8('bespoke')}
+                          className={`px-2 py-0.5 text-[10px] rounded font-medium transition-colors ${
+                            nivelPortaoA8 === 'bespoke'
+                              ? 'bg-[#FF9900] text-[#0B1120] font-bold'
+                              : 'text-[#8B98B4] hover:text-[#F8FAFC]'
+                          }`}
+                        >
+                          Bespoke CaaS
+                        </button>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="border-[#3DDC74]/60 text-[#3DDC74] bg-[#3DDC74]/10 text-[10px] font-semibold"
+                      >
+                        Portão A8 ({nivelPortaoA8.toUpperCase()})
+                      </Badge>
+                    </div>
                   </CardHeader>
-                  <CardContent className="p-3 text-xs">
+                  <CardContent className="p-3 text-xs space-y-3">
+                    <div className="p-2.5 rounded bg-[#0B1120] border border-[#24334F] text-[11px] text-[#C7D0E0] flex items-center justify-between flex-wrap gap-2">
+                      <div>
+                        <span className="text-[#8B98B4]">Regime de Validação A8:</span>{' '}
+                        <strong className="text-[#F8FAFC]">
+                          {nivelPortaoA8 === 'saas'
+                            ? 'SaaS Puro — Gate P1 a P6 auditado por amostragem humana (SLA 72h)'
+                            : nivelPortaoA8 === 'maas'
+                              ? 'MaaS Híbrido — Validação humana 100% item a item pré-sessão devolutiva (45 min)'
+                              : 'Bespoke CaaS — Certificação executiva da Banca do Expert (10 itens com ata registrada)'}
+                        </strong>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#8B98B4]">
+                          Conformes:{' '}
+                          {Object.values(statusItensA8).filter((s) => s === 'CONFORME').length}/10
+                        </span>
+                        <span className="text-[10px] text-rose-400">
+                          Rejeitados:{' '}
+                          {Object.values(statusItensA8).filter((s) => s === 'REJEITADO').length}
+                        </span>
+                        <span className="text-[10px] text-amber-300">
+                          Pendentes:{' '}
+                          {Object.values(statusItensA8).filter((s) => s === 'PENDENTE').length}
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
                           <tr className="border-b border-[#24334F] text-[#8B98B4] text-[11px]">
-                            <th className="py-1 px-2 w-12 font-mono">Item</th>
-                            <th className="py-1 px-2 w-48">Critério de Portão</th>
-                            <th className="py-1 px-2">Saída Produzida (Motor V7.2.3)</th>
-                            <th className="py-1 px-2">Evidência no Dossiê</th>
-                            <th className="py-1 px-2 text-center w-28">Status Auditor</th>
+                            <th className="py-1.5 px-2 w-12 font-mono">Item</th>
+                            <th className="py-1.5 px-2 w-44">Critério de Portão</th>
+                            <th className="py-1.5 px-2">Saída Produzida (Motor V7.2.3)</th>
+                            <th className="py-1.5 px-2">Referência Externa (Expert / Dossiê)</th>
+                            <th className="py-1.5 px-2 text-center w-40">Validação Humana</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#24334F]/30">
-                          <tr className="hover:bg-[#111A2E]/40 text-xs">
-                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.1</td>
-                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
-                              CS-17: DRE Normalizada 15 Linhas
-                            </td>
-                            <td className="py-1.5 px-2 text-[#C7D0E0]">
-                              {diagnosticoVinculado?.dre_normalizada_15_linhas
-                                ? `15 de 15 linhas estruturadas com ${
-                                    diagnosticoVinculado.dre_normalizada_15_linhas.filter(
-                                      (l: any) => String(l.valor).includes('[REQUER'),
-                                    ).length
-                                  } linha(s) não segregável(is) identificada(s)`
-                                : 'Aguardando processamento'}
-                            </td>
-                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
-                              {arquivosFinanceiros.length > 0
-                                ? `${arquivosFinanceiros.length} doc(s) financeiro(s) anexado(s)`
-                                : 'Sem balancete — [REQUER VERIFICAÇÃO] em todas as linhas contábeis'}
-                            </td>
-                            <td className="py-1.5 px-2 text-center">
-                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
-                                Conforme
-                              </Badge>
-                            </td>
-                          </tr>
-
-                          <tr className="hover:bg-[#111A2E]/40 text-xs">
-                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.2</td>
-                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
-                              A9: Matriz EREC Canônica
-                            </td>
-                            <td className="py-1.5 px-2 text-[#C7D0E0]">
-                              {diagnosticoVinculado?.estrutura_erec_a9
-                                ? `Tabela 4 colunas: Ação (EREC) | Item | Base Conclusiva | Dimensão setorial (${diagnosticoVinculado.estrutura_erec_a9.length} itens)`
-                                : 'Aguardando processamento'}
-                            </td>
-                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
-                              Anexo B Bloco Solução — Seções 1 a 11 do questionário
-                            </td>
-                            <td className="py-1.5 px-2 text-center">
-                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
-                                Conforme
-                              </Badge>
-                            </td>
-                          </tr>
-
-                          <tr className="hover:bg-[#111A2E]/40 text-xs">
-                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.3</td>
-                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
-                              CS-19: Versão do Questionário
-                            </td>
-                            <td className="py-1.5 px-2 text-[#C7D0E0]">
-                              Versão declarada expressamente na confirmação de carga:{' '}
-                              <code className="text-[#5B9DFF] font-mono">
-                                {diagnosticoVinculado?.versao_questionario || 'V7.2'}
-                              </code>
-                            </td>
-                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
-                              Paridade com PDF Consolidado 12 Setores V7.2
-                            </td>
-                            <td className="py-1.5 px-2 text-center">
-                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
-                                Validado
-                              </Badge>
-                            </td>
-                          </tr>
-
-                          <tr className="hover:bg-[#111A2E]/40 text-xs">
-                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.4</td>
-                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
-                              CS-20: Gate de Autorização Devolutiva
-                            </td>
-                            <td className="py-1.5 px-2 text-[#C7D0E0]">
-                              {(lead.autorizacao_devolutiva || '').toLowerCase().includes('sim')
-                                ? 'Autorização "Sim" → Devolutiva agendada liberada'
-                                : 'Autorização "Não autorizo" → CTA integral retido, nutrição com teaser protegido'}
-                            </td>
-                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
-                              Pergunta 9.3 do questionário (autorizacao_devolutiva)
-                            </td>
-                            <td className="py-1.5 px-2 text-center">
-                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
-                                Preservado
-                              </Badge>
-                            </td>
-                          </tr>
-
-                          <tr className="hover:bg-[#111A2E]/40 text-xs">
-                            <td className="py-1.5 px-2 font-mono text-[#8B98B4]">A8.5</td>
-                            <td className="py-1.5 px-2 font-semibold text-[#F8FAFC]">
-                              Gabarito e Custo do Gateway
-                            </td>
-                            <td className="py-1.5 px-2 text-[#C7D0E0]">
-                              {diagnosticoVinculado?.custo_gateway
-                                ? `Custo: $${diagnosticoVinculado.custo_gateway.custo_usd} | Tokens: ${diagnosticoVinculado.custo_gateway.tokens_input} in / ${diagnosticoVinculado.custo_gateway.tokens_output} out (${diagnosticoVinculado.custo_gateway.tempo_execucao_ms}ms)`
-                                : 'Custo registrado por diagnóstico no cofre'}
-                            </td>
-                            <td className="py-1.5 px-2 text-[#8B98B4] text-[11px]">
-                              Economia unitária auditável no campo custo_gateway
-                            </td>
-                            <td className="py-1.5 px-2 text-center">
-                              <Badge className="bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] text-[9px]">
-                                Auditável
-                              </Badge>
-                            </td>
-                          </tr>
+                          {[
+                            {
+                              id: 'a8_1',
+                              label: 'A8.1',
+                              criterio: 'Identificação, Setor & Protocolo',
+                              saida: `Protocolo ${lead.protocolo || '—'} | Cliente: ${lead.razao_social} | Setor: ${lead.setor}`,
+                              referencia: 'Dossiê cadastral oficial e contrato social (Fase A2)',
+                            },
+                            {
+                              id: 'a8_2',
+                              label: 'A8.2',
+                              criterio: 'CS-19 / CS-20 Carga em 2 Linhas',
+                              saida: `Versão declarada: ${diagnosticoVinculado?.versao_questionario || 'V7.2'} | Gate 9.2: ${lead.autorizacao_devolutiva || 'Sim'}`,
+                              referencia:
+                                'Resposta 9.2 do questionário e confirmação P1 sem slot dedicado para DRE',
+                            },
+                            {
+                              id: 'a8_3',
+                              label: 'A8.3',
+                              criterio: 'Causa Raiz & Canvas As Is (9 Blocos)',
+                              saida: diagnosticoVinculado?.output_prompts?.[0]
+                                ? 'Fase 1 emitida com síntese da dor e 9 blocos estruturados'
+                                : 'Saída Fase 1 aguardando processamento do motor',
+                              referencia:
+                                'Causa raiz formulada pelo Expert no Bloco Solução Completo',
+                            },
+                            {
+                              id: 'a8_4',
+                              label: 'A8.4',
+                              criterio: 'Micro-epifanias Bloco Setorial',
+                              saida: `3 a 5 micro-epifanias ancoradas no Bloco Setorial ${lead.setor} V7.2`,
+                              referencia: 'Seção 6 do Contexto Estratégico Global V7.2',
+                            },
+                            {
+                              id: 'a8_5',
+                              label: 'A8.5',
+                              criterio: 'Vazamentos Quantificados no Dossiê',
+                              saida:
+                                'Vazamentos financeiros e operacionais ancorados nos números do cliente',
+                              referencia: 'Demonstrativos e respostas financeiras do questionário',
+                            },
+                            {
+                              id: 'a8_6',
+                              label: 'A8.6',
+                              criterio: 'Nota de Triangulação Contábil',
+                              saida:
+                                'Cruzamento entre respostas qualitativas e balancetes reais anexados',
+                              referencia: `${arquivosFinanceiros.length} documento(s) contábil(is) do cofre`,
+                            },
+                            {
+                              id: 'a8_7',
+                              label: 'A8.7',
+                              criterio: 'CS-17: DRE Normalizada 15 Linhas',
+                              saida: diagnosticoVinculado?.dre_normalizada_15_linhas
+                                ? `15 de 15 linhas estruturadas com RB = ${lead.faturamento_mensal || 'projeção'} (Linha 1)`
+                                : 'DRE 15 linhas não processada',
+                              referencia:
+                                'DRE ECD 2025 / Balancete contábil sob Exceção A11 (sem sobrepor convenção)',
+                            },
+                            {
+                              id: 'a8_8',
+                              label: 'A8.8',
+                              criterio: 'A9: Matriz EREC Canônica 4 Colunas',
+                              saida: diagnosticoVinculado?.estrutura_erec_a9
+                                ? `Tabela 4 colunas: Ação (EREC) | Item | Base Conclusiva | Dimensão (${diagnosticoVinculado.estrutura_erec_a9.length} itens)`
+                                : 'Matriz EREC A9 pendente',
+                              referencia: 'Matriz EREC do Expert no Bloco Solução (Fase 3 — P6)',
+                            },
+                            {
+                              id: 'a8_9',
+                              label: 'A8.9',
+                              criterio: 'CS-20: Gate Devolutiva / Nutrição',
+                              saida: (lead.autorizacao_devolutiva || '')
+                                .toLowerCase()
+                                .includes('sim')
+                                ? 'Autorizado → Devolutiva liberada'
+                                : 'Não autorizou → CTA retido, nutrição com teaser protegido',
+                              referencia:
+                                'Pergunta 9.2 do questionário respeitada deterministicamente',
+                            },
+                            {
+                              id: 'a8_10',
+                              label: 'A8.10',
+                              criterio: 'Fechamento Inviolável "Aguardo seu comando."',
+                              saida:
+                                'Todas as fases encerradas rigorosamente com comando de fechamento formal',
+                              referencia: 'Roteiro de Execução de 13 Prompts (Skill canônica V7.2)',
+                            },
+                          ].map((item) => {
+                            const statusAtual = statusItensA8[item.id] || 'PENDENTE'
+                            return (
+                              <tr key={item.id} className="hover:bg-[#111A2E]/40 text-xs">
+                                <td className="py-2 px-2 font-mono text-[#8B98B4] font-semibold">
+                                  {item.label}
+                                </td>
+                                <td className="py-2 px-2 font-semibold text-[#F8FAFC]">
+                                  {item.criterio}
+                                </td>
+                                <td className="py-2 px-2 text-[#C7D0E0] text-[11px]">
+                                  {item.saida}
+                                </td>
+                                <td className="py-2 px-2 text-[#8B98B4] text-[11px]">
+                                  {item.referencia}
+                                </td>
+                                <td className="py-2 px-2 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setStatusItensA8((prev) => ({
+                                          ...prev,
+                                          [item.id]: 'CONFORME',
+                                        }))
+                                      }
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors ${
+                                        statusAtual === 'CONFORME'
+                                          ? 'bg-[#3DDC74]/20 border-[#3DDC74] text-[#3DDC74] font-bold'
+                                          : 'border-[#24334F] text-[#8B98B4] hover:text-[#F8FAFC]'
+                                      }`}
+                                    >
+                                      Aprovar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setStatusItensA8((prev) => ({
+                                          ...prev,
+                                          [item.id]: 'REJEITADO',
+                                        }))
+                                      }
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition-colors ${
+                                        statusAtual === 'REJEITADO'
+                                          ? 'bg-rose-500/20 border-rose-500 text-rose-300 font-bold'
+                                          : 'border-[#24334F] text-[#8B98B4] hover:text-rose-300'
+                                      }`}
+                                    >
+                                      Rejeitar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setStatusItensA8((prev) => ({
+                                          ...prev,
+                                          [item.id]: 'PENDENTE',
+                                        }))
+                                      }
+                                      className={`px-1 py-0.5 rounded text-[9px] font-medium border transition-colors ${
+                                        statusAtual === 'PENDENTE'
+                                          ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                          : 'border-[#24334F] text-[#8B98B4]'
+                                      }`}
+                                    >
+                                      ?
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
                         </tbody>
                       </table>
+                    </div>
+
+                    {/* Observações e Registro do Consultor */}
+                    <div className="pt-2 border-t border-[#24334F] space-y-2">
+                      <label className="text-[11px] font-semibold text-[#F8FAFC] block">
+                        Ata da Auditoria do Consultor / Parecer Humano:
+                      </label>
+                      <input
+                        type="text"
+                        value={obsConsultorA8}
+                        onChange={(e) => setObsConsultorA8(e.target.value)}
+                        placeholder="Ex.: Portão MaaS aprovado pelo consultor — paridade 100% conferida contra o Bloco Solução do Expert."
+                        className="w-full bg-[#0B1120] border border-[#24334F] rounded-[4px] px-2.5 py-1.5 text-xs text-[#F8FAFC] focus:outline-none focus:border-[#5B9DFF]"
+                      />
+                      <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                        <div className="text-[11px] text-[#8B98B4]">
+                          Vedada a autocertificação: registro requer salvamento explícito pelo
+                          consultor.
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={salvandoA8Humano || !diagnosticoVinculado?.id}
+                          onClick={async () => {
+                            if (!diagnosticoVinculado?.id) return
+                            setSalvandoA8Humano(true)
+                            setFeedbackMsg(null)
+                            try {
+                              const { salvarValidacaoHumanaA8 } =
+                                await import('@/services/site-leads-sync')
+                              const payloadGabarito: Record<string, any> = {
+                                nivel_portao: nivelPortaoA8,
+                                auditado_em: new Date().toISOString(),
+                                tipo_auditoria: 'validacao_humana_sem_autocertificacao',
+                                item1_identificacao_setor_protocolo: {
+                                  status: statusItensA8.a8_1,
+                                  criterio: 'Identificação, Setor & Protocolo',
+                                },
+                                item2_confirmacao_carga_2_linhas: {
+                                  status: statusItensA8.a8_2,
+                                  criterio: 'CS-19 / CS-20 Carga em 2 Linhas',
+                                },
+                                item3_causa_raiz_canvas_as_is: {
+                                  status: statusItensA8.a8_3,
+                                  criterio: 'Causa Raiz & Canvas As Is (9 Blocos)',
+                                },
+                                item4_micro_epifanias_bloco_setorial: {
+                                  status: statusItensA8.a8_4,
+                                  criterio: 'Micro-epifanias Bloco Setorial',
+                                },
+                                item5_vazamentos_objetivos: {
+                                  status: statusItensA8.a8_5,
+                                  criterio: 'Vazamentos Quantificados no Dossiê',
+                                },
+                                item6_nota_triangulacao: {
+                                  status: statusItensA8.a8_6,
+                                  criterio: 'Nota de Triangulação Contábil',
+                                },
+                                item7_snapshot_f6_dre_15_linhas: {
+                                  status: statusItensA8.a8_7,
+                                  criterio: 'CS-17: DRE Normalizada 15 Linhas',
+                                },
+                                item8_anexo_b_erec_a9: {
+                                  status: statusItensA8.a8_8,
+                                  criterio: 'A9: Matriz EREC Canônica 4 Colunas',
+                                },
+                                item9_gate_autorizacao_cs20: {
+                                  status: statusItensA8.a8_9,
+                                  criterio: 'CS-20: Gate Devolutiva / Nutrição',
+                                },
+                                item10_fechamento_aguardo_comando: {
+                                  status: statusItensA8.a8_10,
+                                  criterio: 'Fechamento Inviolável "Aguardo seu comando."',
+                                },
+                              }
+
+                              const res = await salvarValidacaoHumanaA8(
+                                diagnosticoVinculado.id,
+                                payloadGabarito,
+                                'Consultor Responsável',
+                                obsConsultorA8,
+                              )
+                              if (!res.success) {
+                                throw new Error(res.error || 'Falha ao salvar validação humana A8.')
+                              }
+
+                              setFeedbackMsg({
+                                type: 'success',
+                                text: `Validação Humana A8 (${nivelPortaoA8.toUpperCase()}) registrada com sucesso no cofre!`,
+                              })
+
+                              // Recarregar diagnóstico
+                              const { getDiagnosticoByLeadId } =
+                                await import('@/services/diagnosticos')
+                              const diagAtualizado = await getDiagnosticoByLeadId(lead.id)
+                              setDiagnosticoVinculado(diagAtualizado)
+                            } catch (err: any) {
+                              setFeedbackMsg({
+                                type: 'error',
+                                text: err?.message || 'Erro ao salvar validação humana.',
+                              })
+                            } finally {
+                              setSalvandoA8Humano(false)
+                            }
+                          }}
+                          className="bg-[#22B14C] hover:bg-[#1E9E43] text-white text-xs h-7 gap-1.5"
+                        >
+                          {salvandoA8Humano ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          )}
+                          <span>Registrar Validação Humana do Consultor</span>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
