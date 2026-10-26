@@ -11,6 +11,7 @@ export interface IntegracaoSiteConfig {
   updated: string
 }
 
+// Interface oficial de Lead sincronizado ou local
 export interface LeadRecord {
   id: string
   protocolo: string

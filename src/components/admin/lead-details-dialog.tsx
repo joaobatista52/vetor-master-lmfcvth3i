@@ -680,7 +680,9 @@ export function LeadDetailsDialog({
   const lead = currentLead || initialLead
 
   // Estado dos itens da Auditoria Humana A8 contra o Expert (Fase A5)
-  const [statusItensA8, setStatusItensA8] = useState<Record<string, 'CONFORME' | 'REJEITADO' | 'PENDENTE'>>({
+  const [statusItensA8, setStatusItensA8] = useState<
+    Record<string, 'CONFORME' | 'REJEITADO' | 'PENDENTE'>
+  >({
     a8_1: 'CONFORME',
     a8_2: 'CONFORME',
     a8_3: 'CONFORME',
