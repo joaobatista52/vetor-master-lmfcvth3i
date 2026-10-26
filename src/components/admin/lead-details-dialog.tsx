@@ -606,6 +606,8 @@ export function LeadDetailsDialog({
   const [exportandoDossie, setExportandoDossie] = useState<boolean>(false)
   const [jsonExpertInput, setJsonExpertInput] = useState<string>('')
   const [registrandoExpert, setRegistrandoExpert] = useState<boolean>(false)
+  const [salvandoA8Humano, setSalvandoA8Humano] = useState<boolean>(false)
+  const [obsConsultorA8, setObsConsultorA8] = useState<string>('')
   const [fasesExpandidas, setFasesExpandidas] = useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -676,6 +678,15 @@ export function LeadDetailsDialog({
   }, [open, leadId, initialLead])
 
   const lead = currentLead || initialLead
+
+  // Estado dos itens da Auditoria Humana A8 contra o Expert (Fase A5)
+  const [statusItensA8, setStatusItensA8] = useState<Record<string, 'CONFORME' | 'REJEITADO' | 'PENDENTE'>>({
+    a8_1: 'CONFORME',
+    a8_2: 'CONFORME',
+    a8_3: 'CONFORME',
+    a8_4: 'CONFORME',
+    a8_5: 'CONFORME',
+  })
 
   if (!lead && !open) return null
   if (!lead) return null

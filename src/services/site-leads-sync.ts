@@ -302,6 +302,44 @@ export async function invocarServicoDiagnostico(params: {
   }
 }
 
+/**
+ * Salva a Validação Humana A8 do Consultor para um Diagnóstico (Fase A5)
+ * Atualiza o gabarito_auditoria sem nenhuma autocertificação.
+ */
+export async function salvarValidacaoHumanaA8(
+  diagnosticoId: string,
+  gabaritoA8: Record<string, any>,
+  consultorNome: string,
+  observacoes?: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const gabaritoAtualizado = {
+      ...gabaritoA8,
+      auditado_em: new Date().toISOString(),
+      validador: `consultor_humano:${consultorNome || 'Consultor JBP Vetor Master'}`,
+      tipo_validacao: 'auditoria_humana_externa',
+      observacoes_consultor: observacoes || '',
+      status_global: Object.values(gabaritoA8).every(
+        (it: any) => it?.status === 'CONFORME' || it?.status === 'APROVADO',
+      )
+        ? 'homologado_consultor'
+        : 'divergente_em_revisao',
+    }
+
+    await pb.collection('diagnosticos').update(diagnosticoId, {
+      gabarito_auditoria: gabaritoAtualizado,
+    })
+
+    return { success: true }
+  } catch (err: any) {
+    console.error('Falha ao salvar validação humana A8:', err)
+    return {
+      success: false,
+      error: err?.message || 'Erro ao registrar validação humana A8.',
+    }
+  }
+}
+
 export async function getIntegracaoSiteConfig(): Promise<IntegracaoSiteConfig | null> {
   try {
     const record = await pb
