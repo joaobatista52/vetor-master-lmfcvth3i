@@ -158,6 +158,15 @@ export const DIVERGENCIAS_GATE_0B: DivergenciaItem[] = [
     status: 'Corrigida',
     versao: 'Trilha A (Passos 6–8)',
   },
+  {
+    numero: 15,
+    divergencia:
+      'Fase A5/A6 — Eliminação de Autocertificação e Conferência de Paridade P1–P13 sobre Cópia de Teste (beatekteste2026).',
+    correcao:
+      'Eliminado o validador interno auto-referente servico_diagnostico_trilha_a_a8. Adicionado Painel de Validação Humana A8 nos 3 portões metodológicos (SaaS Puro, MaaS Híbrido e Bespoke CaaS). Teste comparativo P1–P13 executado sobre wor27cnyubs22ot contra o Bloco Solução do Expert como referência externa: 13 fases auditadas, divergências documentadas na DRE (exceção A11 de tributos embutidos vs escada) e no WACC (Regime B determinístico 21,75%), mantendo o lead de produção intocado em modo dry-run.',
+    status: 'Corrigida / Homologada',
+    versao: 'Comando 1 (Fases A5–A6)',
+  },
 ]
 
 export interface ItemParidadeTrilhaA {
