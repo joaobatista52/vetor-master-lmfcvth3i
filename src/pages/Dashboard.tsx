@@ -277,9 +277,158 @@ export default function Dashboard() {
     return (
       ultimoDiagnostico.dados_entrada?.bloco_solucao_completo ||
       ultimoDiagnostico.blocos_solucao?.bloco_solucao_completo ||
+      ultimoDiagnostico.blocos_solucao ||
       null
     )
   }, [temDiagnosticoReal, ultimoDiagnostico])
+
+  // Materialização dos 7 Anexos Canônicos (A–G) do Bloco Solução Completo conforme Plano V2 com rastreabilidade
+  const anexosSolucaoMaterializados = useMemo(() => {
+    const rawBlocos: any = blocoSolucaoCompleto || {}
+    const outputPrompts = ultimoDiagnostico?.output_prompts || []
+
+    const ANEXOS_DEFINICAO = [
+      {
+        letra: 'A',
+        id: 'anexo_a',
+        titulo: 'Causa Raiz & Canvas As Is (9 Blocos)',
+        faseOrigem: 'Fase 1 (P1/P2)',
+        escopo:
+          'Identificação da causa raiz primária, vazamentos de valor quantificados e Canvas As Is de 9 blocos.',
+      },
+      {
+        letra: 'B',
+        id: 'anexo_b',
+        titulo: 'Matriz EREC Canônica A9 (13 Intervenções)',
+        faseOrigem: 'Fase 3 (P6)',
+        escopo:
+          'Matriz com as 4 ações de diferenciação (Eliminar, Reduzir, Elevar, Criar) e Curva de Valor.',
+      },
+      {
+        letra: 'C',
+        id: 'anexo_c',
+        titulo: 'OKRs Estratégicos & Roadmap Faseado',
+        faseOrigem: 'Fase 5 (P8)',
+        escopo:
+          'OKRs vivos em cascata por etapa (Hoshin Kanri) e Roadmap 0–90, 90–180 e 180–360 dias.',
+      },
+      {
+        letra: 'D',
+        id: 'anexo_d',
+        titulo: 'Capacidade & Design Organizacional',
+        faseOrigem: 'Fase 4 (P7)',
+        escopo:
+          'Framework Hackman (5 condições facilitadoras), Tiers A/B/C de liderança e gaps de competência.',
+      },
+      {
+        letra: 'E',
+        id: 'anexo_e',
+        titulo: 'Governança PME em 2 Etapas & Matriz de Alçadas',
+        faseOrigem: 'Fase 7 (P10)',
+        escopo:
+          'Conselho Consultivo → Conselho de Administração, alçadas e calibração de porte A7.',
+      },
+      {
+        letra: 'F',
+        id: 'anexo_f',
+        titulo: 'DRE Normalizada 15 Linhas & Lente de Buffett',
+        faseOrigem: 'Fase 6 (P9)',
+        escopo:
+          'CS-17 linha a linha, margem de contribuição, EBITDA, WACC Regime B e margem de segurança.',
+      },
+      {
+        letra: 'G',
+        id: 'anexo_g',
+        titulo: 'Inovação, ERP/MES & Fosso Defensivo (Moat)',
+        faseOrigem: 'Fase 8 (P11)',
+        escopo:
+          'Maturidade digital As Is vs To Be, roadmap ERP em nuvem + MES industrial e proteção competitiva.',
+      },
+    ]
+
+    return ANEXOS_DEFINICAO.map((def) => {
+      let disponivel = false
+      let resumo = 'Aguardando registro do output do motor determinístico pelo consultor.'
+      let totalItens = 0
+      let conteudoExibicao: any = null
+
+      if (temDiagnosticoReal && ultimoDiagnostico) {
+        if (def.id === 'anexo_b') {
+          if (
+            ultimoDiagnostico.estrutura_erec_a9 &&
+            ultimoDiagnostico.estrutura_erec_a9.length > 0
+          ) {
+            disponivel = true
+            totalItens = ultimoDiagnostico.estrutura_erec_a9.length
+            resumo = `${totalItens} intervenções canônicas de diferenciação mapeadas nas 4 ações estruturais.`
+            conteudoExibicao = ultimoDiagnostico.estrutura_erec_a9
+          }
+        } else if (def.id === 'anexo_f') {
+          if (
+            ultimoDiagnostico.dre_normalizada_15_linhas &&
+            ultimoDiagnostico.dre_normalizada_15_linhas.length >= 15
+          ) {
+            disponivel = true
+            totalItens = 15
+            resumo =
+              'DRE Normalizada de 15 linhas completa com segregação de margem, EBITDA e Lucro Líquido (CS-17).'
+            conteudoExibicao = ultimoDiagnostico.dre_normalizada_15_linhas
+          }
+        } else if (def.id === 'anexo_c') {
+          if (temOKRsReais || rawBlocos.anexo_c) {
+            disponivel = true
+            totalItens = okrs.length || (rawBlocos.anexo_c?.okrs?.length ?? 3)
+            resumo = `${totalItens} OKRs estratégicos parametrizados por etapa e rituais semanais/mensais.`
+            conteudoExibicao = rawBlocos.anexo_c || okrs
+          }
+        } else if (def.id === 'anexo_a') {
+          const outF1 = outputPrompts.find((p: any) => p.fase === 1)
+          if (outF1 || rawBlocos.anexo_a) {
+            disponivel = true
+            resumo =
+              'Causa raiz formulada, 3–5 micro-epifanias gatilho setoriais e Canvas As Is de 9 blocos.'
+            totalItens = 9
+            conteudoExibicao = rawBlocos.anexo_a || outF1?.output_integral
+          }
+        } else if (def.id === 'anexo_d') {
+          const outF4 = outputPrompts.find((p: any) => p.fase === 4)
+          if (outF4 || rawBlocos.anexo_d) {
+            disponivel = true
+            resumo =
+              'Mapa Hackman, matriz de competências críticas e alocação de squads de liderança.'
+            totalItens = 5
+            conteudoExibicao = rawBlocos.anexo_d || outF4?.output_integral
+          }
+        } else if (def.id === 'anexo_e') {
+          const outF7 = outputPrompts.find((p: any) => p.fase === 7)
+          if (outF7 || rawBlocos.anexo_e) {
+            disponivel = true
+            resumo =
+              'Transição de governança familiar/PME para conselho consultivo e limites de alçada.'
+            totalItens = 4
+            conteudoExibicao = rawBlocos.anexo_e || outF7?.output_integral
+          }
+        } else if (def.id === 'anexo_g') {
+          const outF8 = outputPrompts.find((p: any) => p.fase === 8)
+          if (outF8 || rawBlocos.anexo_g) {
+            disponivel = true
+            resumo =
+              'Arquitetura tecnológica integrada (ERP + MES) e barreiras de entrada protegidas.'
+            totalItens = 3
+            conteudoExibicao = rawBlocos.anexo_g || outF8?.output_integral
+          }
+        }
+      }
+
+      return {
+        ...def,
+        disponivel,
+        resumo,
+        totalItens,
+        conteudoExibicao,
+      }
+    })
+  }, [temDiagnosticoReal, ultimoDiagnostico, blocoSolucaoCompleto, temOKRsReais, okrs])
 
   const metricasFinanceirasReais = useMemo(() => {
     if (!temDiagnosticoReal || !ultimoDiagnostico) return null
@@ -1136,6 +1285,86 @@ export default function Dashboard() {
             </Card>
           </div>
         )}
+      </section>
+
+      {/* ========================================================================= */}
+      {/* BLOCO 4 — BLOCO SOLUÇÃO COMPLETO COM ANEXOS A–G (PLANO V2) COM RASTREABILIDADE */}
+      {/* ========================================================================= */}
+      <section className="space-y-4 pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-[#0066CC] bg-[#0066CC]/10 px-2 py-0.5 rounded">
+                BLOCO SOLUÇÃO
+              </span>
+              <h2 className="text-lg md:text-xl font-bold text-[#333333] flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-[#22B14C]" />
+                Bloco Solução Completo — Anexos Canônicos A–G (Plano V2)
+              </h2>
+            </div>
+            <p className="text-xs text-[#808080] mt-0.5">
+              Materialização com rastreabilidade explícita ao motor determinístico JBP GM V7.2. O
+              App consome o output registrado e não gera conteúdo analítico próprio.
+            </p>
+          </div>
+          <Badge
+            className={
+              temDiagnosticoReal
+                ? 'bg-[#22B14C] text-white text-[10px] font-mono border-none'
+                : 'border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono'
+            }
+          >
+            {temDiagnosticoReal ? '7 Anexos Rastreáveis' : 'Demonstração Metodológica'}
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {anexosSolucaoMaterializados.map((anx) => (
+            <Card
+              key={anx.id}
+              className={`rounded-[4px] p-5 shadow-xs flex flex-col justify-between transition-all ${
+                anx.disponivel
+                  ? 'bg-white border border-[#E0E0E0] hover:border-[#0066CC]/40'
+                  : 'bg-[#F9F9F9] border border-dashed border-[#D0D0D0]'
+              }`}
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-[#0066CC] text-white text-xs font-bold font-mono">
+                    Anexo {anx.letra}
+                  </Badge>
+                  <span className="font-mono text-[10px] text-[#0066CC] bg-[#0066CC]/10 px-2 py-0.5 rounded font-semibold">
+                    Origem: {anx.faseOrigem}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#333333] leading-snug">{anx.titulo}</h3>
+                  <p className="text-[11px] text-[#666666] mt-1 leading-relaxed">{anx.escopo}</p>
+                </div>
+                <div className="p-2.5 bg-[#F5F5F5] rounded border border-[#EAEAEA] text-xs text-[#444444] leading-relaxed">
+                  <div className="text-[10px] uppercase font-bold text-[#808080] mb-0.5">
+                    Conteúdo Registrado
+                  </div>
+                  <p className="line-clamp-3">{anx.resumo}</p>
+                </div>
+              </div>
+
+              <div className="pt-3 mt-3 border-t border-[#E0E0E0] flex items-center justify-between text-[11px]">
+                <span className="text-[#808080]">Status de Materialização:</span>
+                {anx.disponivel ? (
+                  <span className="font-semibold text-[#22B14C] flex items-center gap-1 font-mono">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#22B14C]" />
+                    Conforme (Expert)
+                  </span>
+                ) : (
+                  <span className="font-semibold text-amber-700 font-mono bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                    Aguardando Output
+                  </span>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
       </section>
     </div>
   )

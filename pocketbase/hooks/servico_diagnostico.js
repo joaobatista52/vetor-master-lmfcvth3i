@@ -73,7 +73,8 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   const autorizacaoRaw =
     metadados.autorizacao_devolutiva || dossie.cliente.autorizacao_devolutiva || ''
   const autorizouDevolutiva = autorizacaoRaw.toLowerCase().indexOf('sim') !== -1
-  const faturamentoDeclarado = dossie.cliente.faturamento_declarado || 'R$ 7.500.000,00'
+  const faturamentoDeclarado =
+    dossie.cliente.faturamento_declarado || dossie.cliente.faturamento || '[REQUER VERIFICAÇÃO]'
 
   // 4. Montar os 5 Slots de Contexto do núcleo determinístico JBP
   const slotsContexto = {

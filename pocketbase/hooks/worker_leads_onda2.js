@@ -816,86 +816,73 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
     }
 
     // 5. Auditoria Comparativa A8 validada item a item CONTRA o output do Expert (Fase A5.2 e A5.3)
+    // Se o consultor registrou gabarito manual ou veio do Expert, preserva. Se não, marca explicitamente PENDENTE_VALIDACAO_HUMANA.
     const gabaritoAuditoriaA8 = respostaServico.gabarito_auditoria_a8 || {
       item1_identificacao_setor_protocolo: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Protocolo e identificação completa do cliente',
-        evidencia:
-          'Protocolo ' +
-          (leadRecord.getString('protocolo') || '#VM-' + leadId) +
-          '; Razão Social: ' +
-          razaoSocial +
-          '; Setor: ' +
-          setor +
-          '; Versão: ' +
-          versaoQuestionario,
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'P1_CARGA',
       },
       item2_confirmacao_carga_2_linhas: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Confirmação de carga em até 2 linhas com versão (CS-19) e gate (CS-20)',
-        evidencia:
-          outputPromptsGravados[0]?.output_integral?.substring(0, 200) ||
-          'Declarada versão ' +
-            versaoQuestionario +
-            ' e sinalização do gate ' +
-            (autorizouDevolutiva ? 'Sim' : 'Não autorizo'),
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'P1_CARGA',
       },
       item3_causa_raiz_canvas_as_is: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Causa raiz formulada e Canvas As Is de 9 blocos na Fase 1',
-        evidencia: 'Produzido na Fase 1 com os 9 blocos derivados do dossiê',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 1 (P2)',
       },
       item4_micro_epifanias_bloco_setorial: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: '3 a 5 micro-epifanias originadas do Bloco Setorial ' + setor + ' V7.2',
-        evidencia: 'Micro-epifanias ancoradas diretamente no Slot 1 (Contexto Estratégico Global)',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 1 (P2)',
       },
       item5_vazamentos_objetivos: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Vazamentos quantificados ancorados estritamente nos dados do dossiê',
-        evidencia: 'Vazamentos financeiros e operacionais referenciados no dossiê',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 1 (P2)',
       },
       item6_nota_triangulacao: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Triangulação entre questionário e anexos contábeis reais',
-        evidencia: 'Cruzamento entre demonstrativos contábeis e projeções declaradas',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 1 (P2)',
       },
       item7_snapshot_f6_dre_15_linhas: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'DRE 15 linhas (CS-17) com RB prevista = projeção do cliente e fontes reais',
-        evidencia: 'Linhas 1 a 15 detalhadas sem omissões de linhas contábeis (CS-17)',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 6 (P9)',
       },
       item8_anexo_b_erec_a9: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Matriz EREC canônica A9 com densidade cheia e 4 colunas obrigatórias',
-        evidencia:
-          'Intervenções estruturadas em Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 3 (P6)',
       },
       item9_gate_autorizacao_cs20: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Gate de autorização respeitado conforme resposta 9.2 (CS-20)',
-        evidencia: autorizouDevolutiva
-          ? 'Autorizado → Devolutiva integral liberada para agendamento'
-          : 'Não autorizou → Gerado teaser protegido; e-mails suprimidos no modo DRY-RUN; cadência ativa',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'P1_CARGA / CS-20',
       },
       item10_fechamento_aguardo_comando: {
-        status: 'CONFORME',
+        status: 'PENDENTE_VALIDACAO_HUMANA',
         criterio: 'Cada fase encerrada com "Aguardo seu comando."',
-        evidencia: 'Todas as fases e snapshots concluídos com a frase de protocolo inviolável',
+        evidencia: 'Aguardando validação humana do consultor contra o output registrado do Expert.',
         origem_fase: 'Fase 8 (P13)',
       },
       auditado_em: new Date().toISOString(),
       validador: 'auditoria_humana_externa_consultor',
-      referencia_externa: 'Output homologado do Expert V7.2 / Adapta ONE',
+      status_global: 'pendente_validacao_humana',
+      referencia_externa:
+        'Output homologado do Expert V7.2 / Adapta ONE (requer aprovação no Painel A5)',
     }
 
     // 6. Salvar diagnóstico (atualização completa preservando integridade e histórico de versões)
