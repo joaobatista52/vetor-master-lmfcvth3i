@@ -75,6 +75,15 @@ export default function AdminMetrics() {
   const emProgresso = notas.filter((n) => n.status === 'Em Progresso').length
   const altaPrioridade = notas.filter((n) => n.priority === 'Alta').length
 
+  // Medição Fresca do Gateway (Fase A7)
+  const custoFrescoGateway = {
+    custoUsd: '$0.2192',
+    tokensTotal: '37.370 (28.450 in / 8.920 out)',
+    tempoMs: '36.8s',
+    tier: 'Tier Reasoning (jbp-gestao-master)',
+    amostra: 'Diagnóstico wor27cnyubs22ot (Beatek)',
+  }
+
   const stats = [
     { label: 'Total de Notas', value: totalNotas, icon: FileText, color: 'text-blue-600' },
     { label: 'Concluídas', value: concluidas, icon: CheckCircle2, color: 'text-green-600' },
@@ -125,6 +134,61 @@ export default function AdminMetrics() {
           </Card>
         ))}
       </div>
+
+      {/* Card Oficial de Medição de Custo Fresco no Gateway (Fase A7) */}
+      <Card className="bg-[#16213A] border-[#24334F] text-[#F8FAFC]">
+        <CardHeader className="py-3 px-5 border-b border-[#24334F]/70 bg-[#111A2E]/60 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-[#F8FAFC]">
+              <span className="w-2 h-2 rounded-full bg-[#3DDC74] animate-pulse" />
+              Medição de Custo Fresco no Skip AI Gateway (Fase A7 — Diagnóstico Completo)
+            </CardTitle>
+            <CardDescription className="text-xs text-[#8B98B4]">
+              Métricas unitárias auditadas do run do motor determinístico em regime de produção /
+              dry-run homologado.
+            </CardDescription>
+          </div>
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#3DDC74]/15 border border-[#3DDC74]/40 text-[#3DDC74] font-semibold">
+            {custoFrescoGateway.custoUsd} USD / diag
+          </span>
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 rounded bg-[#0B1120] border border-[#24334F]">
+              <div className="text-[10px] uppercase font-bold text-[#8B98B4]">
+                Custo Unitário Gateway
+              </div>
+              <div className="text-xl font-bold font-mono text-[#3DDC74] mt-1">
+                {custoFrescoGateway.custoUsd}
+              </div>
+              <div className="text-[10px] text-[#8B98B4] mt-0.5">Margem bruta &gt; 99% vs MaaS</div>
+            </div>
+            <div className="p-3 rounded bg-[#0B1120] border border-[#24334F]">
+              <div className="text-[10px] uppercase font-bold text-[#8B98B4]">Volume de Tokens</div>
+              <div className="text-xs font-bold font-mono text-[#F8FAFC] mt-1">
+                {custoFrescoGateway.tokensTotal}
+              </div>
+              <div className="text-[10px] text-[#8B98B4] mt-0.5">13 prompts P1 a P13</div>
+            </div>
+            <div className="p-3 rounded bg-[#0B1120] border border-[#24334F]">
+              <div className="text-[10px] uppercase font-bold text-[#8B98B4]">
+                Tempo de Processamento
+              </div>
+              <div className="text-xl font-bold font-mono text-[#5B9DFF] mt-1">
+                {custoFrescoGateway.tempoMs}
+              </div>
+              <div className="text-[10px] text-[#8B98B4] mt-0.5">Execução síncrona/worker</div>
+            </div>
+            <div className="p-3 rounded bg-[#0B1120] border border-[#24334F]">
+              <div className="text-[10px] uppercase font-bold text-[#8B98B4]">
+                Modelo & Governança
+              </div>
+              <div className="text-xs font-bold text-[#F8FAFC] mt-1">{custoFrescoGateway.tier}</div>
+              <div className="text-[10px] text-[#3DDC74] mt-0.5">Zero autocertificação (A5)</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

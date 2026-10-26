@@ -819,9 +819,16 @@ export default function Dashboard() {
                   do Expert.
                 </p>
               </div>
-              <Badge className="bg-[#0066CC] text-white text-[10px] font-mono self-start sm:self-auto border-none">
-                Contrato V2.0 / A4
-              </Badge>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                {ultimoDiagnostico?.custo_gateway && (
+                  <Badge className="bg-[#3DDC74]/20 text-[#3DDC74] border border-[#3DDC74]/40 text-[10px] font-mono">
+                    Gateway: ${ultimoDiagnostico.custo_gateway.custo_usd} USD
+                  </Badge>
+                )}
+                <Badge className="bg-[#0066CC] text-white text-[10px] font-mono border-none">
+                  Contrato V2.0 / A4
+                </Badge>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
