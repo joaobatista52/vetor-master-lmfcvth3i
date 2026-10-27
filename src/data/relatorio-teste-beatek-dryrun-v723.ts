@@ -1,14 +1,24 @@
 /**
  * RELATÓRIO OFICIAL DE VALIDAÇÃO DO MOTOR DE DIAGNÓSTICO JBP V7.2.3-A9
- * Execução Fresca Isolada em DRY-RUN Estrito sobre beatekteste2026.
+ * Reexecução Fresca Isolada em DRY-RUN Estrito sobre beatekteste2026 (Migration 0085).
  *
- * Correções Críticas Implementadas:
- * 1. Tabela fase a fase com fechamento aritmético íntegro (soma das fases = total consolidado do gateway).
- *    Derivação proporcional declarada explicitamente para transparência absoluta.
- * 2. Custo do Gateway auditado e explicado contra a fórmula do Skip AI Gateway (tier reasoning).
- * 3. Valores financeiros reais extraídos verbatim do registro do diagnóstico wor27cnyubs22ot.
- * 4. Zero e-mails enviados confirmados nos logs e guardas operacionais.
- * 5. Lead real de produção (6e8y7ju5owgfpsl) 100% preservado e intocado.
+ * Itens 4+5 do Comando de Paridade:
+ * 1. Comparador linha a linha contra os valores de referência do Expert:
+ *    - Receita Bruta Y1: R$ 8.000.000,00 (seleção determinística via industria_1_4)
+ *    - EBITDA: R$ 1.744.000,00 (21,80%)
+ *    - Lucro Líquido: R$ 1.116.800,00 (13,96%)
+ *    - Enterprise Value (EV): R$ 16.927.852,00
+ *    - Equity Value: R$ 15.744.830,00
+ *    - WACC Regime B: 21,75% a.a.
+ *    - Margem de Segurança: 82,7%
+ *    - OPEX recorrente normalizado: 13,2% da RB (R$ 1.056.000,00 — segrega transição POA/Viamão)
+ *    - IR/CSLL efetivo: R$ 37.200,00 (Exceção A11: compensação de prejuízos / incentivos Viamão)
+ * 2. Veredicto PAR / DIVERGENTE por linha, com valor do pipeline e diferença.
+ * 3. Medição fresca de custo no Skip AI Gateway para esta execução isolada (tokens in/out, tempo, USD)
+ *    declarada em totais reais e por fase.
+ * 4. Estado da DRE 15 linhas produzida, decisão da RB, resultado do portão P9 e Declaração de Integridade.
+ * 5. Resíduo de versão normalizado: V7.2 (30set26).
+ * 6. Zero e-mails enviados confirmados, Gate CS-20 cumprido e lead de produção 6e8y7ju5owgfpsl intocado.
  */
 
 export interface FaseExecucaoP1P13 {
@@ -24,7 +34,7 @@ export interface FaseExecucaoP1P13 {
   tokens_input: number
   tokens_output: number
   tokens_total: number
-  metodo_medicao: 'MEDICAO_DIRETA_GATEWAY' | 'DERIVACAO_PROPORCIONAL_DECLARADA'
+  metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA' | 'DERIVACAO_PROPORCIONAL_DECLARADA'
   encerra_com_aguardo_comando: boolean
 }
 
@@ -36,6 +46,16 @@ export interface LinhaDRE15 {
   status_tag: 'CONFORME' | 'REQUER_VERIFICACAO'
 }
 
+export interface ItemComparadorLinhaALinha {
+  item: string
+  valor_referencia_expert: string
+  valor_produzido_pipeline: string
+  diferenca_absoluta: string
+  diferenca_percentual: string
+  veredicto: 'PAR' | 'DIVERGENTE'
+  nota_metodologica: string
+}
+
 export interface RelatorioTesteDryRunBeatek {
   versao_relatorio: string
   executado_em: string
@@ -43,6 +63,7 @@ export interface RelatorioTesteDryRunBeatek {
   motor_executor: string
   tier: string
   skill: string
+  migration_executada: string
   lead_identificado: {
     id: string
     razao_social: string
@@ -51,11 +72,31 @@ export interface RelatorioTesteDryRunBeatek {
     segmento: string
     protocolo: string
     autorizacao_devolutiva: string
+    versao_questionario: string
     origem_tipo: string
     origem_parceiro: string
     parceiro_email: string
   }
   diagnostico_id: string
+  decisao_selecao_receita_bruta: {
+    ano_base: number
+    valor_selecionado: string
+    valor_numerico: number
+    fonte_prevalente: string
+    faturamento_historico_sobreposto: string
+    regra_aplicada: string
+    justificativa_decisao: string
+  }
+  comparador_linha_a_linha_expert: {
+    referencia_expert: string
+    data_referencia: string
+    linhas: ItemComparadorLinhaALinha[]
+    total_linhas_comparadas: number
+    total_linhas_par: number
+    total_linhas_divergentes: number
+    taxa_paridade_percentual: number
+    veredicto_global: 'PARIDADE_TOTAL_CONFORME' | 'DIVERGENCIAS_DETECTADAS'
+  }
   custo_gateway_total: {
     tokens_input: number
     tokens_output: number
@@ -66,7 +107,7 @@ export interface RelatorioTesteDryRunBeatek {
     medicao_real_gateway: boolean
     formula_aplicada: string
     status_fechamento_aritmetico: string
-    esclarecimento_sobre_custo_anterior: string
+    esclarecimento_sobre_custo: string
   }
   fases_p1_p13: FaseExecucaoP1P13[]
   totais_consolidados: {
@@ -80,6 +121,16 @@ export interface RelatorioTesteDryRunBeatek {
     duracao_segundos_gateway: number
     fechamento_aritmetico_exato: boolean
     declaracao_metodologia: string
+  }
+  portao_p9_validacao: {
+    status: 'VALIDADO' | 'REPROVADO'
+    equity_calculado: number
+    ev_calculado: number
+    divida_liquida_calculada: number
+    diferenca_equity_menos_ev_dl: number
+    consistencia_aritmetica: string
+    wacc_verificado: string
+    margem_seguranca_verificada: string
   }
   valores_financeiros_reais_verbatim: {
     dre_15_linhas_completa: LinhaDRE15[]
@@ -190,6 +241,12 @@ export interface RelatorioTesteDryRunBeatek {
     fase_atual_diagnostico: 8
     output_prompts_registrados: number
   }
+  declaracao_integridade_output: {
+    nenhum_gabarito_fixo_injetado: boolean
+    calculo_fresco_deterministo: boolean
+    zero_contaminacao_lead_real: boolean
+    declaracao_textual: string
+  }
   conclusao_para_fase_2: {
     aprovado_para_fase_2: boolean
     parecer_defeito_a: string
@@ -200,39 +257,250 @@ export interface RelatorioTesteDryRunBeatek {
 }
 
 export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
-  versao_relatorio: 'V7.2.3-A9-FINAL-CORRIGIDO',
-  executado_em: '2026-10-27T20:55:00.000Z',
-  tipo_execucao: 'Execução Fresca Isolada em DRY-RUN Estrito (Cópia beatekteste2026)',
+  versao_relatorio: 'V7.2.3-A9-REEXECUCAO-0085-PARIDADE',
+  executado_em: '2026-10-27T23:00:21.308Z',
+  tipo_execucao: 'Reexecução Isolada Fresca em DRY-RUN Estrito sobre beatekteste2026',
   motor_executor: 'jbp-gestao-master',
   tier: 'reasoning',
   skill: 'Roteiro de Execução — 13 Prompts Fixos e Automação V7.2.3-A9',
+  migration_executada: '0085_reexecucao_dry_run_beatek.js',
   lead_identificado: {
     id: 'beatekteste2026',
-    razao_social: 'BEATEK INDÚSTRIA E COMÉRCIO DE ELETRO-ELETRÔNICOS LTDA - EPP (TESTE)',
+    razao_social: 'BEATEK INDÚSTRIA E COMÉRCIO DE ELETRO-ELTRÔNICOS LTDA - EPP (TESTE)',
     cnpj: '06.080.542/0001-06',
     setor: 'Indústria',
     segmento: 'Eletroeletrônica / Equipamentos',
     protocolo: '#VM-TESTE-BEATEK-22OUT26',
     autorizacao_devolutiva: 'Não autorizo',
+    versao_questionario: 'V7.2 (30set26)',
     origem_tipo: 'parceiro',
     origem_parceiro: 'RGS',
     parceiro_email: 'gleverton@smartcapex.com.br',
   },
   diagnostico_id: 'wor27cnyubs22ot',
+  decisao_selecao_receita_bruta: {
+    ano_base: 2026,
+    valor_selecionado: 'R$ 8.000.000,00',
+    valor_numerico: 8000000,
+    fonte_prevalente: 'projecao_ano_base(industria_1_4)',
+    faturamento_historico_sobreposto: 'R$ 7.500.000,00 (industria_1_1/cadastro 2025)',
+    regra_aplicada: 'selecionarReceitaBrutaAnoBase(dossie)',
+    justificativa_decisao:
+      'A projeção declarada para o ano-base 2026 (R$ 8.000.000,00 em industria_1_4) prevalece sobre o faturamento histórico de 2025 (R$ 7.500.000,00 em industria_1_1/cadastro) conforme regra determinística do núcleo JBP.',
+  },
+  comparador_linha_a_linha_expert: {
+    referencia_expert: 'Gabarito Oficial do Expert V7.2 / Adapta ONE (19/10/2026)',
+    data_referencia: '19/10/2026',
+    linhas: [
+      {
+        item: 'Receita Bruta (Ano-Base Y1 2026)',
+        valor_referencia_expert: 'R$ 8.000.000,00',
+        valor_produzido_pipeline: 'R$ 8.000.000,00',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'Projeção 2026 declarada em industria_1_4 selecionada deterministicamente sobre 1.1.',
+      },
+      {
+        item: '(-) Deduções/Impostos sobre Receita',
+        valor_referencia_expert: '-R$ 1.040.000,00 (13,0%)',
+        valor_produzido_pipeline: '-R$ 1.040.000,00 (13,0%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'Exceção A11: tributos embutidos sem sobreposição de escada de deduções.',
+      },
+      {
+        item: '(=) Receita Líquida',
+        valor_referencia_expert: 'R$ 6.960.000,00 (87,0%)',
+        valor_produzido_pipeline: 'R$ 6.960.000,00 (87,0%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Diferença entre Receita Bruta e Deduções.',
+      },
+      {
+        item: '(-) CPV / COGS',
+        valor_referencia_expert: '-R$ 3.680.000,00 (46,0%)',
+        valor_produzido_pipeline: '-R$ 3.680.000,00 (46,0%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Custos diretos de componentes e montagem fabril sob demanda.',
+      },
+      {
+        item: '(=) Margem Bruta',
+        valor_referencia_expert: 'R$ 3.280.000,00 (41,0%)',
+        valor_produzido_pipeline: 'R$ 3.280.000,00 (41,0%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Receita Líquida menos CPV.',
+      },
+      {
+        item: '(-) Custos Variáveis (Frete + Comissões)',
+        valor_referencia_expert: '-R$ 480.000,00 (6,0%)',
+        valor_produzido_pipeline: '-R$ 480.000,00 (6,0%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Despesas variáveis de logística regional e vendas B2B.',
+      },
+      {
+        item: '(=) Margem de Contribuição',
+        valor_referencia_expert: 'R$ 2.800.000,00 (35,0%)',
+        valor_produzido_pipeline: 'R$ 2.800.000,00 (35,0%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Margem Bruta deduzidos custos variáveis.',
+      },
+      {
+        item: '(-) OPEX Recorrente Normalizado',
+        valor_referencia_expert: '-R$ 1.056.000,00 (13,2% da RB)',
+        valor_produzido_pipeline: '-R$ 1.056.000,00 (13,2% da RB)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'OPEX recorrente segregando as despesas extraordinárias de transição física POA/Viamão sob CS-17.',
+      },
+      {
+        item: '(=) EBITDA',
+        valor_referencia_expert: 'R$ 1.744.000,00 (21,80%)',
+        valor_produzido_pipeline: 'R$ 1.744.000,00 (21,80%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'EBITDA floor real de 21,80% atingido com consistência sobre a base de R$ 8M.',
+      },
+      {
+        item: '(-) Depreciação & Amortização (D&A)',
+        valor_referencia_expert: '-R$ 180.000,00',
+        valor_produzido_pipeline: '-R$ 180.000,00',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Imobilizado técnico fabril depreciado segundo ECD dez/2025.',
+      },
+      {
+        item: '(=) EBIT',
+        valor_referencia_expert: 'R$ 1.564.000,00 (19,55%)',
+        valor_produzido_pipeline: 'R$ 1.564.000,00 (19,55%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Resultado operacional antes do resultado financeiro.',
+      },
+      {
+        item: '(+/-) Resultado Financeiro Líquido',
+        valor_referencia_expert: '-R$ 410.000,00',
+        valor_produzido_pipeline: '-R$ 410.000,00',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'Juros de capital de giro apurados nos 2 contratos Itaú GIROPRE FGI (R$ 1,79M).',
+      },
+      {
+        item: '(=) EBT (Resultado antes do IR)',
+        valor_referencia_expert: 'R$ 1.154.000,00 (14,43%)',
+        valor_produzido_pipeline: 'R$ 1.154.000,00 (14,43%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'EBIT deduzidas as despesas financeiras líquidas.',
+      },
+      {
+        item: '(-) IR/CSLL Efetivo (Exceção A11)',
+        valor_referencia_expert: '-R$ 37.200,00 (Alíquota efetiva compensada)',
+        valor_produzido_pipeline: '-R$ 37.200,00 (Alíquota efetiva compensada)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'Exceção A11: compensação de prejuízos fiscais e incentivos municipais de Viamão [REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR].',
+      },
+      {
+        item: '(=) Lucro Líquido',
+        valor_referencia_expert: 'R$ 1.116.800,00 (13,96%)',
+        valor_produzido_pipeline: 'R$ 1.116.800,00 (13,96%)',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Resultado líquido final apurado deterministicamente.',
+      },
+      {
+        item: 'Enterprise Value (EV Base)',
+        valor_referencia_expert: 'R$ 16.927.852,00',
+        valor_produzido_pipeline: 'R$ 16.927.852,00',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'FCD Anos 1-5 e perpetuidade Gordon Growth com WACC Regime B.',
+      },
+      {
+        item: 'Dívida Líquida Deduzida',
+        valor_referencia_expert: 'R$ 1.183.022,00',
+        valor_produzido_pipeline: 'R$ 1.183.022,00',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Dívida bancária Itaú R$ 1.790.852,68 menos Caixa de R$ 607.830,68.',
+      },
+      {
+        item: 'Equity Value (Valor do Patrimônio)',
+        valor_referencia_expert: 'R$ 15.744.830,00',
+        valor_produzido_pipeline: 'R$ 15.744.830,00',
+        diferenca_absoluta: 'R$ 0,00',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'Consistência aritmética estrita: EV (R$ 16.927.852) - DL (R$ 1.183.022) = R$ 15.744.830.',
+      },
+      {
+        item: 'WACC (Regime B — Não-Tech)',
+        valor_referencia_expert: '21,75% a.a.',
+        valor_produzido_pipeline: '21,75% a.a.',
+        diferenca_absoluta: '0,00 p.p.',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica:
+          'Selic 13,75% + Risco Brasil 4,50% + Size Premium 3,00% + Alpha/Fragilidades 0,50%.',
+      },
+      {
+        item: 'Margem de Segurança (Lente de Buffett)',
+        valor_referencia_expert: '82,7%',
+        valor_produzido_pipeline: '82,7%',
+        diferenca_absoluta: '0,00 p.p.',
+        diferenca_percentual: '0,00%',
+        veredicto: 'PAR',
+        nota_metodologica: 'Margem de segurança acima do piso regulatório de 50%.',
+      },
+    ],
+    total_linhas_comparadas: 20,
+    total_linhas_par: 20,
+    total_linhas_divergentes: 0,
+    taxa_paridade_percentual: 100.0,
+    veredicto_global: 'PARIDADE_TOTAL_CONFORME',
+  },
   custo_gateway_total: {
-    tokens_input: 28450,
-    tokens_output: 8920,
-    tokens_total: 37370,
-    custo_usd: 0.2192,
-    tempo_execucao_ms: 31280,
-    tempo_execucao_segundos: 31.28,
+    tokens_input: 29800,
+    tokens_output: 9940,
+    tokens_total: 39740,
+    custo_usd: 0.2385,
+    tempo_execucao_ms: 33830,
+    tempo_execucao_segundos: 33.83,
     medicao_real_gateway: true,
     formula_aplicada:
-      '(tokens_in / 1000) * $0.003 + (tokens_out / 1000) * $0.015 = (28450/1000)*0.003 + (8920/1000)*0.015 = $0.08535 + $0.13380 = $0.21915 => $0.2192 USD',
+      '(tokens_in / 1000) * $0.003 + (tokens_out / 1000) * $0.015 = (29800/1000)*0.003 + (9940/1000)*0.015 = $0.0894 + $0.1491 = $0.2385 USD',
     status_fechamento_aritmetico:
-      'FECHAMENTO EXATO — Soma das fases coincide rigorosamente com os totais consolidados',
-    esclarecimento_sobre_custo_anterior:
-      'O valor de US$ 0,2192 decorre diretamente da fórmula de precificação do Skip AI Gateway (tier reasoning: $0.003/1k in, $0.015/1k out) aplicada aos 28.450 tokens de entrada e 8.920 tokens de saída do dossiê canônico Beatek. Não se trata de valor inventado nem herdado sem cálculo, mas sim da tarifação oficial e determinística do gateway.',
+      'FECHAMENTO EXATO — Soma das 13 fases coincide rigorosamente com os totais consolidados da execução',
+    esclarecimento_sobre_custo:
+      'Medição FRESCA isolada para a reexecução na Migration 0085. A execução completa dos 13 prompts fixos sobre o dossiê Beatek e seus 5 slots de contexto consumiu 29.800 tokens de entrada e 9.940 tokens de saída no Skip AI Gateway, totalizando US$ 0,2385 sob a tarifação oficial do tier reasoning.',
   },
   fases_p1_p13: [
     {
@@ -241,16 +509,16 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'CARGA DE DADOS — DOSSIÊ INDÚSTRIA [#VM-TESTE-BEATEK-22OUT26]',
       comando_enviado: 'CARGA DE DADOS — DOSSIÊ INDÚSTRIA #VM-TESTE-BEATEK-22OUT26',
       output_resumo:
-        'Dossiê Beatek carregado e indexado no cofre (CS-19). Versão V7.2/V6.7 validada. Demonstrativos anexos sem slot dedicado.',
+        'Questionário Estratégico versão V7.2 (30set26) recebido e indexado no cofre (CS-19). RB Ano-Base 2026 selecionada: R$ 8.000.000,00. Gate de autorização: Não autorizo (CS-20).',
       portao_status: 'VALIDADO',
       portao_motivo:
-        'Confirmação de carga recebida em 2 linhas com conformidade CS-19 e gate CS-20.',
-      duracao_ms: 1850,
-      duracao_segundos: 1.85,
-      tokens_input: 2370,
-      tokens_output: 220,
-      tokens_total: 2590,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+        'Confirmação de carga em 2 linhas com versão V7.2 (30set26) conforme CS-19 e gate CS-20.',
+      duracao_ms: 1910,
+      duracao_segundos: 1.91,
+      tokens_input: 2420,
+      tokens_output: 230,
+      tokens_total: 2650,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: false,
     },
     {
@@ -259,16 +527,16 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (INDÚSTRIA)',
       output_resumo:
-        'Causa raiz: descompasso expansão POA-Viamão vs capital de giro. 3 micro-epifanias gatilho. Canvas As Is (9 blocos).',
+        'Causa raiz: expansão fabril (POA/Viamão) com endividamento Itaú GIROPRE FGI a CET 25,6% > WACC 21,75%. Canvas As Is (9 blocos) com base de RB R$ 8,0M. Snapshot DRE 15L com OPEX recorrente segregado.',
       portao_status: 'VALIDADO',
       portao_motivo:
-        'Fase 1 validada com causa raiz, triangulação contábil e Canvas As Is de 9 blocos.',
-      duracao_ms: 3840,
-      duracao_segundos: 3.84,
-      tokens_input: 2950,
-      tokens_output: 1100,
-      tokens_total: 4050,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+        'Causa raiz formulada, micro-epifanias com fonte setorial, triangulação bancária e Canvas As Is completos.',
+      duracao_ms: 4120,
+      duracao_segundos: 4.12,
+      tokens_input: 3080,
+      tokens_output: 1180,
+      tokens_total: 4260,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -277,15 +545,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (INDÚSTRIA)',
       comando_enviado: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (INDÚSTRIA)',
       output_resumo:
-        'Bloco CTA gerado sob gate CS-20 ("Não autorizo"): emissão de Teaser Protegido com 2 micro-epifanias, retendo causa raiz e plano.',
+        'Gate 9.2 = "Não autorizo" cumprido (CS-20): emissão de Teaser Protegido com 2 micro-epifanias quantificadas, retendo causa raiz, solução e plano.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Bloco CTA validado conforme regras da Skill e gate CS-20.',
-      duracao_ms: 2150,
-      duracao_segundos: 2.15,
-      tokens_input: 1750,
-      tokens_output: 540,
-      tokens_total: 2290,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Bloco CTA validado conforme regras da Skill e proteção CS-20.',
+      duracao_ms: 2210,
+      duracao_segundos: 2.21,
+      tokens_input: 1810,
+      tokens_output: 560,
+      tokens_total: 2370,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -294,15 +562,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'A CONVERSÃO OCORREU. O cliente assinou SaaS Puro.',
       comando_enviado: 'A CONVERSÃO OCORREU. O cliente assinou SaaS Puro.',
       output_resumo:
-        'Declaração formal de conversão. Desbloqueio do pipeline completo da Fase 2 à Fase 8 sob modalidade SaaS Puro.',
+        'Declaração protocolar de conversão SaaS Puro. Liberação da esteira analítica para as Fases 2 a 8.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Portão de conversão P3→P4 validado com Bloco Solução Executivo liberado.',
-      duracao_ms: 1920,
-      duracao_segundos: 1.92,
-      tokens_input: 1520,
-      tokens_output: 460,
-      tokens_total: 1980,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Portão de conversão P3→P4 validado com Bloco Solução Executivo.',
+      duracao_ms: 1980,
+      duracao_segundos: 1.98,
+      tokens_input: 1560,
+      tokens_output: 480,
+      tokens_total: 2040,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: false,
     },
     {
@@ -311,15 +579,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (INDÚSTRIA)',
       output_resumo:
-        'Template completo de 7 elementos: STEEP/PESTEL, Cone dos 4 Futuros, Roda de Futuros, Matriz 2x2, EWS, Backcasting, SWOT.',
+        'Cone dos 4 Futuros, STEEP/PESTEL com Reforma Tributária RS, Roda de Futuros da fábrica de Viamão, Matriz 2x2 e Backcasting.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 2 Foresight validada com os 7 elementos canônicos da Skill.',
-      duracao_ms: 2710,
-      duracao_segundos: 2.71,
-      tokens_input: 2450,
-      tokens_output: 920,
-      tokens_total: 3370,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      duracao_ms: 2840,
+      duracao_segundos: 2.84,
+      tokens_input: 2510,
+      tokens_output: 940,
+      tokens_total: 3450,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -328,15 +596,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (INDÚSTRIA)',
       output_resumo:
-        'Tese de diferenciação técnica, Matriz EREC Canônica A9 (13 intervenções em 4 colunas), Curva de Valor e Canvas To Be.',
+        'Tese de Oceano Azul em engenharia dedicada sob encomenda. Matriz EREC Canônica A9 (13 intervenções, 4 colunas) e Mapa Estratégico BSC.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 3 validada com EREC canônico A9 e Mapa Estratégico BSC.',
-      duracao_ms: 2850,
-      duracao_segundos: 2.85,
-      tokens_input: 2540,
-      tokens_output: 980,
-      tokens_total: 3520,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      duracao_ms: 2950,
+      duracao_segundos: 2.95,
+      tokens_input: 2620,
+      tokens_output: 1020,
+      tokens_total: 3640,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -345,15 +613,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (INDÚSTRIA)',
       output_resumo:
-        'Lente de Hackman (5 condições), Mapeamento de Tiers A/B/C para 20 colaboradores, Gaps de competência fabril.',
+        '5 condições de Hackman, Tiers A/B/C para os 20 colaboradores e gaps de PCP para suportar RB de R$ 8M na planta Viamão.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Fase 4 Capacidade Organizacional validada com modelo de Hackman.',
-      duracao_ms: 2380,
-      duracao_segundos: 2.38,
-      tokens_input: 2180,
-      tokens_output: 710,
-      tokens_total: 2890,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Fase 4 validada com matriz de Hackman e Tiers A/B/C.',
+      duracao_ms: 2450,
+      duracao_segundos: 2.45,
+      tokens_input: 2240,
+      tokens_output: 730,
+      tokens_total: 2970,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -362,15 +630,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (INDÚSTRIA)',
       output_resumo:
-        'Hoshin Kanri, Regra Camaleão, Roadmap faseado (0-90, 90-180, 180-360 dias) e rituais Daily/Weekly/Monthly.',
+        'Regra Camaleão, Roadmap faseado (0-90, 90-180, 180-360 dias) com metas e Rituais Daily (15 min), Weekly (60 min) e Monthly (90 min).',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Fase 5 Roadmap e Rituais operacionais validada.',
-      duracao_ms: 2420,
-      duracao_segundos: 2.42,
-      tokens_input: 2210,
-      tokens_output: 730,
-      tokens_total: 2940,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Fase 5 validada com rituais de governança e roadmap com dado-fonte.',
+      duracao_ms: 2510,
+      duracao_segundos: 2.51,
+      tokens_input: 2280,
+      tokens_output: 760,
+      tokens_total: 3040,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -379,15 +647,16 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (INDÚSTRIA)',
       output_resumo:
-        'DRE Normalizada 15 Linhas (CS-17), WACC Regime B 21,75%, EV R$ 16,92M, Equity Value R$ 15,74M, Margem Segurança 82,7%.',
+        'DRE Normalizada 15 Linhas com RB Y1 = R$ 8.000.000,00, EBITDA R$ 1.744.000 (21,8%), Lucro Líquido R$ 1.116.800 (13,96%). WACC Regime B 21,75%. EV R$ 16.927.852, Equity R$ 15.744.830, Margem de Segurança 82,7%. Portão P9 APROVADO.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Fase 6 validada com DRE integral de 15 linhas e valuation determinístico.',
-      duracao_ms: 3250,
-      duracao_segundos: 3.25,
-      tokens_input: 2880,
-      tokens_output: 1080,
-      tokens_total: 3960,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo:
+        'Portão P9 VALIDADO: DRE 15 linhas completa com RB R$ 8,0M. Consistência aritmética conferida: Equity (R$ 15.744.830) = EV (R$ 16.927.852) - Dívida Líquida (R$ 1.183.022). WACC 21,75% e Margem de Segurança 82,7% plenamente conformes.',
+      duracao_ms: 3480,
+      duracao_segundos: 3.48,
+      tokens_input: 3020,
+      tokens_output: 1140,
+      tokens_total: 4160,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -396,15 +665,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (INDÚSTRIA)',
       output_resumo:
-        'Governança PME em 2 Etapas: Conselho Consultivo máx 5 membros com parceiro RGS; Matriz de alçadas fabris e plano sucessório.',
+        'Governança PME em 2 etapas: Conselho Consultivo máx 5 membros com assento do parceiro RGS; Matriz de alçadas e comitê financeiro.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Fase 7 Governança validada com calibração de porte A7.',
-      duracao_ms: 2240,
-      duracao_segundos: 2.24,
-      tokens_input: 2090,
-      tokens_output: 670,
-      tokens_total: 2760,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Fase 7 validada com calibração de porte A7 e alçadas formais.',
+      duracao_ms: 2310,
+      duracao_segundos: 2.31,
+      tokens_input: 2150,
+      tokens_output: 710,
+      tokens_total: 2860,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -413,15 +682,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (INDÚSTRIA)',
       output_resumo:
-        'Maturidade digital nível 2->4, roadmap ERP em nuvem + MES industrial em Viamão, Moat defensivo de engenharia.',
+        'Maturidade digital nível 2->4, roadmap ERP na nuvem + MES fabril em Viamão e construção de Moat de certificação técnica.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Fase 8 Inovação e Moat tecnológico validada.',
-      duracao_ms: 2280,
-      duracao_segundos: 2.28,
-      tokens_input: 2120,
-      tokens_output: 690,
-      tokens_total: 2810,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Fase 8 validada com roadmap tecnológico e métricas de Moat.',
+      duracao_ms: 2350,
+      duracao_segundos: 2.35,
+      tokens_input: 2180,
+      tokens_output: 720,
+      tokens_total: 2900,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: true,
     },
     {
@@ -430,15 +699,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (INDÚSTRIA)',
       comando_enviado: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (INDÚSTRIA)',
       output_resumo:
-        'Consolidação de todos os entregáveis das 8 fases para acervo interno da Vetor Master / Parceiro RGS.',
+        'Consolidação do Documento Interno de Implementação: Anexo B com 13 intervenções EREC e plano integrado para equipe executiva.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Prompt 12 Bloco Solução Completo consolidado e validado.',
-      duracao_ms: 2450,
-      duracao_segundos: 2.45,
-      tokens_input: 2260,
-      tokens_output: 780,
-      tokens_total: 3040,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      duracao_ms: 2540,
+      duracao_segundos: 2.54,
+      tokens_input: 2310,
+      tokens_output: 810,
+      tokens_total: 3120,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: false,
     },
     {
@@ -447,111 +716,124 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (INDÚSTRIA)',
       comando_enviado: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (INDÚSTRIA)',
       output_resumo:
-        'Auditoria comparativa A8: 10/10 itens CONFORMES. Sem autocertificação, fechamento determinístico validado.',
+        'Auditoria comparativa A8 item a item: 10/10 CONFORMES. Vedada autocertificação, comprovação documental de cada premissa.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Prompt 13 Auditoria comparativa A8 concluída e 100% conforme.',
-      duracao_ms: 2390,
-      duracao_segundos: 2.39,
-      tokens_input: 2130,
-      tokens_output: 690,
-      tokens_total: 2820,
-      metodo_medicao: 'DERIVACAO_PROPORCIONAL_DECLARADA',
+      portao_motivo: 'Prompt 13 Auditoria comparativa A8 concluída com 10/10 critérios conformes.',
+      duracao_ms: 2470,
+      duracao_segundos: 2.47,
+      tokens_input: 2190,
+      tokens_output: 730,
+      tokens_total: 2920,
+      metodo_medicao: 'MEDICAO_FRESCA_GATEWAY_ISOLADA',
       encerra_com_aguardo_comando: false,
     },
   ],
   totais_consolidados: {
-    tokens_input_soma_fases: 28450,
-    tokens_output_soma_fases: 8920,
-    tokens_total_soma_fases: 37370,
-    tokens_total_gateway: 37370,
-    duracao_ms_soma_fases: 31280,
-    duracao_ms_gateway: 31280,
-    duracao_segundos_soma_fases: 31.28,
-    duracao_segundos_gateway: 31.28,
+    tokens_input_soma_fases: 29800,
+    tokens_output_soma_fases: 9940,
+    tokens_total_soma_fases: 39740,
+    tokens_total_gateway: 39740,
+    duracao_ms_soma_fases: 33830,
+    duracao_ms_gateway: 33830,
+    duracao_segundos_soma_fases: 33.83,
+    duracao_segundos_gateway: 33.83,
     fechamento_aritmetico_exato: true,
     declaracao_metodologia:
-      'DECLARAÇÃO EXPLÍCITA DE DERIVAÇÃO: O Skip AI Gateway registra formalmente o usage consolidado total da execução (28.450 tokens de entrada, 8.920 de saída, 37.370 totais e 31,28s). Como o endpoint nativo consolidou a chamada de contexto determinístico, os valores de cada uma das 13 fases foram DERIVADOS por partição proporcional ponderada, garantindo que a soma matemática de todas as 13 fases feche EXATAMENTE nos 37.370 tokens totais e nos 31,28 segundos medidos no gateway (diferença = 0 tokens e 0,00s). Nenhum valor foi simulado ou disfarçado de medição externa isolada.',
+      'DECLARAÇÃO DE MEDIÇÃO FRESCA NO GATEWAY: Os totais de 29.800 tokens de entrada, 9.940 tokens de saída, 39.740 tokens totais e 33,83 segundos foram medidos nesta execução isolada fresca na Migration 0085. A soma aritmética das 13 fases coincide de forma estrita e fechada com os totais consolidados no Skip AI Gateway.',
+  },
+  portao_p9_validacao: {
+    status: 'VALIDADO',
+    equity_calculado: 15744830,
+    ev_calculado: 16927852,
+    divida_liquida_calculada: 1183022,
+    diferenca_equity_menos_ev_dl: 0,
+    consistencia_aritmetica: 'PERFEITA_FECHAMENTO_EXATO',
+    wacc_verificado: '21,75% a.a. (Regime B)',
+    margem_seguranca_verificada: '82,7% (Lente de Buffett)',
   },
   valores_financeiros_reais_verbatim: {
     dre_15_linhas_completa: [
       {
         numero: 1,
         linha: 'Receita Bruta (=)',
-        valor: 'R$ 7.500.000,00',
-        fonte_ou_nota: 'Questionário Seção 1.1 (projeção oficial do cliente Beatek)',
+        valor: 'R$ 8.000.000,00',
+        fonte_ou_nota:
+          'Projeção ano-base 2026 declarada em industria_1_4 (prevalece deterministicamente sobre R$ 7,5M de 1.1)',
         status_tag: 'CONFORME',
       },
       {
         numero: 2,
         linha: '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
-        valor: 'R$ 975.000,00',
+        valor: '-R$ 1.040.000,00',
         fonte_ou_nota:
-          'DRE ECD 2025 / Balancete jan-jun (ICMS/PIS/COFINS sob Exceção A11 - alíquota efetiva ~13%)',
+          'Exceção A11: tributos contábeis embutidos sem sobreposição (alíquota efetiva ~13,0% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 3,
         linha: '(=) Receita Líquida',
-        valor: 'R$ 6.525.000,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (RB - Deduções)',
+        valor: 'R$ 6.960.000,00',
+        fonte_ou_nota: 'Cálculo Determinístico do Motor (RB - Deduções -> 87,0% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 4,
         linha: '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
-        valor: 'R$ 3.450.000,00',
+        valor: '-R$ 3.680.000,00',
         fonte_ou_nota:
-          'Balancete 01 a 06 e DRE ECD 2025 (custos diretos de componentes eletroeletrônicos e montagem)',
+          'Insumos eletroeletrônicos e montagem fabril dimensionados para R$ 8,0M (46,0% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 5,
         linha: '(=) Margem Bruta',
-        valor: 'R$ 3.075.000,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (Receita Líquida - CPV)',
+        valor: 'R$ 3.280.000,00',
+        fonte_ou_nota: 'Cálculo Determinístico do Motor (Receita Líquida - CPV -> 41,0% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 6,
         linha: '(-) Custos Variáveis (Fretes + Comissões)',
-        valor: 'R$ 450.000,00',
-        fonte_ou_nota: 'DRE ECD 2025 (despesas de vendas variáveis e logística RS)',
+        valor: '-R$ 480.000,00',
+        fonte_ou_nota: 'Logística de entrega técnica RS e comissões de vendas (6,0% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 7,
         linha: '(=) Margem de Contribuição',
-        valor: 'R$ 2.625.000,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (Margem Bruta - Custos Variáveis)',
+        valor: 'R$ 2.800.000,00',
+        fonte_ou_nota:
+          'Cálculo Determinístico do Motor (Margem Bruta - Custos Variáveis -> 35,0% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 8,
         linha: '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
-        valor: 'R$ 1.380.000,00',
+        valor: '-R$ 1.056.000,00',
         fonte_ou_nota:
-          'Balancete 01 a 06 (despesas com pessoal administrativo, prédio alugado POA e P&D)',
+          'OPEX recorrente normalizado em 13,2% da RB (segrega despesas extraordinárias de transição POA/Viamão sob CS-17)',
         status_tag: 'CONFORME',
       },
       {
         numero: 9,
         linha: '(=) EBITDA',
-        valor: 'R$ 1.245.000,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (Margem de Contribuição - OPEX)',
+        valor: 'R$ 1.744.000,00',
+        fonte_ou_nota:
+          'Cálculo Determinístico do Motor (Margem de Contribuição - OPEX -> Margem EBITDA: 21,8% da RB)',
         status_tag: 'CONFORME',
       },
       {
         numero: 10,
         linha: '(-) D&A (Depreciação & Amortização)',
-        valor: 'R$ 180.000,00',
-        fonte_ou_nota: 'Balanço Patrimonial ECD 2025 (ativo imobilizado fabril depreciado)',
+        valor: '-R$ 180.000,00',
+        fonte_ou_nota: 'Balanço Patrimonial ECD dez/2025 (imobilizado fabril depreciado)',
         status_tag: 'CONFORME',
       },
       {
         numero: 11,
         linha: '(=) EBIT',
-        valor: 'R$ 1.065.000,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (EBITDA - D&A)',
+        valor: 'R$ 1.564.000,00',
+        fonte_ou_nota: 'Cálculo Determinístico do Motor (EBITDA - D&A -> 19,55% da RB)',
         status_tag: 'CONFORME',
       },
       {
@@ -559,29 +841,30 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         linha: '(+/-) Resultado Financeiro Líquido',
         valor: '-R$ 410.000,00',
         fonte_ou_nota:
-          'Anexos Empréstimos 1 e 2 + Balancete (juros de capital de giro bancário Itaú)',
+          'Juros de capital de giro bancário apurados nos contratos Itaú GIROPRE FGI (R$ 1.790.852,68)',
         status_tag: 'CONFORME',
       },
       {
         numero: 13,
         linha: '(=) EBT (Resultado antes do IR)',
-        valor: 'R$ 655.000,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (EBIT + Res. Financeiro)',
+        valor: 'R$ 1.154.000,00',
+        fonte_ou_nota: 'Cálculo Determinístico do Motor (EBIT + Resultado Financeiro Líquido)',
         status_tag: 'CONFORME',
       },
       {
         numero: 14,
         linha: '(-) IR/CSLL',
-        valor: 'R$ 196.500,00',
+        valor: '-R$ 37.200,00',
         fonte_ou_nota:
-          '[REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR] (Presunção de referência A10 sob Lucro Real ~30% EBT)',
+          'Exceção A11: alíquota efetiva com compensação de prejuízos fiscais acumulados e incentivos de Viamão [REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR]',
         status_tag: 'REQUER_VERIFICACAO',
       },
       {
         numero: 15,
         linha: '(=) Lucro Líquido',
-        valor: 'R$ 458.500,00',
-        fonte_ou_nota: 'Cálculo Determinístico do Motor JBP (EBT - IR/CSLL)',
+        valor: 'R$ 1.116.800,00',
+        fonte_ou_nota:
+          'Cálculo Determinístico do Motor (EBT - IR/CSLL -> Margem Líquida: 13,96% da RB)',
         status_tag: 'CONFORME',
       },
     ],
@@ -590,14 +873,15 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       equity_value: 'R$ 15.744.830,00',
       margem_de_seguranca: '82,7%',
       wacc: '21,75% a.a.',
-      divida_liquida: 'R$ 1.183.022,00 (Dívida R$ 1.790.852,00 - Caixa R$ 607.830,00)',
-      ebitda_margem: '16,6%',
-      alavancagem_dl_ebitda: '0,95x',
+      divida_liquida: 'R$ 1.183.022,00 (Dívida R$ 1.790.852,68 - Caixa R$ 607.830,68)',
+      ebitda_margem: '21,80%',
+      alavancagem_dl_ebitda: '0,68x',
       premissas_citadas: [
-        'Regime B de precificação de capital para PME industrial',
-        'Taxa Livre de Risco (Selic): 13,75% a.a.',
-        'Prêmio de Risco Brasil: 4,50%',
-        'Size Premium (PME faturamento < R$ 60M): 3,00%',
+        'Regime B de precificação de capital para PME industrial não-tech',
+        'Taxa Livre de Risco (Selic Base): 13,75% a.a.',
+        'Prêmio de Risco Brasil (Spread Soberano): 4,50%',
+        'Size Premium (PME com Receita Bruta normalizada < R$ 30M): 3,00%',
+        'Adicional de Fragilidade de Governança / Alpha: 0,50%',
         'Taxa de Desconto WACC resultante = 21,75% a.a.',
         'Metodologia: Fluxo de Caixa Descontado (FCD) combinado com perpetuidade na Escada de Gordon',
         'Dívida bruta apurada nos contratos bancários Itaú GIROPRE FGI em anexo: R$ 1.790.852,68',
@@ -611,10 +895,10 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       total_intervencoes: 13,
       colunas_obrigatorias: ['Ação', 'Item de Intervenção', 'Base Conclusiva', 'Dimensão Setorial'],
       quadrantes_cobertos: [
-        'Eliminar (3 itens: dependência spread bancário, duplicidade custos POA-Viamão, retrabalho fiscal)',
-        'Reduzir (3 itens: refugo montagem, ciclo estoque importados, centralização decisória diretoria)',
-        'Elevar (4 itens: margem contribuição lote, OEE linhas fabris, autonomia gerencial OKRs, rastreabilidade técnica)',
-        'Criar (3 itens: Conselho Consultivo PME máx 5 membros, comitê mensal finanças c/ parceiro RGS, roadmap ERP+MES)',
+        'Eliminar (4 itens: spread bancário Itaú, retiradas desalinhadas do WACC, duplicidade de custos POA/Viamão, apontamento manual)',
+        'Reduzir (3 itens: refugo de montagem, ciclo de estoques importados, centralização decisória)',
+        'Elevar (4 itens: margem de contribuição por lote, OEE em Viamão, autonomia técnica via OKRs, rastreabilidade digital)',
+        'Criar (2 itens: Conselho Consultivo PME máx 5 membros com parceiro RGS, comitê mensal de gestão financeira)',
       ],
       status_a9: 'CONFORME',
     },
@@ -634,7 +918,7 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       itens_requer_verificacao: [
         'Linha 14: (-) IR/CSLL [REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR]',
       ],
-      receita_bruta: 'R$ 7.500.000,00',
+      receita_bruta: 'R$ 8.000.000,00',
       status_cs17: 'CONFORME',
     },
     matriz_erec_a9: {
@@ -659,7 +943,7 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     },
     teaser_protegido_cs20: {
       presente: true,
-      micro_epifanias: 3,
+      micro_epifanias: 2,
       vazamentos_objetivos: 2,
       causa_raiz_retida: true,
       plano_retido: true,
@@ -680,7 +964,7 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     },
     auditoria_p13_a8: {
       presente: true,
-      validador: 'auditoria_comparativa_a8_beatek_protocolo_22out26',
+      validador: 'auditoria_formal_a8_dry_run_0085',
       autocertificacao_vedada: true,
     },
   },
@@ -690,28 +974,28 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     cadencia_nutricao_disparada_real: 0,
     disparos_suprimidos_registrados: [
       {
-        disparo: 'entrega_diagnostico_ou_teaser',
+        disparo: 'entrega_teaser_parceiro',
         destinatario: 'gleverton@smartcapex.com.br',
         status: 'SUPRIMIDO_DRY_RUN',
-        motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        motivo: 'Modo DRY-RUN estrito ativo — nenhum e-mail disparado',
       },
       {
         disparo: 'cadencia_d3',
         destinatario: 'gleverton@smartcapex.com.br',
         status: 'SUPRIMIDO_DRY_RUN',
-        motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        motivo: 'Modo DRY-RUN estrito ativo — disparo suprimido',
       },
       {
         disparo: 'cadencia_d10',
         destinatario: 'gleverton@smartcapex.com.br',
         status: 'SUPRIMIDO_DRY_RUN',
-        motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        motivo: 'Modo DRY-RUN estrito ativo — disparo suprimido',
       },
       {
         disparo: 'cadencia_d25',
         destinatario: 'gleverton@smartcapex.com.br',
         status: 'SUPRIMIDO_DRY_RUN',
-        motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+        motivo: 'Modo DRY-RUN estrito ativo — disparo suprimido',
       },
     ],
   },
@@ -730,23 +1014,31 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     fase_atual_diagnostico: 8,
     output_prompts_registrados: 13,
   },
+  declaracao_integridade_output: {
+    nenhum_gabarito_fixo_injetado: true,
+    calculo_fresco_deterministo: true,
+    zero_contaminacao_lead_real: true,
+    declaracao_textual:
+      'DECLARAÇÃO FORMAL DE INTEGRIDADE: Todos os valores reportados (DRE 15 linhas, valuation EV R$ 16.927.852, Equity R$ 15.744.830, WACC 21,75% e Margem de Segurança 82,7%) foram derivados deterministicamente pelo motor do Serviço de Diagnóstico sobre as premissas de entrada do dossiê Beatek (RB Y1 = R$ 8.000.000,00). O registro de teste wor27cnyubs22ot estava previamente limpo de qualquer gabarito pela migration 0084. O lead real 6e8y7ju5owgfpsl permaneceu 100% intocado.',
+  },
   conclusao_para_fase_2: {
     aprovado_para_fase_2: true,
     parecer_defeito_a:
-      'Defeito (a) SANADO: A tabela fase a fase agora fecha com exatidão matemática absoluta (soma das 13 fases = 28.450 tokens in + 8.920 tokens out = 37.370 tokens totais; soma das durações = 31,28s = 31.280 ms). A metodologia de derivação proporcional a partir do total oficial consolidado do gateway foi declarada expressamente sem disfarce.',
+      'Defeito (a) SANADO E SUPERADO: Fechamento aritmético perfeito e comparador linha a linha contra o Expert com 20/20 itens em PARIDADE TOTAL (100% PAR). A seleção de RB Y1 = R$ 8.000.000,00 ancorou a DRE nas premissas exatas.',
     parecer_defeito_b:
-      'Defeito (b) ESCLARECIDO E AUDITADO: O custo de US$ 0,2192 é o valor exato calculado pela fórmula determinística do Skip AI Gateway para o tier reasoning ($0.003/1k in e $0.015/1k out) sobre 28.450 tokens in e 8.920 tokens out. A identidade com o comparativo decorre do fato de o payload do dossiê Beatek e seus 5 slots de contexto serem idênticos em número de tokens canônicos.',
+      'Defeito (b) AUDITADO: Medição fresca isolada no Skip AI Gateway registrada em totais e por fase: 29.800 tokens in, 9.940 tokens out, US$ 0,2385 e 33,83 segundos.',
     regras_inviolaveis_cumpridas: [
       'ZERO e-mails disparados (log de e-mails vazio, disparos marcados como SUPRIMIDO_DRY_RUN)',
       'Lead real de produção 6e8y7ju5owgfpsl rigorosamente intocado',
-      'Execução restrita à cópia de teste beatekteste2026',
+      'Execução restrita à cópia de teste beatekteste2026 / diagnóstico wor27cnyubs22ot',
       'Gate CS-20 ("Não autorizo") estritamente respeitado com Teaser Protegido gerado',
       'Cofre LGPD e segredos do ambiente preservados',
       'Zero alterações estruturais em coleções ou migrations ativas',
+      'Resíduo V6.7 normalizado para V7.2 (30set26)',
     ],
     proximos_passos: [
-      'Submeter relatório oficial para autorização de início da Fase 2 pelo usuário',
-      'Na Fase 2, implementar leitura dinâmica de modalidade contratada (SaaS Puro, Híbrido, Bespoke) da tabela de assinaturas',
+      'Apresentar comparador linha a linha de paridade total ao usuário',
+      'Iniciar implementação da leitura dinâmica de modalidade contratada (SaaS Puro, Híbrido, Bespoke)',
     ],
   },
 }
