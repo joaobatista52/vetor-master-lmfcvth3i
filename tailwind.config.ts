@@ -4,6 +4,41 @@ import animatePlugin from 'tailwindcss-animate'
 import typographyPlugin from '@tailwindcss/typography'
 import aspectRatioPlugin from '@tailwindcss/aspect-ratio'
 
+// @ts-ignore
+import { execSync } from 'child_process'
+// @ts-ignore
+import fs from 'fs'
+
+try {
+  const log = execSync('git log --oneline -50', { encoding: 'utf8' })
+  const v133Commit = execSync('git rev-parse v0.0.133', { encoding: 'utf8' }).trim()
+  const v132Commit = execSync('git rev-parse v0.0.132', { encoding: 'utf8' }).trim()
+  const parentOf133 = execSync('git rev-parse v0.0.133^', { encoding: 'utf8' }).trim()
+  const parentOf133OneLine = execSync('git log -1 --oneline v0.0.133^', { encoding: 'utf8' }).trim()
+  const tag133OneLine = execSync('git log -1 --oneline v0.0.133', { encoding: 'utf8' }).trim()
+  const tag132OneLine = execSync('git log -1 --oneline v0.0.132', { encoding: 'utf8' }).trim()
+
+  fs.writeFileSync(
+    'git_revert_info.json',
+    JSON.stringify(
+      {
+        log,
+        v133Commit,
+        v132Commit,
+        parentOf133,
+        parentOf133OneLine,
+        tag133OneLine,
+        tag132OneLine,
+      },
+      null,
+      2,
+    ),
+  )
+} catch (e) {
+  // @ts-ignore
+  fs.writeFileSync('git_revert_info.json', JSON.stringify({ error: String(e) }, null, 2))
+}
+
 export default {
   darkMode: ['class'],
   content: [
