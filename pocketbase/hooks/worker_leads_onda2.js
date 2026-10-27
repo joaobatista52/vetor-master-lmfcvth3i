@@ -410,58 +410,46 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
 
     if (!respostaServico) {
       // FASE 1 DO AJUSTE DO MOTOR:
-      // O worker consome diretamente o pipeline de 13 prompts fixos da Skill V7.2.3-A9.
-      // Se a função global existir no runtime JSVM, invoca diretamente; senão, via endpoint HTTP.
-      if (
-        typeof globalThis !== 'undefined' &&
-        typeof globalThis.executarPipeline13Prompts === 'function'
-      ) {
-        respostaServico = globalThis.executarPipeline13Prompts(
-          payloadDossie,
-          {
-            lead_id: leadId,
-            versao_questionario: versaoQuestionario,
-            autorizacao_devolutiva: autorizacaoRaw,
-            origem_tipo: isParceiro ? 'parceiro' : 'direto',
-            origem_parceiro: origemParceiro,
+      // O worker consome o pipeline de 13 prompts fixos da Skill V7.2.3-A9 via endpoint HTTP do serviço.
+      // Compatível com o pool isolado de JSVM do PocketBase.
+      let servicoUrl = 'http://127.0.0.1:8090'
+      try {
+        const pbUrlEnv = $os.getenv('PB_INSTANCE_URL') || $os.getenv('VITE_POCKETBASE_URL')
+        if (pbUrlEnv) servicoUrl = pbUrlEnv.replace(/\/+$/, '')
+      } catch (_) {}
+
+      const payloadServico = {
+        dossie: payloadDossie,
+        metadados: {
+          lead_id: leadId,
+          versao_questionario: versaoQuestionario,
+          autorizacao_devolutiva: autorizacaoRaw,
+          origem_tipo: isParceiro ? 'parceiro' : 'direto',
+          origem_parceiro: origemParceiro,
+        },
+        dry_run: dryRunParam,
+      }
+
+      try {
+        const resHttp = $http.send({
+          url: servicoUrl + '/backend/v1/servico-diagnostico',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          callerUserId,
-        )
-      } else {
-        const payloadServico = {
-          dossie: payloadDossie,
-          metadados: {
-            lead_id: leadId,
-            versao_questionario: versaoQuestionario,
-            autorizacao_devolutiva: autorizacaoRaw,
-            origem_tipo: isParceiro ? 'parceiro' : 'direto',
-            origem_parceiro: origemParceiro,
-          },
-          dry_run: dryRunParam,
+          body: JSON.stringify(payloadServico),
+          timeout: 180,
+        })
+
+        if (resHttp && resHttp.raw) {
+          respostaServico = JSON.parse(resHttp.raw)
         }
-
-        try {
-          const resHttp = $http.send({
-            url: 'http://127.0.0.1:8090/backend/v1/servico-diagnostico',
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payloadServico),
-            timeout: 180,
-          })
-
-          if (resHttp && resHttp.raw) {
-            respostaServico = JSON.parse(resHttp.raw)
-          }
-        } catch (errServicoHttp) {
-          console.log('Erro ao chamar Serviço de Diagnóstico via HTTP: ' + errServicoHttp.message)
-          respostaServico = {
-            sucesso: false,
-            codigo_erro: 'FALHA_CONEXAO_SERVICO',
-            motivo:
-              'Não foi possível conectar ao serviço de diagnóstico: ' + errServicoHttp.message,
-          }
+      } catch (errServicoHttp) {
+        console.log('Erro ao chamar Serviço de Diagnóstico via HTTP: ' + errServicoHttp.message)
+        respostaServico = {
+          sucesso: false,
+          codigo_erro: 'FALHA_CONEXAO_SERVICO',
+          motivo: 'Não foi possível conectar ao serviço de diagnóstico: ' + errServicoHttp.message,
         }
       }
     }
