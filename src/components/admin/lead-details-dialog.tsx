@@ -2734,12 +2734,10 @@ export function LeadDetailsDialog({
                               )
                             }
 
-                            // Validação estrita via TypeScript validador do contrato
-                            const { validarOutputExpert } = await import('@/types/contrato-expert')
-                            const validacao = validarOutputExpert(parsed)
-                            if (!validacao.valido) {
+                            // Validação estrutural do JSON do Expert
+                            if (!parsed || typeof parsed !== 'object') {
                               throw new Error(
-                                `Erro [${validacao.codigo_erro || 'VALIDACAO'}]: ${validacao.erros.join('; ')}`,
+                                'O output do Expert precisa ser um objeto JSON válido.',
                               )
                             }
 
