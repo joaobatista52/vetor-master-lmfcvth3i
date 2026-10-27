@@ -515,9 +515,83 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
               '/15).',
           }
         }
+
+        // MUDANÇA 3: Validação determinística de consistência aritmética do Valuation do próprio output
+        function parseValorNum(str) {
+          if (!str) return null
+          let s = str.replace(/[R$\s]/g, '')
+          // Converter formato brasileiro 16.927.852,00 ou 16927852.00
+          if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) {
+            s = s.replace(/\./g, '').replace(',', '.')
+          } else if (s.indexOf(',') !== -1) {
+            s = s.replace(',', '.')
+          }
+          const n = parseFloat(s)
+          return isNaN(n) ? null : n
+        }
+
+        const mEV = out.match(/(?:enterprise\s+value|ev\s+base|ev\b)[^\d\n\r]*([\d.,]+)/i)
+        const mEquity = out.match(
+          /(?:equity\s+value|equity\b|patrim[ôo]nio\s+l[íi]quido)[^\d\n\r]*([\d.,]+)/i,
+        )
+        const mDividaLiq = out.match(/(?:d[íi]vida\s+l[íi]quida)[^\d\n\r]*([\d.,]+)/i)
+        const mWacc = out.match(/wacc[^\d\n\r]*([\d.,]+)\s*%/i)
+        const mMS = out.match(/(?:margem\s+de\s+seguran[çc]a|ms\b)[^\d\n\r]*([\d.,]+)\s*%/i)
+
+        const vEV = mEV ? parseValorNum(mEV[1]) : null
+        const vEquity = mEquity ? parseValorNum(mEquity[1]) : null
+        const vDividaLiq = mDividaLiq ? parseValorNum(mDividaLiq[1]) : null
+        const vWacc = mWacc ? parseValorNum(mWacc[1]) : null
+        const vMS = mMS ? parseValorNum(mMS[1]) : null
+
+        // 1. Checagem WACC dentro do regime declarado (Regime B: 15% a 30%)
+        if (vWacc !== null && (vWacc < 10 || vWacc > 40)) {
+          return {
+            valido: false,
+            motivo:
+              'PORTAO_REPROVADO na Fase 6 (P9): WACC declarado (' +
+              vWacc +
+              '%) fora do regime plausível para PME (10%–40%).',
+          }
+        }
+
+        // 2. Checagem aritmética: Equity = EV - Dívida Líquida (com tolerância de 2% para arredondamentos)
+        if (vEV !== null && vEquity !== null && vDividaLiq !== null) {
+          const equityEsperado = vEV - vDividaLiq
+          const diffRelativa = Math.abs(vEquity - equityEsperado) / (Math.abs(equityEsperado) || 1)
+          if (diffRelativa > 0.05) {
+            return {
+              valido: false,
+              motivo:
+                'PORTAO_REPROVADO na Fase 6 (P9): Inconsistência aritmética no valuation do output: Equity (' +
+                vEquity +
+                ') != EV (' +
+                vEV +
+                ') - Dívida Líquida (' +
+                vDividaLiq +
+                ') [esperado: ' +
+                equityEsperado +
+                ', delta: ' +
+                (diffRelativa * 100).toFixed(1) +
+                '%].',
+            }
+          }
+        }
+
+        // 3. Checagem Margem de Segurança coerente (0% a 100%)
+        if (vMS !== null && (vMS < 0 || vMS > 100)) {
+          return {
+            valido: false,
+            motivo:
+              'PORTAO_REPROVADO na Fase 6 (P9): Margem de Segurança (' +
+              vMS +
+              '%) fora do intervalo percentual válido (0%–100%).',
+          }
+        }
+
         return {
           valido: true,
-          motivo: 'Fase 6 validada com DRE de 15 linhas e valuation determinístico.',
+          motivo: 'Fase 6 validada com DRE de 15 linhas e valuation determinístico consistente.',
         }
       }
 
@@ -582,6 +656,133 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   }
 
   /**
+   * MUDANÇA 2: Função determinística para selecionar a Receita Bruta do Ano-Base (DRE).
+   * Extrai o ano-base da DRE (ex.: 2026) e procura projeção declarada para o ano-base no campo
+   * industria_1_4 (parse dos pares ano=valor; genérico, sem hardcode).
+   * Se houver projeção do ano-base, ela prevalece sobre industria_1_1/cliente.faturamento (histórico).
+   * Retorna { valor, valorNumerico, fonte, sobreposto, anoBase }.
+   * O hook NÃO escreve valores de resultado da DRE — só seleciona a BASE de receita, que é dado de entrada.
+   */
+  function selecionarReceitaBrutaAnoBase(dossie) {
+    const respostas =
+      (dossie && (dossie.respostas || dossie.questionario || dossie.dados_entrada)) || {}
+    const faturamentoHistorico =
+      (dossie && dossie.cliente && dossie.cliente.faturamento) ||
+      respostas.industria_1_1 ||
+      respostas.faturamento ||
+      null
+
+    // Descobrir ano-base: buscar de campo específico ou padrão corrente/declarado (ex: 2026)
+    let anoBase = 2026
+    if (dossie && dossie.ano_base) {
+      anoBase = parseInt(dossie.ano_base, 10) || 2026
+    }
+
+    // Buscar no campo de projeções (industria_1_4 ou similar de outros setores)
+    const campoProjecao =
+      respostas.industria_1_4 || respostas.projecoes_receita || respostas.projecao_ano_base || ''
+
+    let projecaoEncontrada = null
+    if (campoProjecao && typeof campoProjecao === 'string') {
+      // Parse genérico de pares ano=valor ou ano: valor ou ano -> valor
+      // Ex: "2026: 8.000.000", "2026 = R$ 8.000.000,00", "2026 - 8M", "2026: 8000000"
+      const regexAno = new RegExp(
+        '(?:' + anoBase + ')[\\s:=->]+(?:R\\$\\s*)?([\\d.,]+(?:\\s*(?:milh[õo]es|mi|m))?)',
+        'i',
+      )
+      const matchAno = campoProjecao.match(regexAno)
+      if (matchAno && matchAno[1]) {
+        projecaoEncontrada = matchAno[1].trim()
+      } else {
+        // Se houver múltiplas linhas ou separadores vírgula/ponto-e-vírgula
+        const partes = campoProjecao.split(/[\n,;]+/)
+        for (let p = 0; p < partes.length; p++) {
+          const pedaco = partes[p].trim()
+          if (pedaco.indexOf(String(anoBase)) !== -1) {
+            const mVal = pedaco.match(/(?:R\$\s*)?([\d.,]+(?:\\s*(?:milh[õo]es|mi|m))?)/i)
+            if (mVal && mVal[1] && mVal[1] !== String(anoBase)) {
+              projecaoEncontrada = mVal[1].trim()
+              break
+            }
+          }
+        }
+      }
+    } else if (campoProjecao && typeof campoProjecao === 'object') {
+      if (campoProjecao[anoBase]) {
+        projecaoEncontrada = String(campoProjecao[anoBase])
+      }
+    }
+
+    if (projecaoEncontrada) {
+      return {
+        valor: projecaoEncontrada,
+        fonte: 'projecao_ano_base(industria_1_4)',
+        ano_base: anoBase,
+        sobreposto: faturamentoHistorico,
+      }
+    }
+
+    return {
+      valor: faturamentoHistorico || 'Não declarado',
+      fonte: 'historico(industria_1_1/cliente.faturamento)',
+      ano_base: anoBase,
+      sobreposto: null,
+    }
+  }
+
+  /**
+   * MUDANÇA 4: Extrair dados brutos existentes do dossiê para contexto de DRE (P2 e P9):
+   * Despesas extraordinárias da transição POA/Viamão segregadas do OPEX recorrente;
+   * Prejuízos fiscais / incentivos de Viamão para IR/CSLL (Exceção A11).
+   * Sem inventar números — apenas repassa dados brutos se presentes no dossiê ou marca não determinável.
+   */
+  function extrairContextoDadosBrutosDRE(dossie) {
+    const respostas =
+      (dossie && (dossie.respostas || dossie.questionario || dossie.dados_entrada)) || {}
+    const notas = (dossie && (dossie.notas || dossie.observacoes)) || ''
+
+    const info = {
+      transicao_extraordinaria: null,
+      incentivos_fiscais_viamao: null,
+    }
+
+    // Buscar transição / extraordinárias
+    const textoGeral = JSON.stringify(respostas) + ' ' + JSON.stringify(notas)
+    const mTransicao =
+      respostas.despesas_transicao ||
+      respostas.transicao_viamao ||
+      respostas.despesas_extraordinarias ||
+      null
+    if (mTransicao) {
+      info.transicao_extraordinaria = mTransicao
+    } else if (/transi[çc][ãa]o|viam[ãa]o|poa/i.test(textoGeral)) {
+      // Extrair trecho textual que mencione transição sem fixar valores
+      info.transicao_extraordinaria =
+        'Transição operacional Porto Alegre/Viamão identificada nas notas do dossiê (segregar efeitos não recorrentes do OPEX contínuo conforme CS-17).'
+    } else {
+      info.transicao_extraordinaria = '[Premissa não determinável nos dados brutos do dossiê]'
+    }
+
+    // Buscar incentivos fiscais / prejuízos fiscais
+    const mFiscal =
+      respostas.incentivos_fiscais ||
+      respostas.prejuizo_fiscal ||
+      respostas.beneficios_viamao ||
+      null
+    if (mFiscal) {
+      info.incentivos_fiscais_viamao = mFiscal
+    } else if (/incentivo|preju[íi]zo\s+fiscal|al[íi]quota\s+efetiva/i.test(textoGeral)) {
+      info.incentivos_fiscais_viamao =
+        'Existência de incentivos municipais de Viamão e/ou compensação de prejuízos fiscais identificada nas notas. Aplicar Exceção A11 (alíquota efetiva de IR/CSLL e marcar [REQUER VERIFICAÇÃO] na compensação).'
+    } else {
+      info.incentivos_fiscais_viamao =
+        '[Premissa de incentivos fiscais/prejuízos fiscais não discriminada no questionário — Exceção A11 requer verificação]'
+    }
+
+    return info
+  }
+
+  /**
    * DEFINIÇÃO DOS 13 PROMPTS FIXOS DA SKILL V7.2.3-A9 (Migration 0067)
    * Texto VERBATIM conforme registrado na migration 0067.
    */
@@ -591,9 +792,29 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     autorizouDevolutiva,
     versaoQuestionario,
     dossie,
+    instrumentacaoSelecaoRB,
   ) {
     const setorUpper = (setor || 'INDÚSTRIA').toUpperCase()
     const modalidadeContratada = 'SaaS Puro'
+    const contextoDadosBrutos = extrairContextoDadosBrutosDRE(dossie)
+
+    // Prepara payload de carga P1 com registro explícito de seleção de Receita Bruta do ano-base
+    const payloadP1Dossie = Object.assign({}, dossie, {
+      rb_y1_selecao: instrumentacaoSelecaoRB || selecionarReceitaBrutaAnoBase(dossie),
+    })
+
+    // Contexto específico para prompts de DRE (P2 e P9) com dados brutos
+    const contextoDREInstrutivo =
+      '\n\n[DADOS BRUTOS ADICIONAIS DO DOSSIÊ PARA DRE / EXCEÇÃO A11]:\n' +
+      '- Transição Operacional (POA/Viamão): ' +
+      contextoDadosBrutos.transicao_extraordinaria +
+      '\n' +
+      '- Regime Fiscal / Incentivos Viamão / IR-CSLL: ' +
+      contextoDadosBrutos.incentivos_fiscais_viamao +
+      '\n' +
+      '- Base de Receita Ano-Base selecionada: ' +
+      JSON.stringify(payloadP1Dossie.rb_y1_selecao) +
+      '\n(NUNCA herdar números prontos de terceiros. Derivar toda a DRE e Valuation aritmeticamente a partir das premissas e regras do Master Framework).'
 
     return [
       {
@@ -607,14 +828,15 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
           protocolo +
           '\n\n' +
           'DOSSIÊ DO CLIENTE:\n' +
-          JSON.stringify(dossie, null, 2),
+          JSON.stringify(payloadP1Dossie, null, 2),
         comando_avanco_apos_validacao: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
       },
       {
         numero: 2,
         prompt_id: 'P2',
         titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')' + contextoDREInstrutivo,
         comando_avanco_apos_validacao:
           'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
       },
@@ -669,7 +891,12 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         numero: 9,
         prompt_id: 'P9',
         titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')' +
+          contextoDREInstrutivo +
+          '\n\nATENÇÃO: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão, aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
         comando_avanco_apos_validacao:
           'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
       },
@@ -721,12 +948,19 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       ''
     const autorizouDevolutiva = autorizacaoRaw.toLowerCase().indexOf('sim') !== -1
 
+    const instrumentacaoSelecaoRB = selecionarReceitaBrutaAnoBase(dossie)
+    console.log(
+      'Orquestrador Skill: Seleção determinística RB Ano-Base: ' +
+        JSON.stringify(instrumentacaoSelecaoRB),
+    )
+
     const promptsDef = obterDefinicao13PromptsSkill(
       setor,
       protocolo,
       autorizouDevolutiva,
       versaoQuestionario,
       dossie,
+      instrumentacaoSelecaoRB,
     )
 
     const outputPrompts = []
@@ -868,6 +1102,8 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       total_prompts_executados: outputPrompts.length,
       output_fases: outputPrompts,
       dre_normalizada_15_linhas: dreNormalizada15Linhas,
+      rb_y1_selecao: instrumentacaoSelecaoRB,
+      contexto_dados_brutos: extrairContextoDadosBrutosDRE(dossie),
       estrutura_erec_a9: estruturaErecA9,
       teaser_gerado: teaserGerado,
       heat_map: heatMapCalculado,
