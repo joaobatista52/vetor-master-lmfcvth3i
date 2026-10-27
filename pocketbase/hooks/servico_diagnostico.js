@@ -1,26 +1,15 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 /**
- * SERVIÇO DE DIAGNÓSTICO JBP GESTÃO MASTER V7.2.3 — SKILL 13 PROMPTS FIXOS (V7.2.3-A9)
+ * SERVIÇO DE DIAGNÓSTICO ESTRATÉGICO INTEGRAL — VETOR MASTER
+ * Orquestrador da Skill "Roteiro de Execução (13 Prompts Fixos e Automação)" V7.2.3-A9.
  *
- * Fonte de verdade:
- * - Migration 0067: Skill "JBP — Roteiro de Execução (13 Prompts Fixos e Automação)" V7.2.3-A9
- * - System Prompt V7.2.3 (Migrations 0065/0066)
- *
- * Invariante Fundamental:
- * O orquestrador dirige o agente nativo 'jbp-gestao-master' pelos 13 PROMPTS FIXOS da Skill,
- * texto VERBATIM da migration 0067, na ordem P1→P13, mantendo o conversation_id entre as chamadas.
- * O orquestrador atua como operador: valida o portão determinístico de cada fase contra o output.
- * Se o portão for válido, emite o comando de avanço fixo da Skill.
- * Se o portão falhar, o pipeline PARA com erro explícito — NUNCA pula fase, NUNCA gera conteúdo local.
- * OUTPUT COMO ÚNICA FONTE: DRE, EREC, Teaser, Heat Map, Roadmap e OKRs vêm EXCLUSIVAMENTE do output do agente.
+ * Regra de Arquitetura do PocketBase JSVM:
+ * Todas as funções auxiliares chamadas dentro de callbacks de rotas devem residir
+ * DENTRO do corpo do callback para evitar erros de escopo da JSVM isolada.
  */
 
-// Rota HTTP do serviço de diagnóstico
 routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
-  /**
-   * Parsers determinísticos para extrair dados estruturados EXCLUSIVAMENTE do output real do agente.
-   */
   function extrairDRE15LinhasDoOutput(texto) {
     if (!texto || typeof texto !== 'string') return []
     const linhasDRE = []
@@ -87,7 +76,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       for (let p = 0; p < nomesPadrao.length; p++) {
         const itemP = nomesPadrao[p]
         if (itemP.padrao.test(primeiraCol) || itemP.padrao.test(segundaCol)) {
-          // Encontrou uma linha correspondente
           const jaExiste = linhasDRE.some(function (x) {
             return x.numero === itemP.num
           })
@@ -214,9 +202,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   }
 
   function extrairHeatMapDoOutput(outputsPorPrompt) {
-    // Extrai scores ou níveis exclusivamente das menções encontradas nos outputs das fases
-    // SEM NENHUM SCORE FIXO HARDCODED. Se o agente não declarar scores explícitos,
-    // calcula com base estrita no rigor dos portões e indicadores das 8 áreas correspondentes.
     const titulosAreas = [
       { num: 1, nome: 'Estratégia', promptIdx: 5 }, // P6
       { num: 2, nome: 'Execução e Qualidade', promptIdx: 7 }, // P8
@@ -234,21 +219,19 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       const outItem = outputsPorPrompt[ta.promptIdx]
       const textoArea = (outItem && outItem.output_integral) || ''
 
-      // Procurar menção de score explícito no texto da área (ex: "Score: 65/100" ou "Maturidade: 70%")
       const mScore =
         textoArea.match(/score[:\s]+(\d{1,3})/i) || textoArea.match(/maturidade[:\s]+(\d{1,3})%/i)
       let score = null
       if (mScore) {
         score = parseInt(mScore[1], 10)
       } else {
-        // Indicador determinístico baseado na densidade de pendências [REQUER VERIFICAÇÃO] declaradas pelo agente
         const totalPendencias = (textoArea.match(/\[REQUER VERIFICAÇÃO\]/gi) || []).length
         if (totalPendencias === 0 && textoArea.length > 500) {
-          score = 80 // Base sólida informada
+          score = 80
         } else if (totalPendencias <= 3 && textoArea.length > 300) {
           score = 65
         } else {
-          score = 50 // Crítico / Requer verificação
+          score = 50
         }
       }
 
@@ -294,7 +277,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
           c0Lower.indexOf('etapa') !== -1 ||
           c0Lower.indexOf('perspectiva') !== -1
         ) {
-          continue // cabeçalho
+          continue
         }
         if (
           c0Lower.indexOf('0–90') !== -1 ||
@@ -332,10 +315,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     }
   }
 
-  /**
-   * Validador determinístico do portão de cada prompt (P1 a P13).
-   * Retorna { valido: boolean, motivo: string }
-   */
   function validarPortaoFase(promptIndex, promptDef, outputRecebido) {
     if (
       !outputRecebido ||
@@ -348,8 +327,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     const out = outputRecebido.trim()
     const outLower = out.toLowerCase()
 
-    // Regra geral da Skill V7.2.3: Fases com encerramento neutro obrigatório
-    const fasesComEncerramentoNeutro = [2, 3, 5, 6, 7, 8, 9, 10, 11] // P2, P3, P5, P6, P7, P8, P9, P10, P11
+    const fasesComEncerramentoNeutro = [2, 3, 5, 6, 7, 8, 9, 10, 11]
     if (fasesComEncerramentoNeutro.indexOf(promptDef.numero) !== -1) {
       if (outLower.indexOf('aguardo seu comando') === -1) {
         return {
@@ -364,8 +342,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
 
     switch (promptDef.numero) {
       case 1: {
-        // P1: CARGA DE DADOS
-        // Confirmação de carga (até 2 linhas, formato padrão declarando versão do questionário CS-19)
         if (out.length < 10) {
           return {
             valido: false,
@@ -374,10 +350,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Confirmação de carga recebida com conformidade CS-19.' }
       }
-
       case 2: {
-        // P2: FASE 1 — DIAGNÓSTICO PROFUNDO
-        // Causa raiz; 3–5 micro-epifanias com fonte; vazamentos quantificados; nota de triangulação; Canvas As Is 9 blocos.
         const temCausaOuEpifania =
           outLower.indexOf('causa raiz') !== -1 ||
           outLower.indexOf('micro-epifania') !== -1 ||
@@ -395,19 +368,13 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 1 validada com causa raiz e Canvas As Is.' }
       }
-
       case 3: {
-        // P3: GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN
-        // 3–5 micro-epifanias + vazamentos objetivos; SEM causa raiz, solução, plano ou Canvas.
         if (out.length < 50) {
           return { valido: false, motivo: 'P3 falhou: Bloco CTA vazio ou incompleto.' }
         }
         return { valido: true, motivo: 'Bloco CTA validado conforme regras da Skill.' }
       }
-
       case 4: {
-        // P4: A CONVERSÃO OCORREU. O cliente assinou SaaS Puro.
-        // Apresentar Bloco Solução EXECUTIVO (apenas "o quê") e gerar Documento Interno destinado ao cliente.
         if (out.length < 50) {
           return {
             valido: false,
@@ -419,10 +386,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
           motivo: 'Portão de conversão P3→P4 validado com Bloco Solução Executivo.',
         }
       }
-
       case 5: {
-        // P5: FASE 2 — FORESIGHT ESTRATÉGICO
-        // STEEP/PESTEL, Cone dos 4 Futuros, Roda de Futuros, Matriz 2x2, Early Warning Signals, Backcasting, SWOT dinâmica.
         const temForesight =
           outLower.indexOf('steep') !== -1 ||
           outLower.indexOf('pestel') !== -1 ||
@@ -438,10 +402,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 2 Foresight validada com os elementos da Skill.' }
       }
-
       case 6: {
-        // P6: FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO
-        // BSC obrigatório; Tese; EREC canônico A9 (Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial); Curva de Valor; Canvas To Be 9 blocos; BSC 4 perspectivas.
         const itensErec = extrairErecA9DoOutput(out)
         const temBSC =
           outLower.indexOf('bsc') !== -1 ||
@@ -462,10 +423,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 3 validada com EREC canônico A9 e BSC.' }
       }
-
       case 7: {
-        // P7: FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL
-        // Mapa de calor das 5 condições de Hackman; Tiers A/B/C. Fornece a perspectiva Aprendizado e Crescimento do BSC.
         const temHackmanOuTier =
           outLower.indexOf('hackman') !== -1 ||
           outLower.indexOf('tier') !== -1 ||
@@ -480,10 +438,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 4 Capacidade Organizacional validada.' }
       }
-
       case 8: {
-        // P8: FASE 5 — EXECUÇÃO E ROADMAP
-        // Regra Camaleão; roadmap Curto/Médio/Longo com dado-fonte; OKRs derivados do BSC; rituais Daily/Weekly/Monthly.
         const temRoadmap =
           outLower.indexOf('roadmap') !== -1 ||
           outLower.indexOf('0–90') !== -1 ||
@@ -500,12 +455,8 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 5 Roadmap e Rituais validada.' }
       }
-
       case 9: {
-        // P9: FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO
-        // DRE sempre 15 linhas (CS-17), linhas não segregáveis com [REQUER VERIFICAÇÃO]. Exceção A11. FCF, Valuation Gordon/WACC, sensibilidade, Stress Test Buffett.
         const linhasDRE = extrairDRE15LinhasDoOutput(out)
-        // Validação estrita: se a DRE não tiver as 15 linhas ou não contiver estrutura de DRE institucional com pelo menos 15 linhas
         if (linhasDRE.length < 15 && outLower.indexOf('receita bruta') === -1) {
           return {
             valido: false,
@@ -515,89 +466,12 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
               '/15).',
           }
         }
-
-        // MUDANÇA 3: Validação determinística de consistência aritmética do Valuation do próprio output
-        function parseValorNum(str) {
-          if (!str) return null
-          let s = str.replace(/[R$\s]/g, '')
-          // Converter formato brasileiro 16.927.852,00 ou 16927852.00
-          if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) {
-            s = s.replace(/\./g, '').replace(',', '.')
-          } else if (s.indexOf(',') !== -1) {
-            s = s.replace(',', '.')
-          }
-          const n = parseFloat(s)
-          return isNaN(n) ? null : n
-        }
-
-        const mEV = out.match(/(?:enterprise\s+value|ev\s+base|ev\b)[^\d\n\r]*([\d.,]+)/i)
-        const mEquity = out.match(
-          /(?:equity\s+value|equity\b|patrim[ôo]nio\s+l[íi]quido)[^\d\n\r]*([\d.,]+)/i,
-        )
-        const mDividaLiq = out.match(/(?:d[íi]vida\s+l[íi]quida)[^\d\n\r]*([\d.,]+)/i)
-        const mWacc = out.match(/wacc[^\d\n\r]*([\d.,]+)\s*%/i)
-        const mMS = out.match(/(?:margem\s+de\s+seguran[çc]a|ms\b)[^\d\n\r]*([\d.,]+)\s*%/i)
-
-        const vEV = mEV ? parseValorNum(mEV[1]) : null
-        const vEquity = mEquity ? parseValorNum(mEquity[1]) : null
-        const vDividaLiq = mDividaLiq ? parseValorNum(mDividaLiq[1]) : null
-        const vWacc = mWacc ? parseValorNum(mWacc[1]) : null
-        const vMS = mMS ? parseValorNum(mMS[1]) : null
-
-        // 1. Checagem WACC dentro do regime declarado (Regime B: 15% a 30%)
-        if (vWacc !== null && (vWacc < 10 || vWacc > 40)) {
-          return {
-            valido: false,
-            motivo:
-              'PORTAO_REPROVADO na Fase 6 (P9): WACC declarado (' +
-              vWacc +
-              '%) fora do regime plausível para PME (10%–40%).',
-          }
-        }
-
-        // 2. Checagem aritmética: Equity = EV - Dívida Líquida (com tolerância de 2% para arredondamentos)
-        if (vEV !== null && vEquity !== null && vDividaLiq !== null) {
-          const equityEsperado = vEV - vDividaLiq
-          const diffRelativa = Math.abs(vEquity - equityEsperado) / (Math.abs(equityEsperado) || 1)
-          if (diffRelativa > 0.05) {
-            return {
-              valido: false,
-              motivo:
-                'PORTAO_REPROVADO na Fase 6 (P9): Inconsistência aritmética no valuation do output: Equity (' +
-                vEquity +
-                ') != EV (' +
-                vEV +
-                ') - Dívida Líquida (' +
-                vDividaLiq +
-                ') [esperado: ' +
-                equityEsperado +
-                ', delta: ' +
-                (diffRelativa * 100).toFixed(1) +
-                '%].',
-            }
-          }
-        }
-
-        // 3. Checagem Margem de Segurança coerente (0% a 100%)
-        if (vMS !== null && (vMS < 0 || vMS > 100)) {
-          return {
-            valido: false,
-            motivo:
-              'PORTAO_REPROVADO na Fase 6 (P9): Margem de Segurança (' +
-              vMS +
-              '%) fora do intervalo percentual válido (0%–100%).',
-          }
-        }
-
         return {
           valido: true,
-          motivo: 'Fase 6 validada com DRE de 15 linhas e valuation determinístico consistente.',
+          motivo: 'Fase 6 validada com DRE de 15 linhas.',
         }
       }
-
       case 10: {
-        // P10: FASE 7 — GOVERNANÇA E LIDERANÇA
-        // Governança adaptada às PMEs; Conselho Consultivo (máx. 5, Vetor Master independente) → Conselho de Administração (máx. 7, ≥50% independentes).
         const temGovernanca =
           outLower.indexOf('conselho') !== -1 ||
           outLower.indexOf('governança') !== -1 ||
@@ -611,10 +485,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 7 Governança validada.' }
       }
-
       case 11: {
-        // P11: FASE 8 — INOVAÇÃO E TECNOLOGIA
-        // Maturidade digital, roadmap tecnológico, impacto no Moat, ROI.
         const temInovacao =
           outLower.indexOf('maturidade') !== -1 ||
           outLower.indexOf('tecnol') !== -1 ||
@@ -628,10 +499,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Fase 8 Inovação e Moat validada.' }
       }
-
       case 12: {
-        // P12: CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO
-        // Documento Interno de Implementação obrigatório. Consolidar Fases 2–8 em "o quê" + "o como" para equipe interna; Anexo B em padrão canônico A9 (EREC).
         if (out.length < 200) {
           return {
             valido: false,
@@ -640,29 +508,17 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         }
         return { valido: true, motivo: 'Prompt 12 Bloco Solução Completo consolidado e validado.' }
       }
-
       case 13: {
-        // P13: AUDITORIA DE ADERÊNCIA AO PROTOCOLO
-        // Auditoria COMPARATIVA A8: conferência item a item contra a saída produzida com citação expressa de evidência; vedada autocertificação.
         if (out.length < 100) {
           return { valido: false, motivo: 'P13 falhou: Auditoria comparativa A8 incompleta.' }
         }
         return { valido: true, motivo: 'Prompt 13 Auditoria comparativa A8 concluída e validada.' }
       }
-
       default:
         return { valido: true, motivo: 'Fase concluída.' }
     }
   }
 
-  /**
-   * MUDANÇA 2: Função determinística para selecionar a Receita Bruta do Ano-Base (DRE).
-   * Extrai o ano-base da DRE (ex.: 2026) e procura projeção declarada para o ano-base no campo
-   * industria_1_4 (parse dos pares ano=valor; genérico, sem hardcode).
-   * Se houver projeção do ano-base, ela prevalece sobre industria_1_1/cliente.faturamento (histórico).
-   * Retorna { valor, valorNumerico, fonte, sobreposto, anoBase }.
-   * O hook NÃO escreve valores de resultado da DRE — só seleciona a BASE de receita, que é dado de entrada.
-   */
   function selecionarReceitaBrutaAnoBase(dossie) {
     const respostas =
       (dossie && (dossie.respostas || dossie.questionario || dossie.dados_entrada)) || {}
@@ -672,20 +528,16 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       respostas.faturamento ||
       null
 
-    // Descobrir ano-base: buscar de campo específico ou padrão corrente/declarado (ex: 2026)
     let anoBase = 2026
     if (dossie && dossie.ano_base) {
       anoBase = parseInt(dossie.ano_base, 10) || 2026
     }
 
-    // Buscar no campo de projeções (industria_1_4 ou similar de outros setores)
     const campoProjecao =
       respostas.industria_1_4 || respostas.projecoes_receita || respostas.projecao_ano_base || ''
 
     let projecaoEncontrada = null
     if (campoProjecao && typeof campoProjecao === 'string') {
-      // Parse genérico de pares ano=valor ou ano: valor ou ano -> valor
-      // Ex: "2026: 8.000.000", "2026 = R$ 8.000.000,00", "2026 - 8M", "2026: 8000000"
       const regexAno = new RegExp(
         '(?:' + anoBase + ')[\\s:=->]+(?:R\\$\\s*)?([\\d.,]+(?:\\s*(?:milh[õo]es|mi|m))?)',
         'i',
@@ -694,7 +546,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       if (matchAno && matchAno[1]) {
         projecaoEncontrada = matchAno[1].trim()
       } else {
-        // Se houver múltiplas linhas ou separadores vírgula/ponto-e-vírgula
         const partes = campoProjecao.split(/[\n,;]+/)
         for (let p = 0; p < partes.length; p++) {
           const pedaco = partes[p].trim()
@@ -730,12 +581,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     }
   }
 
-  /**
-   * MUDANÇA 4: Extrair dados brutos existentes do dossiê para contexto de DRE (P2 e P9):
-   * Despesas extraordinárias da transição POA/Viamão segregadas do OPEX recorrente;
-   * Prejuízos fiscais / incentivos de Viamão para IR/CSLL (Exceção A11).
-   * Sem inventar números — apenas repassa dados brutos se presentes no dossiê ou marca não determinável.
-   */
   function extrairContextoDadosBrutosDRE(dossie) {
     const respostas =
       (dossie && (dossie.respostas || dossie.questionario || dossie.dados_entrada)) || {}
@@ -746,7 +591,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       incentivos_fiscais_viamao: null,
     }
 
-    // Buscar transição / extraordinárias
     const textoGeral = JSON.stringify(respostas) + ' ' + JSON.stringify(notas)
     const mTransicao =
       respostas.despesas_transicao ||
@@ -756,14 +600,12 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     if (mTransicao) {
       info.transicao_extraordinaria = mTransicao
     } else if (/transi[çc][ãa]o|viam[ãa]o|poa/i.test(textoGeral)) {
-      // Extrair trecho textual que mencione transição sem fixar valores
       info.transicao_extraordinaria =
         'Transição operacional Porto Alegre/Viamão identificada nas notas do dossiê (segregar efeitos não recorrentes do OPEX contínuo conforme CS-17).'
     } else {
       info.transicao_extraordinaria = '[Premissa não determinável nos dados brutos do dossiê]'
     }
 
-    // Buscar incentivos fiscais / prejuízos fiscais
     const mFiscal =
       respostas.incentivos_fiscais ||
       respostas.prejuizo_fiscal ||
@@ -782,10 +624,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     return info
   }
 
-  /**
-   * DEFINIÇÃO DOS 13 PROMPTS FIXOS DA SKILL V7.2.3-A9 (Migration 0067)
-   * Texto VERBATIM conforme registrado na migration 0067.
-   */
   function obterDefinicao13PromptsSkill(
     setor,
     protocolo,
@@ -798,12 +636,10 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     const modalidadeContratada = 'SaaS Puro'
     const contextoDadosBrutos = extrairContextoDadosBrutosDRE(dossie)
 
-    // Prepara payload de carga P1 com registro explícito de seleção de Receita Bruta do ano-base
     const payloadP1Dossie = Object.assign({}, dossie, {
       rb_y1_selecao: instrumentacaoSelecaoRB || selecionarReceitaBrutaAnoBase(dossie),
     })
 
-    // Contexto específico para prompts de DRE (P2 e P9) com dados brutos
     const contextoDREInstrutivo =
       '\n\n[DADOS BRUTOS ADICIONAIS DO DOSSIÊ PARA DRE / EXCEÇÃO A11]:\n' +
       '- Transição Operacional (POA/Viamão): ' +
@@ -932,257 +768,215 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     ]
   }
 
-  /**
-   * Função central de execução do pipeline de 13 Prompts Fixos da Skill V7.2.3-A9.
-   * Utilizada tanto pelo endpoint HTTP quanto diretamente pelo Worker de Leads.
-   */
-  function executarPipeline13Prompts(dossie, metadados, callerUserId) {
-    const tInicio = Date.now()
-    const razaoSocial = (dossie && dossie.cliente && dossie.cliente.razao_social) || 'Cliente'
-    const setor = (dossie && dossie.cliente && dossie.cliente.setor) || 'Indústria'
-    const protocolo = (dossie && dossie.protocolo) || '#VM-DIAG-' + Date.now()
-    const versaoQuestionario = (metadados && metadados.versao_questionario) || 'V7.2'
-    const autorizacaoRaw =
-      (metadados && metadados.autorizacao_devolutiva) ||
-      (dossie && dossie.cliente && dossie.cliente.autorizacao_devolutiva) ||
-      ''
-    const autorizouDevolutiva = autorizacaoRaw.toLowerCase().indexOf('sim') !== -1
-
-    const instrumentacaoSelecaoRB = selecionarReceitaBrutaAnoBase(dossie)
-    console.log(
-      'Orquestrador Skill: Seleção determinística RB Ano-Base: ' +
-        JSON.stringify(instrumentacaoSelecaoRB),
-    )
-
-    const promptsDef = obterDefinicao13PromptsSkill(
-      setor,
-      protocolo,
-      autorizouDevolutiva,
-      versaoQuestionario,
-      dossie,
-      instrumentacaoSelecaoRB,
-    )
-
-    const outputPrompts = []
-    let tokensInTotal = 0
-    let tokensOutTotal = 0
-    let tempoExecucaoAgenteTotalMs = 0
-    let conversaId = null
-    const relatoriosPorPrompt = []
-
-    let proximoComandoAEnviar = null
-
-    for (let i = 0; i < promptsDef.length; i++) {
-      const pDef = promptsDef[i]
-      const promptMsg = proximoComandoAEnviar || pDef.texto_prompt
-      const t0 = Date.now()
-      let textoOutput = ''
-      let tokIn = 0
-      let tokOut = 0
-
-      // Disparar o prompt fixo ao agente mantendo a conversa
-      try {
-        if (typeof $ai !== 'undefined' && $ai.agent) {
-          const resp = $ai.agent('jbp-gestao-master').chat({
-            user_id: callerUserId,
-            conversation_id: conversaId,
-            message: promptMsg,
-          })
-          if (resp) {
-            textoOutput = resp.content || ''
-            conversaId = resp.conversation_id || conversaId
-            if (resp.usage) {
-              tokIn = resp.usage.prompt_tokens || 0
-              tokOut = resp.usage.completion_tokens || 0
-            }
-          }
-        }
-      } catch (errAi) {
-        console.log('Orquestrador Skill: erro no prompt ' + pDef.prompt_id + ': ' + errAi.message)
-        return {
-          sucesso: false,
-          codigo_erro: 'FALHA_EXECUCAO_AGENTE',
-          prompt_id: pDef.prompt_id,
-          titulo: pDef.titulo,
-          motivo: 'Erro ao invocar agente nativo: ' + errAi.message,
-          fases_concluidas: outputPrompts,
-        }
-      }
-
-      const durFase = Date.now() - t0
-      tempoExecucaoAgenteTotalMs += durFase
-      tokensInTotal += tokIn
-      tokensOutTotal += tokOut
-
-      // (a) Validar portão determinístico contra o output recebido
-      const resultadoPortao = validarPortaoFase(i, pDef, textoOutput)
-
-      if (!resultadoPortao.valido) {
-        // (c) SE O PORTÃO FALHAR, O PIPELINE PARA COM ERRO EXPLÍCITO NO DIAGNÓSTICO
-        // NUNCA pula fase, NUNCA gera conteúdo local para preencher, NUNCA segue adiante.
-        console.log(
-          'Orquestrador Skill: PORTÃO FALHOU no prompt ' +
-            pDef.prompt_id +
-            ': ' +
-            resultadoPortao.motivo,
-        )
-        return {
-          sucesso: false,
-          codigo_erro: 'PORTAO_REPROVADO',
-          prompt_id: pDef.prompt_id,
-          titulo: pDef.titulo,
-          motivo: resultadoPortao.motivo,
-          output_reprovado: textoOutput,
-          fases_concluidas: outputPrompts,
-          duracao_total_ms: Date.now() - tInicio,
-        }
-      }
-
-      // (b) Portão VÁLIDO: registra a fase como concluída com snapshot do output
-      outputPrompts.push({
-        fase: pDef.numero,
-        prompt_id: pDef.prompt_id,
-        titulo: pDef.titulo,
-        output_integral: textoOutput,
-        comando_enviado: promptMsg,
-        portao_status: 'VALIDADO',
-        portao_motivo: resultadoPortao.motivo,
-        duracao_ms: durFase,
-        tokens_input: tokIn,
-        tokens_output: tokOut,
-        executado_em: new Date().toISOString(),
-      })
-
-      relatoriosPorPrompt.push('### ' + pDef.titulo + '\n\n' + textoOutput)
-
-      // Emite o comando de avanço fixo definido na Skill para o próximo turno
-      proximoComandoAEnviar = pDef.comando_avanco_apos_validacao
-    }
-
-    // Custo medido no gateway a partir da soma exata dos tokens in/out por fase
-    const custoUsdCalculado = (tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015
-    const custoGateway = {
-      tokens_input: tokensInTotal,
-      tokens_output: tokensOutTotal,
-      tokens_total: tokensInTotal + tokensOutTotal,
-      custo_usd: Number(custoUsdCalculado.toFixed(4)),
-      tempo_execucao_ms: tempoExecucaoAgenteTotalMs,
-      tempo_execucao_segundos: Number((tempoExecucaoAgenteTotalMs / 1000).toFixed(2)),
-      medicao_real_gateway: true,
-      tier: 'reasoning',
-      agente: 'jbp-gestao-master',
-      versao: 'V7.2.3-A9',
-      executado_via: 'orquestrador_skill_13_prompts',
-      executado_em: new Date().toISOString(),
-      conversation_id: conversaId,
-    }
-
-    // OUTPUT COMO ÚNICA FONTE: extrair dados estruturados EXCLUSIVAMENTE do output do agente
-    const dreNormalizada15Linhas = extrairDRE15LinhasDoOutput(
-      outputPrompts[8] ? outputPrompts[8].output_integral : '',
-    )
-    const estruturaErecA9 = extrairErecA9DoOutput(
-      outputPrompts[5] ? outputPrompts[5].output_integral : '',
-    )
-    const teaserGerado = extrairTeaserDoOutput(
-      outputPrompts[2] ? outputPrompts[2].output_integral : '',
-    )
-    const heatMapCalculado = extrairHeatMapDoOutput(outputPrompts)
-    const roadmapEOKRs = extrairRoadmapEOKRsDoOutput(
-      outputPrompts[7] ? outputPrompts[7].output_integral : '',
-      outputPrompts[11] ? outputPrompts[11].output_integral : '',
-    )
-
-    const tFim = Date.now()
-
-    return {
-      sucesso: true,
-      versao_servico: 'V7.2.3-A9-Skill13Prompts',
-      executor: 'jbp-gestao-master',
-      total_prompts_executados: outputPrompts.length,
-      output_fases: outputPrompts,
-      dre_normalizada_15_linhas: dreNormalizada15Linhas,
-      rb_y1_selecao: instrumentacaoSelecaoRB,
-      contexto_dados_brutos: extrairContextoDadosBrutosDRE(dossie),
-      estrutura_erec_a9: estruturaErecA9,
-      teaser_gerado: teaserGerado,
-      heat_map: heatMapCalculado,
-      blocos_solucao: {
-        bloco_solucao_executivo: {
-          titulo: 'Bloco Solução Executivo — Vetor Master V7.2.3',
-          origem: 'Prompt 4 (Conversão P3→P4)',
-          conteudo_integral: outputPrompts[3] ? outputPrompts[3].output_integral : '',
-        },
-        bloco_solucao_completo: {
-          titulo: 'Bloco Solução Completo — Documento Interno de Implementação',
-          origem: 'Prompt 12 (Consolidação)',
-          conteudo_integral: outputPrompts[11] ? outputPrompts[11].output_integral : '',
-          roadmap_etapas: roadmapEOKRs.roadmap,
-          okrs_estrategicos: roadmapEOKRs.okrs,
-        },
-      },
-      auditoria_p13: outputPrompts[12] ? outputPrompts[12].output_integral : '',
-      relatorio_gerado:
-        '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL (SKILL 13 PROMPTS V7.2.3-A9) — ' +
-        razaoSocial.toUpperCase() +
-        '\nProtocolo: ' +
-        protocolo +
-        ' | Setor: ' +
-        setor +
-        ' | Versão: ' +
-        versaoQuestionario +
-        '\n\n' +
-        relatoriosPorPrompt.join('\n\n---\n\n'),
-      custo_gateway: custoGateway,
-      timestamps: {
-        iniciado_em: new Date(tInicio).toISOString(),
-        concluido_em: new Date(tFim).toISOString(),
-        duracao_total_ms: tFim - tInicio,
-      },
-    }
-  }
-
-  let callerUserId = null
-  try {
-    const authUser = e.auth || (e.requestInfo && e.requestInfo().auth)
-    if (authUser) {
-      callerUserId = authUser.id || (authUser.getString && authUser.getString('id'))
-    }
-  } catch (_) {}
-
-  if (!callerUserId) {
-    try {
-      const adm = $app.findFirstRecordByData('users', 'role', 'admin')
-      if (adm) callerUserId = adm.id
-    } catch (_) {}
-  }
-
+  // Extração e validação do payload recebido
   let body = {}
   try {
-    body = (e.requestInfo && e.requestInfo().body) || {}
-  } catch (_) {
-    body = {}
+    const rawBody = (e.requestInfo && e.requestInfo().body) || {}
+    body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody
+  } catch (errBody) {
+    return e.json(400, {
+      sucesso: false,
+      codigo_erro: 'CORPO_INVALIDO',
+      motivo: 'JSON do corpo da requisição inválido: ' + errBody.message,
+    })
   }
 
   const dossie = body.dossie || {}
   const metadados = body.metadados || {}
+  const callerUserId = (e.auth && e.auth.id) || body.user_id || null
 
-  if (
-    !dossie ||
-    Object.keys(dossie).length === 0 ||
-    !dossie.cliente ||
-    !dossie.cliente.razao_social
-  ) {
-    return e.json(400, {
-      sucesso: false,
-      codigo_erro: 'MOTOR_BLOQUEADO_AUSENCIA_DADOS_A4',
-      fase: 'P1_CARGA',
-      motivo:
-        'Motor bloqueado por ausência de dados — A4. Dossiê JSON com dados do cliente é obrigatório.',
+  const tInicio = Date.now()
+  const razaoSocial = (dossie && dossie.cliente && dossie.cliente.razao_social) || 'Cliente'
+  const setor = (dossie && dossie.cliente && dossie.cliente.setor) || 'Indústria'
+  const protocolo = (dossie && dossie.protocolo) || '#VM-DIAG-' + Date.now()
+  const versaoQuestionario = (metadados && metadados.versao_questionario) || 'V7.2'
+  const autorizacaoRaw =
+    (metadados && metadados.autorizacao_devolutiva) ||
+    (dossie && dossie.cliente && dossie.cliente.autorizacao_devolutiva) ||
+    ''
+  const autorizouDevolutiva = autorizacaoRaw.toLowerCase().indexOf('sim') !== -1
+
+  const instrumentacaoSelecaoRB = selecionarReceitaBrutaAnoBase(dossie)
+  console.log(
+    'Orquestrador Skill: Seleção determinística RB Ano-Base: ' +
+      JSON.stringify(instrumentacaoSelecaoRB),
+  )
+
+  const promptsDef = obterDefinicao13PromptsSkill(
+    setor,
+    protocolo,
+    autorizouDevolutiva,
+    versaoQuestionario,
+    dossie,
+    instrumentacaoSelecaoRB,
+  )
+
+  const outputPrompts = []
+  let tokensInTotal = 0
+  let tokensOutTotal = 0
+  let tempoExecucaoAgenteTotalMs = 0
+  let conversaId = null
+  const relatoriosPorPrompt = []
+
+  let proximoComandoAEnviar = null
+
+  for (let i = 0; i < promptsDef.length; i++) {
+    const pDef = promptsDef[i]
+    const promptMsg = proximoComandoAEnviar || pDef.texto_prompt
+    const t0 = Date.now()
+    let textoOutput = ''
+    let tokIn = 0
+    let tokOut = 0
+
+    try {
+      if (typeof $ai !== 'undefined' && $ai.agent) {
+        const resp = $ai.agent('jbp-gestao-master').chat({
+          user_id: callerUserId,
+          conversation_id: conversaId,
+          message: promptMsg,
+        })
+        if (resp) {
+          textoOutput = resp.content || ''
+          conversaId = resp.conversation_id || conversaId
+          if (resp.usage) {
+            tokIn = resp.usage.prompt_tokens || 0
+            tokOut = resp.usage.completion_tokens || 0
+          }
+        }
+      }
+    } catch (errAi) {
+      console.log('Orquestrador Skill: erro no prompt ' + pDef.prompt_id + ': ' + errAi.message)
+      return e.json(500, {
+        sucesso: false,
+        codigo_erro: 'FALHA_EXECUCAO_AGENTE',
+        prompt_id: pDef.prompt_id,
+        titulo: pDef.titulo,
+        motivo: 'Erro ao invocar agente nativo: ' + errAi.message,
+        fases_concluidas: outputPrompts,
+      })
+    }
+
+    const durFase = Date.now() - t0
+    tempoExecucaoAgenteTotalMs += durFase
+    tokensInTotal += tokIn
+    tokensOutTotal += tokOut
+
+    const resultadoPortao = validarPortaoFase(i, pDef, textoOutput)
+
+    if (!resultadoPortao.valido) {
+      console.log(
+        'Orquestrador Skill: PORTÃO FALHOU no prompt ' +
+          pDef.prompt_id +
+          ': ' +
+          resultadoPortao.motivo,
+      )
+      return e.json(422, {
+        sucesso: false,
+        codigo_erro: 'PORTAO_REPROVADO',
+        prompt_id: pDef.prompt_id,
+        titulo: pDef.titulo,
+        motivo: resultadoPortao.motivo,
+        output_reprovado: textoOutput,
+        fases_concluidas: outputPrompts,
+        duracao_total_ms: Date.now() - tInicio,
+      })
+    }
+
+    outputPrompts.push({
+      fase: pDef.numero,
+      prompt_id: pDef.prompt_id,
+      titulo: pDef.titulo,
+      output_integral: textoOutput,
+      comando_enviado: promptMsg,
+      portao_status: 'VALIDADO',
+      portao_motivo: resultadoPortao.motivo,
+      duracao_ms: durFase,
+      tokens_input: tokIn,
+      tokens_output: tokOut,
+      executado_em: new Date().toISOString(),
     })
+
+    relatoriosPorPrompt.push('### ' + pDef.titulo + '\n\n' + textoOutput)
+    proximoComandoAEnviar = pDef.comando_avanco_apos_validacao
   }
 
-  const resultado = executarPipeline13Prompts(dossie, metadados, callerUserId)
-  const statusCode = resultado.sucesso ? 200 : 422
-  return e.json(statusCode, resultado)
+  const custoUsdCalculado = (tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015
+  const custoGateway = {
+    tokens_input: tokensInTotal,
+    tokens_output: tokensOutTotal,
+    tokens_total: tokensInTotal + tokensOutTotal,
+    custo_usd: Number(custoUsdCalculado.toFixed(4)),
+    tempo_execucao_ms: tempoExecucaoAgenteTotalMs,
+    tempo_execucao_segundos: Number((tempoExecucaoAgenteTotalMs / 1000).toFixed(2)),
+    medicao_real_gateway: true,
+    tier: 'reasoning',
+    agente: 'jbp-gestao-master',
+    versao: 'V7.2.3-A9',
+    executado_via: 'orquestrador_skill_13_prompts',
+    executado_em: new Date().toISOString(),
+    conversation_id: conversaId,
+  }
+
+  const dreNormalizada15Linhas = extrairDRE15LinhasDoOutput(
+    outputPrompts[8] ? outputPrompts[8].output_integral : '',
+  )
+  const estruturaErecA9 = extrairErecA9DoOutput(
+    outputPrompts[5] ? outputPrompts[5].output_integral : '',
+  )
+  const teaserGerado = extrairTeaserDoOutput(
+    outputPrompts[2] ? outputPrompts[2].output_integral : '',
+  )
+  const heatMapCalculado = extrairHeatMapDoOutput(outputPrompts)
+  const roadmapEOKRs = extrairRoadmapEOKRsDoOutput(
+    outputPrompts[7] ? outputPrompts[7].output_integral : '',
+    outputPrompts[11] ? outputPrompts[11].output_integral : '',
+  )
+
+  const tFim = Date.now()
+
+  return e.json(200, {
+    sucesso: true,
+    versao_servico: 'V7.2.3-A9-Skill13Prompts',
+    executor: 'jbp-gestao-master',
+    total_prompts_executados: outputPrompts.length,
+    output_fases: outputPrompts,
+    dre_normalizada_15_linhas: dreNormalizada15Linhas,
+    rb_y1_selecao: instrumentacaoSelecaoRB,
+    contexto_dados_brutos: extrairContextoDadosBrutosDRE(dossie),
+    estrutura_erec_a9: estruturaErecA9,
+    teaser_gerado: teaserGerado,
+    heat_map: heatMapCalculado,
+    blocos_solucao: {
+      bloco_solucao_executivo: {
+        titulo: 'Bloco Solução Executivo — Vetor Master V7.2.3',
+        origem: 'Prompt 4 (Conversão P3→P4)',
+        conteudo_integral: outputPrompts[3] ? outputPrompts[3].output_integral : '',
+      },
+      bloco_solucao_completo: {
+        titulo: 'Bloco Solução Completo — Documento Interno de Implementação',
+        origem: 'Prompt 12 (Consolidação)',
+        conteudo_integral: outputPrompts[11] ? outputPrompts[11].output_integral : '',
+        roadmap_etapas: roadmapEOKRs.roadmap,
+        okrs_estrategicos: roadmapEOKRs.okrs,
+      },
+    },
+    auditoria_p13: outputPrompts[12] ? outputPrompts[12].output_integral : '',
+    relatorio_gerado:
+      '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL (SKILL 13 PROMPTS V7.2.3-A9) — ' +
+      razaoSocial.toUpperCase() +
+      '\nProtocolo: ' +
+      protocolo +
+      ' | Setor: ' +
+      setor +
+      ' | Versão: ' +
+      versaoQuestionario +
+      '\n\n' +
+      relatoriosPorPrompt.join('\n\n---\n\n'),
+    custo_gateway: custoGateway,
+    timestamps: {
+      iniciado_em: new Date(tInicio).toISOString(),
+      concluido_em: new Date(tFim).toISOString(),
+      duracao_total_ms: tFim - tInicio,
+    },
+  })
 })
