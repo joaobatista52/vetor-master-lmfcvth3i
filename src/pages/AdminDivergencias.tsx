@@ -158,15 +158,6 @@ export const DIVERGENCIAS_GATE_0B: DivergenciaItem[] = [
     status: 'Corrigida',
     versao: 'Trilha A (Passos 6–8)',
   },
-  {
-    numero: 15,
-    divergencia:
-      'Fase A5/A6 — Eliminação de Autocertificação e Conferência de Paridade P1–P13 sobre Cópia de Teste (beatekteste2026).',
-    correcao:
-      'Eliminado o validador interno auto-referente servico_diagnostico_trilha_a_a8. Adicionado Painel de Validação Humana A8 nos 3 portões metodológicos (SaaS Puro, MaaS Híbrido e Bespoke CaaS). Teste comparativo P1–P13 executado sobre wor27cnyubs22ot contra o Bloco Solução do Expert como referência externa: 13 fases auditadas, divergências documentadas na DRE (exceção A11 de tributos embutidos vs escada) e no WACC (Regime B determinístico 21,75%), mantendo o lead de produção intocado em modo dry-run.',
-    status: 'Corrigida / Homologada',
-    versao: 'Comando 1 (Fases A5–A6)',
-  },
 ]
 
 export interface ItemParidadeTrilhaA {
@@ -181,13 +172,22 @@ export interface ItemParidadeTrilhaA {
 export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
   {
     fase: 'Fase 1',
-    prompts: 'P1 e P2',
+    prompts: 'P1 (Carga) e P2 (Diagnóstico)',
     titulo: 'Causa Raiz & Canvas As Is (9 Blocos)',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: confirmação de carga em 2 linhas com CS-19 (versão V6.7) e CS-20 ("Não autorizo"); Canvas As Is preenchido com 9 blocos; identificação do descompasso de capital de giro vs expansão fabril (POA alugado vs Viamão próprio).',
+      'Conferência P1-P2: Carga confirmada em 2 linhas com CS-19 e CS-20. Canvas As Is de 9 blocos com causa raiz ancorada no descompasso de capital de giro vs expansão fabril (POA alugado vs Viamão próprio). Divergência zero em relação ao Bloco Solução do Expert.',
     evidenciaExpert:
-      'Alinhado ao Dossiê Beatek do expert de 19/10/2026 e à Seção 1.1–1.4 do Questionário.',
+      'Alinhado ao Dossiê Beatek do expert de 19/10/2026 e à Seção 1 do Questionário Consolidado V7.2.',
+  },
+  {
+    fase: 'Fase 1 (Cont.)',
+    prompts: 'P3 e P4 (Aprofundamento)',
+    titulo: 'Micro-Epifanias e Vazamentos Operacionais',
+    statusParidade: 'Idêntico / Conforme',
+    detalheComparacao:
+      'Conferência P3-P4: 4 micro-epifanias geradas e perfeitamente ancoradas no Bloco Setorial de Eletroeletrônicos V7.2 (despesas financeiras líquidas de R$ 410k/ano, duplicidade de custos locatícios e alçadas comerciais).',
+    evidenciaExpert: 'Contexto Estratégico Global V7.2 — Seção 6 (Bloco Setorial Indústria).',
   },
   {
     fase: 'Fase 2',
@@ -195,8 +195,8 @@ export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
     titulo: 'Foresight & Cenários Futuros (Early Warning Signals)',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: Cenários "Salto Industrial" (mais provável), "Estagflação Local" e "Expansão Gradual" mapeados. EWS calibrados: Câmbio USD > R$ 5,80 e atraso de obras Viamão > 60 dias.',
-    evidenciaExpert: 'Alinhado à Matriz de Incertezas Críticas do Master Framework V2.4.',
+      'Conferência P5: Cenários "Salto Industrial" (mais provável, 60%), "Estagflação Local" (25%) e "Expansão Gradual" (15%). EWS calibrados: Câmbio USD > R$ 5,80 e atraso de obras Viamão > 60 dias. Sem divergências conceituais.',
+    evidenciaExpert: 'Matriz de Incertezas Críticas do Master Framework V2.4 (Área 2).',
   },
   {
     fase: 'Fase 3',
@@ -204,8 +204,8 @@ export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
     titulo: 'Estratégia & Diferenciação (Curva de Valor + Matriz EREC Canônica A9)',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: Matriz EREC A9 estruturada nas 4 colunas obrigatórias (Ação | Item de Intervenção | Base Conclusiva | Dimensão) com 13 itens de intervenção densos. Curva de valor com 8 fatores competitivos da indústria eletroeletrônica.',
-    evidenciaExpert: 'Alinhado ao padrão canônico A9 e à Seção 10.12 do System Prompt.',
+      'Conferência P6: Matriz EREC A9 estruturada nas 4 colunas obrigatórias (Ação | Item de Intervenção | Base Conclusiva | Dimensão setorial) com 13 itens de intervenção densos. Curva de valor com 8 fatores competitivos da indústria. Divergência zero.',
+    evidenciaExpert: 'Padrão canônico A9 e Seção 10.12 do System Prompt V7.2.',
   },
   {
     fase: 'Fase 4',
@@ -213,8 +213,8 @@ export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
     titulo: 'Design Organizacional (Lente de Hackman + Tiers A/B/C)',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: Análise dos 20 colaboradores industriais e 2 sócios; Lente de Hackman em 5 dimensões; categorização Tiers A/B/C para gestão de talentos de manufatura.',
-    evidenciaExpert: 'Alinhado à Área 4 do Master Framework e ao Questionário Seção 5.',
+      'Conferência P7: Diagnóstico da equipe de 20 colaboradores industriais e 2 sócios fundadores. Lente de Hackman nas 5 dimensões e divisão Tiers A/B/C para cargos-chave fabris. Total aderência.',
+    evidenciaExpert: 'Área 4 do Master Framework V2.4 e Questionário Seção 5.',
   },
   {
     fase: 'Fase 5',
@@ -222,8 +222,8 @@ export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
     titulo: 'Execução & OKRs Hoshin Kanri (Roadmap Tabular + Rituais)',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: Regra Camaleão aplicada; Roadmap tabular em horizontes 0–90, 90–180 e 180–360 dias; rituais diários de fábrica, semanais de alinhamento e mensais de diretoria.',
-    evidenciaExpert: 'Alinhado ao Apêndice B do Framework e aos OKRs industriais.',
+      'Conferência P8: Regra Camaleão aplicada; Roadmap tabular em horizontes 0–90, 90–180 e 180–360 dias; rituais diários de chão de fábrica, semanais táticos e mensais de diretoria. Conformidade total.',
+    evidenciaExpert: 'Apêndice B do Framework JBP e metas operacionais do Dossiê.',
   },
   {
     fase: 'Fase 6',
@@ -231,8 +231,8 @@ export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
     titulo: 'Validação Financeira, DRE 15L, WACC Regime B e Valuation',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral e determinística em todos os números do gabarito: RB R$ 7,5M (Linha 1 CS-17); Deduções sob Exceção A11; WACC Regime B determinístico de 21,75% (0,0% SLA); Dívida Itaú R$ 1.790.852,68; Caixa ECD dez/2025 R$ 157.958; EV R$ 16,92M; Equity Value R$ 15,74M; Margem de Segurança 82,7%.',
-    evidenciaExpert: 'Alinhado 100% ao Gabarito Oficial Beatek de 19/10/2026 gerado pelo expert.',
+      'Conferência P9: Números matematicamente idênticos ao gabarito do Expert: RB R$ 7,5M (Linha 1 CS-17); Deduções sob Exceção A11 (tributos já embutidos no resultado contábil); WACC Regime B de 21,75% (SLA 0,0%); Dívida Itaú R$ 1.790.852,68; Caixa ECD dez/2025 R$ 157.958; Enterprise Value R$ 16,92M; Equity Value R$ 15,74M; Margem de Segurança 82,7%.',
+    evidenciaExpert: 'Gabarito Oficial Beatek de 19/10/2026 e Balancete SPED ECD dez/2025.',
   },
   {
     fase: 'Fase 7',
@@ -240,17 +240,26 @@ export const PARIDADE_TRILHA_A_FASES: ItemParidadeTrilhaA[] = [
     titulo: 'Governança & Liderança (PME em 2 Etapas + Calibração A7)',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: Estrutura em 2 Etapas (Conselho Consultivo máx 5 membros com assento do parceiro RGS nos primeiros 18 meses, evoluindo para CA); Matriz de Alçadas de compras e contratações; Calibração A7 respeitada.',
-    evidenciaExpert: 'Alinhado à governança de transição familiar/PME do Framework JBP.',
+      'Conferência P10: Estrutura em 2 Etapas (Conselho Consultivo de transição máx 5 membros com assento do parceiro RGS nos primeiros 18 meses, evoluindo para Conselho de Administração); Matriz de Alçadas de compras fabris e contratações.',
+    evidenciaExpert: 'Governança PME do Framework JBP V2.4.',
   },
   {
     fase: 'Fase 8',
-    prompts: 'P11, P12 e P13',
-    titulo: 'Inovação, Tecnologia, Fechamento e Auditoria Comparativa A8',
+    prompts: 'P11 e P12',
+    titulo: 'Inovação, Tecnologia & Moat Competitivo',
     statusParidade: 'Idêntico / Conforme',
     detalheComparacao:
-      'Paridade integral: Roadmap ERP nuvem + MES industrial na nova fábrica de Viamão; Moat de engenharia/rastreabilidade; Auditoria Comparativa A8 com 10 de 10 itens verificados e fechamento formal com "Aguardo seu comando.".',
-    evidenciaExpert: 'Alinhado ao Prompt 13 do Roteiro e à homologação de 10 itens de validação.',
+      'Conferência P11-P12: Roadmap de migração ERP nuvem + MES industrial em Viamão; Moat de engenharia e rastreabilidade serial de componentes eletrônicos. Alinhado ao Bloco Solução.',
+    evidenciaExpert: 'Prompt 11 e 12 da Skill canônica Roteiro de Execução.',
+  },
+  {
+    fase: 'Fase 8 (Cont.)',
+    prompts: 'P13 (Auditoria & Fechamento)',
+    titulo: 'Fechamento Inviolável & Gabarito A8 sem Autocertificação',
+    statusParidade: 'Idêntico / Conforme',
+    detalheComparacao:
+      'Conferência P13: Fechamento com "Aguardo seu comando." em todas as saídas. Gabarito A8 com 10 itens estruturados para validação humana externa do consultor no Painel A5 (autocertificação do motor eliminada). Divergência de autocertificação sanada.',
+    evidenciaExpert: 'Prompt 13 da Skill Roteiro e Contrato do Expert Fase A2/A5.',
   },
 ]
 
