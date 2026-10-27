@@ -825,19 +825,22 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       proximoComandoAEnviar = pDef.comando_avanco_apos_validacao
     }
 
-    // Custo medido no gateway
+    // Custo medido no gateway a partir da soma exata dos tokens in/out por fase
     const custoUsdCalculado = (tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015
     const custoGateway = {
       tokens_input: tokensInTotal,
       tokens_output: tokensOutTotal,
+      tokens_total: tokensInTotal + tokensOutTotal,
       custo_usd: Number(custoUsdCalculado.toFixed(4)),
       tempo_execucao_ms: tempoExecucaoAgenteTotalMs,
+      tempo_execucao_segundos: Number((tempoExecucaoAgenteTotalMs / 1000).toFixed(2)),
       medicao_real_gateway: true,
       tier: 'reasoning',
       agente: 'jbp-gestao-master',
       versao: 'V7.2.3-A9',
       executado_via: 'orquestrador_skill_13_prompts',
       executado_em: new Date().toISOString(),
+      conversation_id: conversaId,
     }
 
     // OUTPUT COMO ÚNICA FONTE: extrair dados estruturados EXCLUSIVAMENTE do output do agente
