@@ -409,289 +409,129 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
     }
 
     if (!respostaServico) {
-      const payloadServico = {
-        dossie: payloadDossie,
-        metadados: {
-          lead_id: leadId,
-          versao_questionario: versaoQuestionario,
-          autorizacao_devolutiva: autorizacaoRaw,
-          origem_tipo: isParceiro ? 'parceiro' : 'direto',
-          origem_parceiro: origemParceiro,
-        },
-        dry_run: dryRunParam,
-      }
-
-      try {
-        const resHttp = $http.send({
-          url: 'http://127.0.0.1:8090/backend/v1/servico-diagnostico',
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+      // FASE 1 DO AJUSTE DO MOTOR:
+      // O worker consome diretamente o pipeline de 13 prompts fixos da Skill V7.2.3-A9.
+      // Se a função global existir no runtime JSVM, invoca diretamente; senão, via endpoint HTTP.
+      if (
+        typeof globalThis !== 'undefined' &&
+        typeof globalThis.executarPipeline13Prompts === 'function'
+      ) {
+        respostaServico = globalThis.executarPipeline13Prompts(
+          payloadDossie,
+          {
+            lead_id: leadId,
+            versao_questionario: versaoQuestionario,
+            autorizacao_devolutiva: autorizacaoRaw,
+            origem_tipo: isParceiro ? 'parceiro' : 'direto',
+            origem_parceiro: origemParceiro,
           },
-          body: JSON.stringify(payloadServico),
-          timeout: 120,
-        })
-
-        if (resHttp && resHttp.statusCode === 200 && resHttp.raw) {
-          respostaServico = JSON.parse(resHttp.raw)
+          callerUserId,
+        )
+      } else {
+        const payloadServico = {
+          dossie: payloadDossie,
+          metadados: {
+            lead_id: leadId,
+            versao_questionario: versaoQuestionario,
+            autorizacao_devolutiva: autorizacaoRaw,
+            origem_tipo: isParceiro ? 'parceiro' : 'direto',
+            origem_parceiro: origemParceiro,
+          },
+          dry_run: dryRunParam,
         }
-      } catch (errServicoHttp) {
-        console.log('Erro ao chamar Serviço de Diagnóstico via HTTP: ' + errServicoHttp.message)
+
+        try {
+          const resHttp = $http.send({
+            url: 'http://127.0.0.1:8090/backend/v1/servico-diagnostico',
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payloadServico),
+            timeout: 180,
+          })
+
+          if (resHttp && resHttp.raw) {
+            respostaServico = JSON.parse(resHttp.raw)
+          }
+        } catch (errServicoHttp) {
+          console.log('Erro ao chamar Serviço de Diagnóstico via HTTP: ' + errServicoHttp.message)
+          respostaServico = {
+            sucesso: false,
+            codigo_erro: 'FALHA_CONEXAO_SERVICO',
+            motivo:
+              'Não foi possível conectar ao serviço de diagnóstico: ' + errServicoHttp.message,
+          }
+        }
       }
     }
 
-    // Se a chamada HTTP falhar por isolamento de porta/host local, invocar diretamente a orquestração do motor
+    // REGRA DE OURO DA FASE 1:
+    // Se o pipeline falhar, ESTADO DE ERRO EXPLÍCITO no diagnóstico (visível ao Admin).
+    // NUNCA pula fase, NUNCA gera conteúdo local para preencher, NUNCA segue adiante com fallback.
     if (!respostaServico || !respostaServico.sucesso) {
-      console.log('Serviço de Diagnóstico: invocação direta com os 5 Slots de Contexto.')
-      // Definição das 8 Fases do Master Framework V2.4 / Prompts (P1 a P13) sem literais hardcoded
-      const definicaoFasesServico = [
-        {
-          fase: 1,
-          prompt_id: 'P1_P2',
-          titulo: 'Fase 1 — Diagnóstico Profundo',
-          evidencias_usadas: [
-            'Dossiê Cadastral ' + razaoSocial,
-            'Questionário Estratégico Setor ' + setor,
-            'Demonstrativos Contábeis e Balancetes anexos (Slot 5)',
-            'Bloco Setorial V7.2 — Micro-epifanias gatilho (Slot 1)',
-          ],
-          prompt:
-            'PROMPT 1 + PROMPT 2 — CARGA DE DADOS & FASE 1 — DIAGNÓSTICO PROFUNDO (SETOR: ' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Regras de execução obrigatórias:\n' +
-            '1. Confirmação de carga (CS-19) em até 2 linhas declarando versão ' +
-            versaoQuestionario +
-            ' e gate ' +
-            (autorizouDevolutiva ? 'Sim' : 'Não autorizo') +
-            ' (CS-20).\n' +
-            '2. Fase 1: Identificar Causa Raiz; emitir 3 a 5 micro-epifanias do Bloco Setorial ' +
-            setor +
-            '; expor vazamentos quantificados; Nota de Triangulação; Canvas As Is 9 blocos.\n' +
-            '3. Concluir rigorosamente com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].\n\n' +
-            'DOSSIÊ DO LEAD:\n' +
-            JSON.stringify(payloadDossie, null, 2),
-        },
-        {
-          fase: 2,
-          prompt_id: 'P5',
-          titulo: 'Fase 2 — Foresight Estratégico',
-          evidencias_usadas: [
-            'Seção 1 questionário + Bloco Setorial ' + setor,
-            'Cenários macroeconômicos e setoriais',
-            'Cone dos 4 Futuros e STEEP',
-          ],
-          prompt:
-            'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Template com 7 elementos: STEEP/PESTEL, Cone dos 4 Futuros, Roda de Futuros, Matriz 2x2, Early Warning Signals, Backcasting, SWOT dinâmica.\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-        {
-          fase: 3,
-          prompt_id: 'P6',
-          titulo: 'Fase 3 — Estratégia e Diferenciação',
-          evidencias_usadas: [
-            'Output Fase 2 (Foresight)',
-            'Ambição e Estratégia do cliente',
-            'Matriz EREC Canônica A9 (13 intervenções)',
-          ],
-          prompt:
-            'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Tese de Diferenciação, Matriz EREC A9 cheia (13 intervenções com 4 colunas), Curva de Valor, Canvas To Be 9 blocos, BSC e OKRs.\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-        {
-          fase: 4,
-          prompt_id: 'P7',
-          titulo: 'Fase 4 — Capacidade e Design Organizacional',
-          evidencias_usadas: [
-            'Seção 5 Organização e Pessoas',
-            'Estrutura de equipe e liderança',
-            'Framework Hackman (5 condições facilitadoras)',
-          ],
-          prompt:
-            'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Mapa de Calor Hackman, Tiers A/B/C, gaps de competência, perspectiva Aprendizado/Crescimento do BSC.\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-        {
-          fase: 5,
-          prompt_id: 'P8',
-          titulo: 'Fase 5 — Execução e Roadmap',
-          evidencias_usadas: [
-            'Metodologia Hoshin Kanri e Regra Camaleão',
-            'Roadmap faseado 0–90, 90–180, 180–360 dias',
-            'Rituais Daily, Weekly e Monthly de governança',
-          ],
-          prompt:
-            'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Regra Camaleão, Roadmap em tabela tabular, OKRs operacionais, Rituais de Governança (Daily 15min, Weekly 60min, Monthly diretoria/parceiro).\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-        {
-          fase: 6,
-          prompt_id: 'P9',
-          titulo: 'Fase 6 — Validação Financeira e Alocação',
-          evidencias_usadas: [
-            'DRE 15 Linhas (CS-17) com RB = ' +
-              (leadRecord.getString('faturamento_mensal') || '[REQUER VERIFICAÇÃO]'),
-            'Demonstrativos contábeis e balancete anexos',
-            'WACC determinístico sob Regime B',
-            'Lente de Buffett e Margem de Segurança',
-          ],
-          prompt:
-            'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'DRE Normalizada 15 Linhas (CS-17) linha a linha sem omissões; Exceção A11; Mapa A3; FCF projetado; WACC Regime B; Lente de Buffett.\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-        {
-          fase: 7,
-          prompt_id: 'P10',
-          titulo: 'Fase 7 — Governança e Liderança',
-          evidencias_usadas: [
-            'Governança PME em 2 Etapas (Conselho Consultivo -> Conselho de Administração)',
-            'Calibração de Porte A7',
-            'Matriz de Alçadas e Limites de Decisão',
-          ],
-          prompt:
-            'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Governança PME em 2 Etapas, Calibração Porte A7, Matriz de Alçadas, Ritos do Conselho e Plano de Sucessão.\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-        {
-          fase: 8,
-          prompt_id: 'P11',
-          titulo: 'Fase 8 — Inovação e Tecnologia',
-          evidencias_usadas: [
-            'Maturidade digital e processos industriais',
-            'Roadmap ERP em nuvem + MES industrial',
-            'Construção de Moat e consolidação dos Blocos Solução',
-          ],
-          prompt:
-            'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' +
-            setor.toUpperCase() +
-            ')\n\n' +
-            'Maturidade digital atual vs alvo, Roadmap tecnológico faseado, Construção de Fosso Defensivo (Moat), consolidação executiva.\n' +
-            'Concluir com: "Aguardo seu comando." Dado ausente = [REQUER VERIFICAÇÃO].',
-        },
-      ]
+      const codigoErro =
+        (respostaServico && respostaServico.codigo_erro) || 'FALHA_PIPELINE_SKILL_13_PROMPTS'
+      const motivoErro =
+        (respostaServico && respostaServico.motivo) ||
+        'Erro não especificado no pipeline de 13 prompts da Skill.'
+      const promptFalho = (respostaServico && respostaServico.prompt_id) || 'INDEFINIDO'
 
-      const outPrompts = []
-      let tokInTotal = 0
-      let tokOutTotal = 0
-      let tAgenteTotalMs = 0
-      let convId = null
-      const relsFase = []
+      console.log('Worker: PIPELINE REPROVADO no ' + promptFalho + ': ' + motivoErro)
 
-      for (let f = 0; f < definicaoFasesServico.length; f++) {
-        const defF = definicaoFasesServico[f]
-        const t0F = Date.now()
-        let txtF = ''
-        let tIn = 0
-        let tOut = 0
-
-        try {
-          if (typeof $ai !== 'undefined' && $ai.agent) {
-            const respA = $ai.agent('jbp-gestao-master').chat({
-              user_id: callerUserId,
-              conversation_id: convId,
-              message: defF.prompt,
-            })
-            if (respA) {
-              txtF = respA.content || ''
-              convId = respA.conversation_id || convId
-              if (respA.usage) {
-                tIn = respA.usage.prompt_tokens || 0
-                tOut = respA.usage.completion_tokens || 0
-              }
-            }
-          }
-        } catch (eAg) {
-          console.log('Retry fase ' + defF.fase + ': ' + eAg.message)
-          try {
-            if (typeof $ai !== 'undefined' && $ai.agent) {
-              const respRetry = $ai.agent('jbp-gestao-master').chat({
-                user_id: callerUserId,
-                conversation_id: null,
-                message: defF.prompt,
-              })
-              if (respRetry && respRetry.content) {
-                txtF = respRetry.content
-                if (respRetry.usage) {
-                  tIn = respRetry.usage.prompt_tokens || 0
-                  tOut = respRetry.usage.completion_tokens || 0
-                }
-              }
-            }
-          } catch (_) {
-            txtF =
-              'Fase ' +
-              defF.fase +
-              ' — Processamento executado pelo núcleo determinístico JBP V7.2.3.'
-          }
-        }
-
-        const durF = Date.now() - t0F
-        tAgenteTotalMs += durF
-        tokInTotal += tIn
-        tokOutTotal += tOut
-
-        outPrompts.push({
-          fase: defF.fase,
-          titulo: defF.titulo,
-          prompt_id: defF.prompt_id,
-          output_integral: txtF,
-          evidencias_usadas: defF.evidencias_usadas,
-          duracao_ms: durF,
-          tokens_input: tIn,
-          tokens_output: tOut,
-        })
-
-        relsFase.push('### ' + defF.titulo + '\n\n' + txtF)
+      // Registrar diagnóstico em estado de erro explícito visível ao Admin
+      let diagErroRec
+      try {
+        diagErroRec = $app.findFirstRecordByData('diagnosticos', 'lead', leadId)
+      } catch (_) {
+        const diagCol = $app.findCollectionByNameOrId('diagnosticos')
+        diagErroRec = new Record(diagCol)
       }
 
-      const cUsd = (tokInTotal / 1000) * 0.003 + (tokOutTotal / 1000) * 0.015
-      respostaServico = {
-        sucesso: true,
-        versao_servico: 'V7.2.3-TrilhaA',
-        executor: 'jbp-gestao-master',
-        output_fases: outPrompts,
-        relatorio_gerado:
-          '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL (SERVIÇO TRILHA A) — ' +
-          razaoSocial.toUpperCase() +
-          '\nProtocolo: ' +
-          (leadRecord.getString('protocolo') || '#VM-' + leadId) +
-          ' | Setor: ' +
-          setor +
-          ' | Versão: ' +
-          versaoQuestionario +
-          '\n\n' +
-          relsFase.join('\n\n---\n\n'),
-        custo_gateway: {
-          tokens_input: tokInTotal,
-          tokens_output: tokOutTotal,
-          custo_usd: Number(cUsd.toFixed(4)),
-          tempo_execucao_ms: tAgenteTotalMs,
-          medicao_real_gateway: true,
-          tier: 'reasoning',
-          agente: 'jbp-gestao-master',
-          versao: 'V7.2.3-A9',
-          executado_via: 'servico_diagnostico_trilha_a',
-          executado_em: new Date().toISOString(),
-        },
+      diagErroRec.set('lead', leadId)
+      diagErroRec.set('setor', setor)
+      diagErroRec.set('status', 'erro')
+      diagErroRec.set('versao_questionario', versaoQuestionario)
+      diagErroRec.set('autorizacao_devolutiva', autorizacaoRaw)
+      diagErroRec.set(
+        'relatorio_gerado',
+        'ERRO NO MOTOR DE DIAGNÓSTICO: ' +
+          codigoErro +
+          '\n' +
+          motivoErro +
+          '\nPrompt paralisado: ' +
+          promptFalho,
+      )
+      diagErroRec.set('output_prompts', (respostaServico && respostaServico.fases_concluidas) || [])
+      diagErroRec.set(
+        'dados_entrada',
+        Object.assign({}, payloadDossie, {
+          erro_pipeline: {
+            codigo: codigoErro,
+            motivo: motivoErro,
+            prompt_id: promptFalho,
+            data_erro: new Date().toISOString(),
+          },
+        }),
+      )
+      if (callerUserId) {
+        diagErroRec.set('user', callerUserId)
       }
+      $app.save(diagErroRec)
+
+      // Reverter status do lead para 'erro' com detalhamento
+      leadRecord.set('status', 'erro')
+      $app.save(leadRecord)
+
+      return e.json(422, {
+        success: false,
+        codigo_erro: codigoErro,
+        prompt_id: promptFalho,
+        error:
+          'Pipeline do JBP Gestão Master V7.2.3 paralisado por falha no portão determinístico: ' +
+          motivoErro,
+        diagnostico_id: diagErroRec.id,
+      })
     }
 
     const outputPromptsGravados = respostaServico.output_fases || []
@@ -706,113 +546,30 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
       respostaServico.relatorio_gerado ||
       '# DIAGNÓSTICO ESTRATÉGICO INTEGRAL — ' + razaoSocial.toUpperCase()
 
-    // 1. DRE canônica de 15 linhas (CS-17)
-    // FASE A3: REMOÇÃO DE LITERAIS FIXOS. Consumida do output do serviço/Expert.
-    let dre15Linhas = respostaServico.dre_normalizada_15_linhas
-    if (!Array.isArray(dre15Linhas) || dre15Linhas.length < 15) {
-      dre15Linhas = []
-      const rotulosDRE = [
-        'Receita Bruta (=)',
-        '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
-        '(=) Receita Líquida',
-        '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
-        '(=) Margem Bruta',
-        '(-) Custos Variáveis (Fretes + Comissões)',
-        '(=) Margem de Contribuição',
-        '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
-        '(=) EBITDA',
-        '(-) D&A (Depreciação & Amortização)',
-        '(=) EBIT',
-        '(+/-) Resultado Financeiro Líquido',
-        '(=) EBT (Resultado antes do IR)',
-        '(-) IR/CSLL',
-        '(=) Lucro Líquido',
-      ]
-      for (let dIdx = 0; dIdx < rotulosDRE.length; dIdx++) {
-        dre15Linhas.push({
-          numero: dIdx + 1,
-          linha: rotulosDRE[dIdx],
-          valor:
-            dIdx === 0
-              ? leadRecord.getString('faturamento_mensal') || '[REQUER VERIFICAÇÃO]'
-              : '[REQUER VERIFICAÇÃO]',
-          fonte:
-            dIdx === 0
-              ? 'Questionário Seção 1.1'
-              : 'Aguardando validação do output do Expert (Fase 6 — P9)',
-          status: dIdx === 0 ? 'CONFORME' : 'REQUER_VERIFICACAO',
-          rastreabilidade_fase: 'Fase 6 (Prompt P9)',
-        })
-      }
-    }
+    // 1. DRE canônica de 15 linhas (CS-17) — EXCLUSIVAMENTE do output do agente (sem literais de fallback)
+    const dre15Linhas = Array.isArray(respostaServico.dre_normalizada_15_linhas)
+      ? respostaServico.dre_normalizada_15_linhas
+      : []
 
-    // 2. Matriz EREC A9
-    // FASE A3: REMOÇÃO DE LITERAIS FIXOS. Consumida do output do serviço/Expert.
-    let estruturaErec = respostaServico.estrutura_erec_a9
-    if (!Array.isArray(estruturaErec) || estruturaErec.length === 0) {
-      estruturaErec = [
-        {
-          acao: 'Eliminar',
-          item: '[Intervenção a carregar do output do Expert]',
-          base: 'Fase 3 (P6)',
-          dimensao: setor,
-          rastreabilidade_fase: 'Fase 3',
-        },
-        {
-          acao: 'Reduzir',
-          item: '[Intervenção a carregar do output do Expert]',
-          base: 'Fase 3 (P6)',
-          dimensao: setor,
-          rastreabilidade_fase: 'Fase 3',
-        },
-        {
-          acao: 'Elevar',
-          item: '[Intervenção a carregar do output do Expert]',
-          base: 'Fase 3 (P6)',
-          dimensao: setor,
-          rastreabilidade_fase: 'Fase 3',
-        },
-        {
-          acao: 'Criar',
-          item: '[Intervenção a carregar do output do Expert]',
-          base: 'Fase 3 (P6)',
-          dimensao: setor,
-          rastreabilidade_fase: 'Fase 3',
-        },
-      ]
-    }
+    // 2. Matriz EREC A9 — EXCLUSIVAMENTE do output do agente (sem literais de fallback)
+    const estruturaErec = Array.isArray(respostaServico.estrutura_erec_a9)
+      ? respostaServico.estrutura_erec_a9
+      : []
 
-    // 3. Heat Map gravado (8 áreas do Master Framework V2.4)
-    const heatMapCalculado = {
-      areas: [
-        { numero: 1, titulo: 'Estratégia', score: 72, nivel: 'critico' },
-        { numero: 2, titulo: 'Execução e Qualidade', score: 58, nivel: 'moderado' },
-        { numero: 3, titulo: 'Liderança e Governança', score: 68, nivel: 'moderado' },
-        { numero: 4, titulo: 'Inovação e Tecnologia', score: 62, nivel: 'moderado' },
-        { numero: 5, titulo: 'Marketing e Vendas', score: 55, nivel: 'moderado' },
-        { numero: 6, titulo: 'Finanças e Economia', score: 78, nivel: 'critico' },
-        { numero: 7, titulo: 'Gestão de Riscos e Compliance', score: 52, nivel: 'moderado' },
-        { numero: 8, titulo: 'Foresight Estratégico', score: 64, nivel: 'moderado' },
-      ],
+    // 3. Heat Map gravado (8 áreas do Master Framework V2.4) — EXCLUSIVAMENTE do output do agente
+    const heatMapCalculado = respostaServico.heat_map || {
+      areas: [],
       gerado_em: new Date().toISOString(),
-      metodologia: 'Master Framework V2.4 — Diagnóstico 8 Áreas',
+      metodologia: 'Master Framework V2.4 — Output do Agente JBP V7.2.3',
     }
 
-    // 4. Teaser protegido (CS-20)
-    const teaserGerado = {
+    // 4. Teaser protegido (CS-20) — EXCLUSIVAMENTE do output do agente
+    const teaserGerado = respostaServico.teaser_gerado || {
       titulo: 'Achados Críticos e Micro-Epifanias Preliminares (Teaser Protegido CS-20)',
-      micro_epifanias: [
-        'Descasamento entre o ciclo fabril de duas unidades (POA e Viamão) e a estrutura de capital de giro com despesas financeiras de R$ 410k/ano.',
-        'Potencial de economia tributária e financeira na renegociação e alongamento das linhas de empréstimo ativas.',
-        'Margem de contribuição fabril pressionada por transição de infraestrutura antes da consolidação em Viamão.',
-      ],
-      vazamentos_objetivos: [
-        'Custos de transição da nova fábrica em Viamão sem alocação clara de centro de custo fabril.',
-        'Despesas financeiras líquidas consumindo ~38% do EBIT operacional.',
-      ],
+      micro_epifanias: [],
+      vazamentos_objetivos: [],
       data_geracao: new Date().toISOString(),
-      status_protecao:
-        'Proteção do valor ativa conforme CS-20 — sem causa raiz integral, sem solução e sem plano de ação.',
+      status_protecao: 'Proteção do valor ativa conforme CS-20 — sem dados adicionais no output.',
     }
 
     // 5. Auditoria Comparativa A8 validada item a item CONTRA o output do Expert (Fase A5.2 e A5.3)
@@ -920,18 +677,17 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
     }
 
     // Atualizar dados de entrada para incluir o heat_map corrigido e bloco_solucao_completo se recebido
+    // A lista de anexos_processados passa a vir estritamente dos arquivos reais do lead (sem literais Beatek fixos)
+    const arquivosReaisLead = []
+      .concat(leadRecord.getStringSlice?.('contrato_social') || [])
+      .concat(leadRecord.getStringSlice?.('certificacoes') || [])
+      .concat(leadRecord.getStringSlice?.('documentacao_adicional') || [])
+
     const dadosEntradaAtualizados = Object.assign({}, payloadDossie, {
       heat_map: heatMapCalculado,
       bloco_solucao_completo: respostaServico.bloco_solucao_completo || null,
       origem_output: expertOutputEnviado ? 'registro_manual_consultor' : 'servico_diagnostico',
-      anexos_processados: [
-        'balancete_beatek_01_a_06_4tx3u1syqo_hea3mjy5rm.pdf',
-        'balan_o_ecd_2025_dw554mgjga_ro70s97awn.pdf',
-        'dre_ecd_2025_lsaec4me4r_7x76ezn4f8.pdf',
-        'recibo_ecd_2026_2025_beatek_40oineothd_18zubz0oia.pdf',
-        'emprestimo_1_4n6y91jnqu_zm3cyh9bym.pdf',
-        'emprestimo_2_kfy4oezyvu_vi8s0frlqj.pdf',
-      ],
+      anexos_processados: arquivosReaisLead,
     })
 
     // Campo relatorio_gerado no schema tem max 5000 chars — truncar com segurança se exceder
