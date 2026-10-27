@@ -227,9 +227,12 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     tempo_execucao_ms: 31280,
     tempo_execucao_segundos: 31.28,
     medicao_real_gateway: true,
-    formula_aplicada: '(tokens_in / 1000) * $0.003 + (tokens_out / 1000) * $0.015 = (28450/1000)*0.003 + (8920/1000)*0.015 = $0.08535 + $0.13380 = $0.21915 => $0.2192 USD',
-    status_fechamento_aritmetico: 'FECHAMENTO EXATO — Soma das fases coincide rigorosamente com os totais consolidados',
-    esclarecimento_sobre_custo_anterior: 'O valor de US$ 0,2192 decorre diretamente da fórmula de precificação do Skip AI Gateway (tier reasoning: $0.003/1k in, $0.015/1k out) aplicada aos 28.450 tokens de entrada e 8.920 tokens de saída do dossiê canônico Beatek. Não se trata de valor inventado nem herdado sem cálculo, mas sim da tarifação oficial e determinística do gateway.',
+    formula_aplicada:
+      '(tokens_in / 1000) * $0.003 + (tokens_out / 1000) * $0.015 = (28450/1000)*0.003 + (8920/1000)*0.015 = $0.08535 + $0.13380 = $0.21915 => $0.2192 USD',
+    status_fechamento_aritmetico:
+      'FECHAMENTO EXATO — Soma das fases coincide rigorosamente com os totais consolidados',
+    esclarecimento_sobre_custo_anterior:
+      'O valor de US$ 0,2192 decorre diretamente da fórmula de precificação do Skip AI Gateway (tier reasoning: $0.003/1k in, $0.015/1k out) aplicada aos 28.450 tokens de entrada e 8.920 tokens de saída do dossiê canônico Beatek. Não se trata de valor inventado nem herdado sem cálculo, mas sim da tarifação oficial e determinística do gateway.',
   },
   fases_p1_p13: [
     {
@@ -237,9 +240,11 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P1',
       titulo: 'CARGA DE DADOS — DOSSIÊ INDÚSTRIA [#VM-TESTE-BEATEK-22OUT26]',
       comando_enviado: 'CARGA DE DADOS — DOSSIÊ INDÚSTRIA #VM-TESTE-BEATEK-22OUT26',
-      output_resumo: 'Dossiê Beatek carregado e indexado no cofre (CS-19). Versão V7.2/V6.7 validada. Demonstrativos anexos sem slot dedicado.',
+      output_resumo:
+        'Dossiê Beatek carregado e indexado no cofre (CS-19). Versão V7.2/V6.7 validada. Demonstrativos anexos sem slot dedicado.',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Confirmação de carga recebida em 2 linhas com conformidade CS-19 e gate CS-20.',
+      portao_motivo:
+        'Confirmação de carga recebida em 2 linhas com conformidade CS-19 e gate CS-20.',
       duracao_ms: 1850,
       duracao_segundos: 1.85,
       tokens_input: 2370,
@@ -253,9 +258,11 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P2',
       titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (INDÚSTRIA)',
-      output_resumo: 'Causa raiz: descompasso expansão POA-Viamão vs capital de giro. 3 micro-epifanias gatilho. Canvas As Is (9 blocos).',
+      output_resumo:
+        'Causa raiz: descompasso expansão POA-Viamão vs capital de giro. 3 micro-epifanias gatilho. Canvas As Is (9 blocos).',
       portao_status: 'VALIDADO',
-      portao_motivo: 'Fase 1 validada com causa raiz, triangulação contábil e Canvas As Is de 9 blocos.',
+      portao_motivo:
+        'Fase 1 validada com causa raiz, triangulação contábil e Canvas As Is de 9 blocos.',
       duracao_ms: 3840,
       duracao_segundos: 3.84,
       tokens_input: 2950,
@@ -269,7 +276,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P3',
       titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (INDÚSTRIA)',
       comando_enviado: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (INDÚSTRIA)',
-      output_resumo: 'Bloco CTA gerado sob gate CS-20 ("Não autorizo"): emissão de Teaser Protegido com 2 micro-epifanias, retendo causa raiz e plano.',
+      output_resumo:
+        'Bloco CTA gerado sob gate CS-20 ("Não autorizo"): emissão de Teaser Protegido com 2 micro-epifanias, retendo causa raiz e plano.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Bloco CTA validado conforme regras da Skill e gate CS-20.',
       duracao_ms: 2150,
@@ -285,7 +293,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P4',
       titulo: 'A CONVERSÃO OCORREU. O cliente assinou SaaS Puro.',
       comando_enviado: 'A CONVERSÃO OCORREU. O cliente assinou SaaS Puro.',
-      output_resumo: 'Declaração formal de conversão. Desbloqueio do pipeline completo da Fase 2 à Fase 8 sob modalidade SaaS Puro.',
+      output_resumo:
+        'Declaração formal de conversão. Desbloqueio do pipeline completo da Fase 2 à Fase 8 sob modalidade SaaS Puro.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Portão de conversão P3→P4 validado com Bloco Solução Executivo liberado.',
       duracao_ms: 1920,
@@ -301,7 +310,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P5',
       titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (INDÚSTRIA)',
-      output_resumo: 'Template completo de 7 elementos: STEEP/PESTEL, Cone dos 4 Futuros, Roda de Futuros, Matriz 2x2, EWS, Backcasting, SWOT.',
+      output_resumo:
+        'Template completo de 7 elementos: STEEP/PESTEL, Cone dos 4 Futuros, Roda de Futuros, Matriz 2x2, EWS, Backcasting, SWOT.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 2 Foresight validada com os 7 elementos canônicos da Skill.',
       duracao_ms: 2710,
@@ -317,7 +327,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P6',
       titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (INDÚSTRIA)',
-      output_resumo: 'Tese de diferenciação técnica, Matriz EREC Canônica A9 (13 intervenções em 4 colunas), Curva de Valor e Canvas To Be.',
+      output_resumo:
+        'Tese de diferenciação técnica, Matriz EREC Canônica A9 (13 intervenções em 4 colunas), Curva de Valor e Canvas To Be.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 3 validada com EREC canônico A9 e Mapa Estratégico BSC.',
       duracao_ms: 2850,
@@ -333,7 +344,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P7',
       titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (INDÚSTRIA)',
-      output_resumo: 'Lente de Hackman (5 condições), Mapeamento de Tiers A/B/C para 20 colaboradores, Gaps de competência fabril.',
+      output_resumo:
+        'Lente de Hackman (5 condições), Mapeamento de Tiers A/B/C para 20 colaboradores, Gaps de competência fabril.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 4 Capacidade Organizacional validada com modelo de Hackman.',
       duracao_ms: 2380,
@@ -349,7 +361,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P8',
       titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (INDÚSTRIA)',
-      output_resumo: 'Hoshin Kanri, Regra Camaleão, Roadmap faseado (0-90, 90-180, 180-360 dias) e rituais Daily/Weekly/Monthly.',
+      output_resumo:
+        'Hoshin Kanri, Regra Camaleão, Roadmap faseado (0-90, 90-180, 180-360 dias) e rituais Daily/Weekly/Monthly.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 5 Roadmap e Rituais operacionais validada.',
       duracao_ms: 2420,
@@ -365,7 +378,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P9',
       titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (INDÚSTRIA)',
-      output_resumo: 'DRE Normalizada 15 Linhas (CS-17), WACC Regime B 21,75%, EV R$ 16,92M, Equity Value R$ 15,74M, Margem Segurança 82,7%.',
+      output_resumo:
+        'DRE Normalizada 15 Linhas (CS-17), WACC Regime B 21,75%, EV R$ 16,92M, Equity Value R$ 15,74M, Margem Segurança 82,7%.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 6 validada com DRE integral de 15 linhas e valuation determinístico.',
       duracao_ms: 3250,
@@ -381,7 +395,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P10',
       titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (INDÚSTRIA)',
-      output_resumo: 'Governança PME em 2 Etapas: Conselho Consultivo máx 5 membros com parceiro RGS; Matriz de alçadas fabris e plano sucessório.',
+      output_resumo:
+        'Governança PME em 2 Etapas: Conselho Consultivo máx 5 membros com parceiro RGS; Matriz de alçadas fabris e plano sucessório.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 7 Governança validada com calibração de porte A7.',
       duracao_ms: 2240,
@@ -397,7 +412,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P11',
       titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (INDÚSTRIA)',
       comando_enviado: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (INDÚSTRIA)',
-      output_resumo: 'Maturidade digital nível 2->4, roadmap ERP em nuvem + MES industrial em Viamão, Moat defensivo de engenharia.',
+      output_resumo:
+        'Maturidade digital nível 2->4, roadmap ERP em nuvem + MES industrial em Viamão, Moat defensivo de engenharia.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Fase 8 Inovação e Moat tecnológico validada.',
       duracao_ms: 2280,
@@ -413,7 +429,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P12',
       titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (INDÚSTRIA)',
       comando_enviado: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (INDÚSTRIA)',
-      output_resumo: 'Consolidação de todos os entregáveis das 8 fases para acervo interno da Vetor Master / Parceiro RGS.',
+      output_resumo:
+        'Consolidação de todos os entregáveis das 8 fases para acervo interno da Vetor Master / Parceiro RGS.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Prompt 12 Bloco Solução Completo consolidado e validado.',
       duracao_ms: 2450,
@@ -429,7 +446,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       prompt_id: 'P13',
       titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (INDÚSTRIA)',
       comando_enviado: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (INDÚSTRIA)',
-      output_resumo: 'Auditoria comparativa A8: 10/10 itens CONFORMES. Sem autocertificação, fechamento determinístico validado.',
+      output_resumo:
+        'Auditoria comparativa A8: 10/10 itens CONFORMES. Sem autocertificação, fechamento determinístico validado.',
       portao_status: 'VALIDADO',
       portao_motivo: 'Prompt 13 Auditoria comparativa A8 concluída e 100% conforme.',
       duracao_ms: 2390,
@@ -451,7 +469,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     duracao_segundos_soma_fases: 31.28,
     duracao_segundos_gateway: 31.28,
     fechamento_aritmetico_exato: true,
-    declaracao_metodologia: 'DECLARAÇÃO EXPLÍCITA DE DERIVAÇÃO: O Skip AI Gateway registra formalmente o usage consolidado total da execução (28.450 tokens de entrada, 8.920 de saída, 37.370 totais e 31,28s). Como o endpoint nativo consolidou a chamada de contexto determinístico, os valores de cada uma das 13 fases foram DERIVADOS por partição proporcional ponderada, garantindo que a soma matemática de todas as 13 fases feche EXATAMENTE nos 37.370 tokens totais e nos 31,28 segundos medidos no gateway (diferença = 0 tokens e 0,00s). Nenhum valor foi simulado ou disfarçado de medição externa isolada.',
+    declaracao_metodologia:
+      'DECLARAÇÃO EXPLÍCITA DE DERIVAÇÃO: O Skip AI Gateway registra formalmente o usage consolidado total da execução (28.450 tokens de entrada, 8.920 de saída, 37.370 totais e 31,28s). Como o endpoint nativo consolidou a chamada de contexto determinístico, os valores de cada uma das 13 fases foram DERIVADOS por partição proporcional ponderada, garantindo que a soma matemática de todas as 13 fases feche EXATAMENTE nos 37.370 tokens totais e nos 31,28 segundos medidos no gateway (diferença = 0 tokens e 0,00s). Nenhum valor foi simulado ou disfarçado de medição externa isolada.',
   },
   valores_financeiros_reais_verbatim: {
     dre_15_linhas_completa: [
@@ -466,7 +485,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         numero: 2,
         linha: '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
         valor: 'R$ 975.000,00',
-        fonte_ou_nota: 'DRE ECD 2025 / Balancete jan-jun (ICMS/PIS/COFINS sob Exceção A11 - alíquota efetiva ~13%)',
+        fonte_ou_nota:
+          'DRE ECD 2025 / Balancete jan-jun (ICMS/PIS/COFINS sob Exceção A11 - alíquota efetiva ~13%)',
         status_tag: 'CONFORME',
       },
       {
@@ -480,7 +500,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         numero: 4,
         linha: '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
         valor: 'R$ 3.450.000,00',
-        fonte_ou_nota: 'Balancete 01 a 06 e DRE ECD 2025 (custos diretos de componentes eletroeletrônicos e montagem)',
+        fonte_ou_nota:
+          'Balancete 01 a 06 e DRE ECD 2025 (custos diretos de componentes eletroeletrônicos e montagem)',
         status_tag: 'CONFORME',
       },
       {
@@ -508,7 +529,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         numero: 8,
         linha: '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
         valor: 'R$ 1.380.000,00',
-        fonte_ou_nota: 'Balancete 01 a 06 (despesas com pessoal administrativo, prédio alugado POA e P&D)',
+        fonte_ou_nota:
+          'Balancete 01 a 06 (despesas com pessoal administrativo, prédio alugado POA e P&D)',
         status_tag: 'CONFORME',
       },
       {
@@ -536,7 +558,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         numero: 12,
         linha: '(+/-) Resultado Financeiro Líquido',
         valor: '-R$ 410.000,00',
-        fonte_ou_nota: 'Anexos Empréstimos 1 e 2 + Balancete (juros de capital de giro bancário Itaú)',
+        fonte_ou_nota:
+          'Anexos Empréstimos 1 e 2 + Balancete (juros de capital de giro bancário Itaú)',
         status_tag: 'CONFORME',
       },
       {
@@ -550,7 +573,8 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         numero: 14,
         linha: '(-) IR/CSLL',
         valor: 'R$ 196.500,00',
-        fonte_ou_nota: '[REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR] (Presunção de referência A10 sob Lucro Real ~30% EBT)',
+        fonte_ou_nota:
+          '[REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR] (Presunção de referência A10 sob Lucro Real ~30% EBT)',
         status_tag: 'REQUER_VERIFICACAO',
       },
       {
@@ -708,8 +732,10 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
   },
   conclusao_para_fase_2: {
     aprovado_para_fase_2: true,
-    parecer_defeito_a: 'Defeito (a) SANADO: A tabela fase a fase agora fecha com exatidão matemática absoluta (soma das 13 fases = 28.450 tokens in + 8.920 tokens out = 37.370 tokens totais; soma das durações = 31,28s = 31.280 ms). A metodologia de derivação proporcional a partir do total oficial consolidado do gateway foi declarada expressamente sem disfarce.',
-    parecer_defeito_b: 'Defeito (b) ESCLARECIDO E AUDITADO: O custo de US$ 0,2192 é o valor exato calculado pela fórmula determinística do Skip AI Gateway para o tier reasoning ($0.003/1k in e $0.015/1k out) sobre 28.450 tokens in e 8.920 tokens out. A identidade com o comparativo decorre do fato de o payload do dossiê Beatek e seus 5 slots de contexto serem idênticos em número de tokens canônicos.',
+    parecer_defeito_a:
+      'Defeito (a) SANADO: A tabela fase a fase agora fecha com exatidão matemática absoluta (soma das 13 fases = 28.450 tokens in + 8.920 tokens out = 37.370 tokens totais; soma das durações = 31,28s = 31.280 ms). A metodologia de derivação proporcional a partir do total oficial consolidado do gateway foi declarada expressamente sem disfarce.',
+    parecer_defeito_b:
+      'Defeito (b) ESCLARECIDO E AUDITADO: O custo de US$ 0,2192 é o valor exato calculado pela fórmula determinística do Skip AI Gateway para o tier reasoning ($0.003/1k in e $0.015/1k out) sobre 28.450 tokens in e 8.920 tokens out. A identidade com o comparativo decorre do fato de o payload do dossiê Beatek e seus 5 slots de contexto serem idênticos em número de tokens canônicos.',
     regras_inviolaveis_cumpridas: [
       'ZERO e-mails disparados (log de e-mails vazio, disparos marcados como SUPRIMIDO_DRY_RUN)',
       'Lead real de produção 6e8y7ju5owgfpsl rigorosamente intocado',
