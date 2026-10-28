@@ -609,6 +609,22 @@ routerAdd('POST', '/backend/v1/diagnostico/executar-passo-async/{leadId}', (e) =
     }
   }
 
+  // Suporte a reinício forçado caso o cliente passe { reiniciar: true } no corpo
+  let reqBody = {}
+  try {
+    const rawB = (e.requestInfo && e.requestInfo().body) || {}
+    reqBody = typeof rawB === 'string' ? JSON.parse(rawB) : rawB
+  } catch (_) {}
+
+  if (reqBody.reiniciar) {
+    outputPrompts = []
+    diagRec.set('output_prompts', [])
+    diagRec.set('fase_atual', 0)
+    diagRec.set('status', 'processando')
+    diagRec.set('conversa_id', null)
+    $app.save(diagRec)
+  }
+
   const proximaFaseIndex = outputPrompts.length // 0 a 12
 
   if (proximaFaseIndex >= 13) {
@@ -622,6 +638,7 @@ routerAdd('POST', '/backend/v1/diagnostico/executar-passo-async/{leadId}', (e) =
       status: 'concluido',
       total_fases_concluidas: 13,
       total_esperado: 13,
+      custo_gateway_acumulado: diagRec.get('custo_gateway'),
       message: 'Pipeline completo já finalizado.',
     })
   }
@@ -807,38 +824,61 @@ routerAdd('POST', '/backend/v1/diagnostico/executar-passo-async/{leadId}', (e) =
   let tokOut = 0
 
   try {
-    if (typeof $ai !== 'undefined' && $ai.agent) {
-      const resp = $ai.agent('jbp-gestao-master').chat({
-        user_id: callerUserId,
-        conversation_id: conversaId,
-        message: comandoAEnviar,
-      })
-      if (resp) {
-        textoOutput = resp.content || ''
-        conversaId = resp.conversation_id || conversaId
-        if (resp.usage) {
-          tokIn = resp.usage.prompt_tokens || 0
-          tokOut = resp.usage.completion_tokens || 0
-        }
+    const agInst = typeof $ai !== 'undefined' && $ai.agent ? $ai.agent('jbp-gestao-master') : null
+    if (!agInst) {
+      throw new Error('$ai.agent("jbp-gestao-master") indisponível no ambiente de runtime')
+    }
+
+    const resp = agInst.chat({
+      user_id: callerUserId,
+      conversation_id: conversaId,
+      message: comandoAEnviar,
+    })
+
+    if (resp) {
+      textoOutput = resp.content || ''
+      conversaId = resp.conversation_id || conversaId
+      if (resp.usage) {
+        tokIn = resp.usage.prompt_tokens || 0
+        tokOut = resp.usage.completion_tokens || 0
       }
-    } else {
-      throw new Error('$ai.agent indisponível no ambiente de runtime')
     }
   } catch (errAi) {
-    console.log('Async Pipeline: Erro na fase ' + pDef.prompt_id + ': ' + errAi.message)
+    const errMsg = errAi.message || String(errAi)
+    console.log('Async Pipeline: Erro na fase ' + pDef.prompt_id + ': ' + errMsg)
+
+    // Se o erro foi timeout ou cancelamento de contexto, registrar com clareza
     diagRec.set('status', 'erro')
     diagRec.set('updated', new Date().toISOString())
     $app.save(diagRec)
+
     return e.json(500, {
       success: false,
       finalizado: true,
       falha: true,
       fase_falha: pDef.prompt_id,
-      erro: errAi.message,
+      erro: errMsg,
+      detalhes: 'Falha durante invocação real ao gateway AI no passo incremental.',
     })
   }
 
   const durFase = Date.now() - t0
+
+  // Portão determinístico da fase
+  let portaoStatus = 'VALIDADO'
+  let portaoMotivo = 'Execução real incremental no gateway.'
+  const outLower = (textoOutput || '').toLowerCase()
+
+  const fasesComEncerramentoNeutro = [2, 3, 5, 6, 7, 8, 9, 10, 11]
+  if (fasesComEncerramentoNeutro.indexOf(pDef.numero) !== -1) {
+    if (outLower.indexOf('aguardo seu comando') === -1) {
+      portaoStatus = 'REPROVADO'
+      portaoMotivo =
+        'Portão reprovado: ' +
+        pDef.prompt_id +
+        ' deve encerrar rigorosamente com "Aguardo seu comando."'
+    }
+  }
 
   // Gravação incremental da fase executada
   outputPrompts.push({
@@ -847,14 +887,31 @@ routerAdd('POST', '/backend/v1/diagnostico/executar-passo-async/{leadId}', (e) =
     titulo: pDef.titulo,
     comando_enviado: comandoAEnviar,
     output_integral: textoOutput,
-    portao_status: 'VALIDADO',
-    portao_motivo: 'Execução real incremental no gateway.',
+    portao_status: portaoStatus,
+    portao_motivo: portaoMotivo,
     duracao_ms: durFase,
     tokens_input: tokIn,
     tokens_output: tokOut,
-    encerra_com_aguardo_comando: textoOutput.toLowerCase().indexOf('aguardo seu comando') !== -1,
+    encerra_com_aguardo_comando: outLower.indexOf('aguardo seu comando') !== -1,
     executado_em: new Date().toISOString(),
   })
+
+  if (portaoStatus === 'REPROVADO') {
+    diagRec.set('output_prompts', outputPrompts)
+    diagRec.set('status', 'erro_portao')
+    diagRec.set('status_execucao', 'erro_portao')
+    diagRec.set('updated', new Date().toISOString())
+    $app.save(diagRec)
+    return e.json(422, {
+      success: false,
+      finalizado: true,
+      falha: true,
+      portao_reprovado: true,
+      fase_falha: pDef.prompt_id,
+      motivo: portaoMotivo,
+      fases_concluidas: outputPrompts.length,
+    })
+  }
 
   // Atualizar totais acumulados de custo e tokens lidos do gateway
   let tokensInTotal = 0
@@ -899,6 +956,105 @@ routerAdd('POST', '/backend/v1/diagnostico/executar-passo-async/{leadId}', (e) =
   if (foiUltimaFase) {
     diagRec.set('status', 'concluido')
     diagRec.set('fase_atual', 8)
+
+    // Extrair DRE 15 linhas do output da Fase 6 (Prompt P9, índice 8)
+    const outP9 = outputPrompts[8] ? outputPrompts[8].output_integral : ''
+    if (outP9) {
+      const nomesPadrao = [
+        { num: 1, padrao: /receita\s+bruta/i, rotulo: 'Receita Bruta (=)' },
+        {
+          num: 2,
+          padrao: /dedu[çc][õo]es|impostos\s*\(escada/i,
+          rotulo: '(-) Deduções/Impostos (Escada Y1/Y2/Y3+)',
+        },
+        { num: 3, padrao: /receita\s+l[íi]quida/i, rotulo: '(=) Receita Líquida' },
+        {
+          num: 4,
+          padrao: /cpv|cogs|custo\s+das\s+vendas/i,
+          rotulo: '(-) CPV/COGS (Squad Tech + Insumos Fabris)',
+        },
+        { num: 5, padrao: /margem\s+bruta/i, rotulo: '(=) Margem Bruta' },
+        {
+          num: 6,
+          padrao: /custos\s+vari[áa]veis|comiss[õo]es|fretes/i,
+          rotulo: '(-) Custos Variáveis',
+        },
+        {
+          num: 7,
+          padrao: /margem\s+de\s+contribui[çc][ãa]o/i,
+          rotulo: '(=) Margem de Contribuição',
+        },
+        {
+          num: 8,
+          padrao: /opex|sg&a|despesas\s+operacionais/i,
+          rotulo: '(-) OPEX (SG&A + P&D + Outros Custos Fabris)',
+        },
+        { num: 9, padrao: /ebitda/i, rotulo: '(=) EBITDA' },
+        {
+          num: 10,
+          padrao: /d&a|deprecia[çc][ãa]o|amortiza[çc][ãa]o/i,
+          rotulo: '(-) Depreciação & Amortização (D&A)',
+        },
+        { num: 11, padrao: /ebit\b|lucro\s+operacional/i, rotulo: '(=) EBIT' },
+        {
+          num: 12,
+          padrao: /resultado\s+financeiro/i,
+          rotulo: '(+/-) Resultado Financeiro Líquido',
+        },
+        {
+          num: 13,
+          padrao: /ebt\b|resultado\s+antes\s+do\s+ir/i,
+          rotulo: '(=) EBT (Resultado antes do IR)',
+        },
+        { num: 14, padrao: /ir\/csll|imposto\s+de\s+renda/i, rotulo: '(-) IR/CSLL' },
+        { num: 15, padrao: /lucro\s+l[íi]quido/i, rotulo: '(=) Lucro Líquido' },
+      ]
+      const linhasTexto = outP9.split('\n')
+      const linhasDRE = []
+      for (let li = 0; li < linhasTexto.length; li++) {
+        const l = linhasTexto[li].trim()
+        if (!l.startsWith('|')) continue
+        const cols = l
+          .split('|')
+          .map(function (c) {
+            return c.trim()
+          })
+          .filter(function (c) {
+            return c.length > 0
+          })
+        if (cols.length < 2) continue
+        const c0 = cols[0]
+        const c1 = cols[1]
+        const c2 = cols[2] || ''
+        for (let np = 0; np < nomesPadrao.length; np++) {
+          const itemP = nomesPadrao[np]
+          if (itemP.padrao.test(c0) || itemP.padrao.test(c1)) {
+            const jaExiste = linhasDRE.some(function (x) {
+              return x.numero === itemP.num
+            })
+            if (!jaExiste) {
+              const val =
+                cols.length >= 3 && !itemP.padrao.test(c1) ? c1 : c2 || cols[cols.length - 1]
+              const st =
+                val.indexOf('[REQUER VERIFICAÇÃO]') !== -1 ? 'REQUER_VERIFICACAO' : 'CONFORME'
+              linhasDRE.push({
+                numero: itemP.num,
+                linha: itemP.rotulo,
+                valor: val,
+                fonte_ou_nota: 'Extraído do output real do agente no Prompt 9',
+                status_tag: st,
+              })
+            }
+          }
+        }
+      }
+      linhasDRE.sort(function (a, b) {
+        return a.numero - b.numero
+      })
+      if (linhasDRE.length > 0) {
+        diagRec.set('dre_normalizada_15_linhas', linhasDRE)
+      }
+    }
 
     // Atualizar estado da máquina do lead sob DRY-RUN estrito
     leadRec.set('status', 'nutricao')

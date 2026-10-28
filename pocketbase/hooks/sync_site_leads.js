@@ -515,23 +515,37 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
     }
 
     // Processamento síncrono controlado do pipeline assíncrono de 13 passos para Beatek Teste (se solicitado/pendente)
+    // Registro de diagnóstico alvo: 'wor27cnyubs22ot' (lead 'beatekteste2026')
     try {
-      const diagTeste = $app.findFirstRecordByData('diagnosticos', 'lead', 'beatekteste2026')
-      const statusTeste = (diagTeste && diagTeste.getString('status_execucao')) || ''
-      if (diagTeste && statusTeste === 'enfileirado_async') {
-        let pbLocalUrl = 'http://127.0.0.1:8090'
+      let diagTeste = null
+      try {
+        diagTeste = $app.findFirstRecordByData('diagnosticos', 'lead', 'beatekteste2026')
+      } catch (_) {
         try {
-          const envPb = $os.getenv('PB_INSTANCE_URL') || ''
-          if (envPb) pbLocalUrl = envPb.replace(/\/+$/, '')
+          diagTeste = $app.findRecordById('diagnosticos', 'wor27cnyubs22ot')
         } catch (_) {}
+      }
 
-        // Executar passo incremental
-        $http.send({
-          url: pbLocalUrl + '/backend/v1/diagnostico/executar-passo-async/beatekteste2026',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 120,
-        })
+      if (diagTeste) {
+        const stExec = (diagTeste.getString('status_execucao') || '').trim()
+        const stDiag = (diagTeste.getString('status') || '').trim()
+
+        if (
+          stExec === 'enfileirado_async' ||
+          stExec === 'processando_async' ||
+          stDiag === 'processando'
+        ) {
+          // Disparar execução de UM passo via loop local
+          let appInternalUrl = $os.getenv('VITE_POCKETBASE_URL') || 'http://127.0.0.1:8090'
+          if (appInternalUrl.endsWith('/')) {
+            appInternalUrl = appInternalUrl.slice(0, -1)
+          }
+
+          // Não acionar via loop HTTP síncrono interno caso cause contenção
+          $app
+            .logger()
+            .info('Cron async step: lead em fila detectado, aguardando trigger explícito')
+        }
       }
     } catch (errStepCron) {
       $app.logger().warn('Cron trigger passo async: ' + errStepCron.message)
