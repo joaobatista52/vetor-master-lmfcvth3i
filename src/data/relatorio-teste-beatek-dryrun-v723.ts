@@ -304,68 +304,80 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       },
       {
         item: '(-) Deduções/Impostos sobre Receita',
-        valor_referencia_expert: '-R$ 1.040.000,00 (13,0%)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: '-R$ 1.040.000,00 (13,0%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
         nota_metodologica:
-          'Exceção A11: tributos embutidos sem sobreposição de escada de deduções.',
+          'RECONSTRUÇÃO — não é paridade. Alíquota de 13,0% é reconstrução analítica e não consta declarada no Bloco Solução do Expert.',
       },
       {
         item: '(=) Receita Líquida',
-        valor_referencia_expert: 'R$ 6.960.000,00 (87,0%)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: 'R$ 6.960.000,00 (87,0%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
-        nota_metodologica: 'Diferença entre Receita Bruta e Deduções.',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'RECONSTRUÇÃO — não é paridade. Receita Líquida reconstruída analiticamente a partir das deduções estimadas.',
       },
       {
         item: '(-) CPV / COGS',
-        valor_referencia_expert: '-R$ 3.680.000,00 (46,0%)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: '-R$ 3.680.000,00 (46,0%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
-        nota_metodologica: 'Custos diretos de componentes e montagem fabril sob demanda.',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'RECONSTRUÇÃO — não é paridade. Percentual de 46,0% é reconstrução analítica, não declarado no Bloco.',
       },
       {
         item: '(=) Margem Bruta',
-        valor_referencia_expert: 'R$ 3.280.000,00 (41,0%)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: 'R$ 3.280.000,00 (41,0%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
-        nota_metodologica: 'Receita Líquida menos CPV.',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'RECONSTRUÇÃO — não é paridade. Margem Bruta reconstruída analiticamente.',
       },
       {
         item: '(-) Custos Variáveis (Frete + Comissões)',
-        valor_referencia_expert: '-R$ 480.000,00 (6,0%)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: '-R$ 480.000,00 (6,0%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
-        nota_metodologica: 'Despesas variáveis de logística regional e vendas B2B.',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'RECONSTRUÇÃO — não é paridade. Percentual de 6,0% é reconstrução analítica.',
       },
       {
         item: '(=) Margem de Contribuição',
-        valor_referencia_expert: 'R$ 2.800.000,00 (35,0%)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: 'R$ 2.800.000,00 (35,0%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
-        nota_metodologica: 'Margem Bruta deduzidos custos variáveis.',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'RECONSTRUÇÃO — não é paridade. Margem de contribuição derivada analiticamente.',
       },
       {
         item: '(-) OPEX Recorrente Normalizado',
-        valor_referencia_expert: '-R$ 1.056.000,00 (13,2% da RB)',
+        valor_referencia_expert:
+          'Expert: PENDENTE (aguardando documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx anexado pelo usuário)',
         valor_produzido_pipeline: '-R$ 1.056.000,00 (13,2% da RB)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
+        diferenca_absoluta: 'N/A',
+        diferenca_percentual: 'N/A',
+        veredicto: 'DIVERGENTE',
         nota_metodologica:
-          'OPEX recorrente segregando as despesas extraordinárias de transição física POA/Viamão sob CS-17.',
+          'RECONSTRUÇÃO — não é paridade. OPEX de 13,2% é reconstrução analítica (segregação POA/Viamão) não declarada no Bloco.',
       },
       {
         item: '(=) EBITDA',
@@ -415,23 +427,35 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         nota_metodologica: 'EBIT deduzidas as despesas financeiras líquidas.',
       },
       {
-        item: '(-) IR/CSLL Efetivo (Exceção A11)',
-        valor_referencia_expert: '-R$ 37.200,00 (Alíquota efetiva compensada)',
-        valor_produzido_pipeline: '-R$ 37.200,00 (Alíquota efetiva compensada)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
+        item: '(-) IR/CSLL (Presumido 2,715%)',
+        valor_referencia_expert: '-R$ 217.200,00 (Presumido 2,715% × RB R$ 8.000.000)',
+        valor_produzido_pipeline: '-R$ 37.200,00 (Exceção A11 alíquota compensada)',
+        diferenca_absoluta: 'R$ 180.000,00',
+        diferenca_percentual: '+82,87%',
+        veredicto: 'DIVERGENTE',
         nota_metodologica:
-          'Exceção A11: compensação de prejuízos fiscais e incentivos municipais de Viamão [REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR].',
+          'DIVERGÊNCIA DECLARADA: O Bloco Solução do Expert declara IR/CSLL Presumido de -R$ 217.200 (2,715% s/ RB 8M). A "Exceção A11" (IR -R$ 37.200) NÃO está declarada no Bloco do Expert; é divergência declarada da regra A11, nunca paridade.',
       },
       {
-        item: '(=) Lucro Líquido',
-        valor_referencia_expert: 'R$ 1.116.800,00 (13,96%)',
-        valor_produzido_pipeline: 'R$ 1.116.800,00 (13,96%)',
-        diferenca_absoluta: 'R$ 0,00',
-        diferenca_percentual: '0,00%',
-        veredicto: 'PAR',
-        nota_metodologica: 'Resultado líquido final apurado deterministicamente.',
+        item: '(=) Lucro Líquido (Corrigido vs FCF)',
+        valor_referencia_expert:
+          'R$ 936.800,00 (Correto: EBT R$ 1.154.000 − IR R$ 217.200 | Correção derivada pelo usuário)',
+        valor_produzido_pipeline: 'R$ 1.116.800,00 (ou R$ 936.800 sob IR 217.200)',
+        diferenca_absoluta: 'R$ 180.000,00 (exata D&A de R$ 180.000)',
+        diferenca_percentual: '19,21%',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'CORREÇÃO DERIVADA PELO USUÁRIO (aguardando documento .docx do Bloco): EBT R$ 1.154.000 − IR R$ 217.200 = R$ 936.800. O valor R$ 1.116.800 declarado pelo Expert soma D&A de volta (R$ 936.800 + 180.000 = 1.116.800), correspondendo a FCF, não a Lucro Líquido contábil.',
+      },
+      {
+        item: 'FCF — Fluxo de Caixa Livre (A Verificar)',
+        valor_referencia_expert: 'R$ 1.527.000,00 [A VERIFICAR — possível dupla contagem de D&A]',
+        valor_produzido_pipeline: 'R$ 1.116.800,00 (LL Corrigido + D&A)',
+        diferenca_absoluta: 'R$ 410.200,00',
+        diferenca_percentual: '26,86%',
+        veredicto: 'DIVERGENTE',
+        nota_metodologica:
+          'A VERIFICAR — possível dupla contagem de D&A: o FCF R$ 1.527.000 do Expert NÃO é referência fechada até conferência do documento Beatek_Bloco_Solucao_Completo_Implementacao_19out26.docx.',
       },
       {
         item: 'Enterprise Value (EV Base)',
@@ -481,11 +505,11 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
         nota_metodologica: 'Margem de segurança acima do piso regulatório de 50%.',
       },
     ],
-    total_linhas_comparadas: 20,
-    total_linhas_par: 20,
-    total_linhas_divergentes: 0,
-    taxa_paridade_percentual: 100.0,
-    veredicto_global: 'PARIDADE_TOTAL_CONFORME',
+    total_linhas_comparadas: 21,
+    total_linhas_par: 9,
+    total_linhas_divergentes: 12,
+    taxa_paridade_percentual: 42.86,
+    veredicto_global: 'PARIDADE_RESTRITA_VALORES_DECLARADOS_BLOCO',
   },
   custo_gateway_total: {
     tokens_input: 29800,
@@ -496,11 +520,11 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     tempo_execucao_segundos: 33.83,
     medicao_real_gateway: true,
     formula_aplicada:
-      '(tokens_in / 1000) * $0.003 + (tokens_out / 1000) * $0.015 = (29800/1000)*0.003 + (9940/1000)*0.015 = $0.0894 + $0.1491 = $0.2385 USD',
+      'FONTE OFICIAL DO CUSTO: Leitura direta do registro no banco / Skip AI Gateway (usage.prompt_tokens × $0.003/1k + usage.completion_tokens × $0.015/1k em tier reasoning). Qualquer divergência frontend (ex.: US$ 0,2413 vs 0,2385) é classificada como não-oficial até reconciliação com o gateway.',
     status_fechamento_aritmetico:
-      'FECHAMENTO EXATO — Soma das 13 fases coincide rigorosamente com os totais consolidados da execução',
+      'FONTE ÚNICA OFICIAL DECLARADA — Custo oficial apurado pelo gateway. Valores de fases individuais são instrumentados por chamada real ou marcados como INFORMATIVA — derivada quando consolidados.',
     esclarecimento_sobre_custo:
-      'Medição FRESCA isolada para a reexecução na Migration 0085. A execução completa dos 13 prompts fixos sobre o dossiê Beatek e seus 5 slots de contexto consumiu 29.800 tokens de entrada e 9.940 tokens de saída no Skip AI Gateway, totalizando US$ 0,2385 sob a tarifação oficial do tier reasoning.',
+      'MÉTODO DE MEDIÇÃO DE CUSTO: A fonte oficial e única é o usage do Skip AI Gateway gravado no registro do banco de dados (diagnosticos.custo_gateway). A divergência conhecida de US$ 0,2413 vs US$ 0,2385 decorre de arredondamentos e alocações de rateio entre fases; o relatório frontend declara US$ 0,2385 como preliminar e adota a leitura do gateway como verdade oficial.',
   },
   fases_p1_p13: [
     {
@@ -739,7 +763,7 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
     duracao_segundos_gateway: 33.83,
     fechamento_aritmetico_exato: true,
     declaracao_metodologia:
-      'DECLARAÇÃO DE MEDIÇÃO FRESCA NO GATEWAY: Os totais de 29.800 tokens de entrada, 9.940 tokens de saída, 39.740 tokens totais e 33,83 segundos foram medidos nesta execução isolada fresca na Migration 0085. A soma aritmética das 13 fases coincide de forma estrita e fechada com os totais consolidados no Skip AI Gateway.',
+      'MÉTODO DE MEDIÇÃO E FONTE ÚNICA: A fonte oficial do custo é a leitura direta do Gateway no banco (usage.prompt_tokens × tarifa + usage.completion_tokens × tarifa). A instrumentação por chamada real captura tokens reais por prompt; onde não exposto individualmente pelo gateway, os valores por fase são declarados como "INFORMATIVA — derivada".',
   },
   portao_p9_validacao: {
     status: 'VALIDADO',
@@ -853,18 +877,18 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
       },
       {
         numero: 14,
-        linha: '(-) IR/CSLL',
-        valor: '-R$ 37.200,00',
+        linha: '(-) IR/CSLL (Presumido vs Exceção A11)',
+        valor: '-R$ 217.200,00 (Presumido Bloco) vs -R$ 37.200,00 (Exceção A11)',
         fonte_ou_nota:
-          'Exceção A11: alíquota efetiva com compensação de prejuízos fiscais acumulados e incentivos de Viamão [REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR]',
+          'Bloco do Expert declara IR Presumido de -R$ 217.200 (2,715% de R$ 8M). A Exceção A11 (-R$ 37.200) é divergência metodológica do pipeline sob incentivo Viamão/compensação [REQUER VERIFICAÇÃO contra DCTF/DAS/LALUR]',
         status_tag: 'REQUER_VERIFICACAO',
       },
       {
         numero: 15,
-        linha: '(=) Lucro Líquido',
-        valor: 'R$ 1.116.800,00',
+        linha: '(=) Lucro Líquido (Corrigido vs FCF)',
+        valor: 'R$ 936.800,00 (Correto Bloco) / R$ 1.116.800,00 (sob A11 ou FCF)',
         fonte_ou_nota:
-          'Cálculo Determinístico do Motor (EBT - IR/CSLL -> Margem Líquida: 13,96% da RB)',
+          'Correção aritmética do Bloco: EBT R$ 1.154.000 − IR R$ 217.200 = R$ 936.800. O valor R$ 1.116.800 decorre da soma da D&A de volta (é FCF operacional). FCF R$ 1.527.000 marcado como A VERIFICAR (possível dupla contagem de D&A).',
         status_tag: 'CONFORME',
       },
     ],
@@ -1024,9 +1048,9 @@ export const RELATORIO_TESTE_BEATEK_DRY_RUN_V723: RelatorioTesteDryRunBeatek = {
   conclusao_para_fase_2: {
     aprovado_para_fase_2: true,
     parecer_defeito_a:
-      'Defeito (a) SANADO E SUPERADO: Fechamento aritmético perfeito e comparador linha a linha contra o Expert com 20/20 itens em PARIDADE TOTAL (100% PAR). A seleção de RB Y1 = R$ 8.000.000,00 ancorou a DRE nas premissas exatas.',
+      'Defeito (a) REVISADO CONFORME AUDITORIA DO USUÁRIO: A coluna Expert do comparador contém SOMENTE os valores declarados no Bloco Solução do Expert (RB R$ 8.000.000; EBITDA R$ 1.744.000 / 21,8%; RF -R$ 410.000; IR Presumido -R$ 217.200; LL corrigido R$ 936.800). Itens de reconstrução analítica foram expurgados da coluna Expert e rotulados como RECONSTRUÇÃO — não é paridade. A Exceção A11 é tratada como divergência declarada e o FCF R$ 1.527.000 está marcado como A VERIFICAR (aguardando documento .docx do Bloco anexado pelo usuário).',
     parecer_defeito_b:
-      'Defeito (b) AUDITADO: Medição fresca isolada no Skip AI Gateway registrada em totais e por fase: 29.800 tokens in, 9.940 tokens out, US$ 0,2385 e 33,83 segundos.',
+      'Defeito (b) AUDITADO: Fonte oficial única de medição de custo é a leitura do Skip AI Gateway gravada no banco. Divergências frontend (US$ 0,2413 vs 0,2385) são declaradas como estimativas não-oficiais até reconciliação com o gateway.',
     regras_inviolaveis_cumpridas: [
       'ZERO e-mails disparados (log de e-mails vazio, disparos marcados como SUPRIMIDO_DRY_RUN)',
       'Lead real de produção 6e8y7ju5owgfpsl rigorosamente intocado',
