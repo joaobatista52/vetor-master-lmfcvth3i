@@ -1226,6 +1226,9 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
     $app
       .logger()
       .info('Cron Async Step: Status encontrado: stDiag=' + stDiag + ' pendente=' + estaPendente)
+    console.log(
+      'Cron Async Step: Status encontrado: stDiag=' + stDiag + ' pendente=' + estaPendente,
+    )
 
     if (!estaPendente) {
       return
@@ -1280,6 +1283,16 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
     diagRec.set('historico_versoes', lockInfo)
     diagRec.set('status', 'processando')
     $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
 
     // Buscar lead associado
     let leadRec = null
@@ -1552,9 +1565,11 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
     } catch (errAi) {
       const errMsg = errAi.message || String(errAi)
       $app.logger().error('Cron Async Step: Erro na fase ' + pDef.prompt_id + ': ' + errMsg)
+      console.log('Cron Async Step: Erro na fase ' + pDef.prompt_id + ': ' + errMsg)
 
       diagRec.set('status', 'erro')
       lockInfo.lock_erro = errMsg
+      delete lockInfo.lock_timestamp
       diagRec.set('historico_versoes', lockInfo)
       diagRec.set('updated', new Date().toISOString())
       $app.save(diagRec)
@@ -1604,6 +1619,10 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
       $app
         .logger()
         .warn('Cron Async Step: Portão reprovado na fase ' + pDef.prompt_id + ': ' + portaoMotivo)
+      console.log(
+        'Cron Async Step: Portão reprovado na fase ' + pDef.prompt_id + ': ' + portaoMotivo,
+      )
+      delete lockInfo.lock_timestamp
       return
     }
 
@@ -1651,6 +1670,34 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
     delete lockInfo.lock_fase
     diagRec.set('historico_versoes', lockInfo)
     diagRec.set('updated', new Date().toISOString())
+
+    console.log(
+      'Cron Async Step: Sucesso no passo ' +
+        pDef.prompt_id +
+        ' (' +
+        faseNumeroConcluida +
+        '/13) em ' +
+        durFase +
+        'ms. Tokens: ' +
+        tokIn +
+        ' in / ' +
+        tokOut +
+        ' out.',
+    )
+
+    console.log(
+      'Cron Async Step: Sucesso no passo ' +
+        pDef.prompt_id +
+        ' (' +
+        faseNumeroConcluida +
+        '/13) em ' +
+        durFase +
+        'ms. Tokens: ' +
+        tokIn +
+        ' in / ' +
+        tokOut +
+        ' out.',
+    )
 
     if (foiUltimaFase) {
       diagRec.set('status', 'concluido')
