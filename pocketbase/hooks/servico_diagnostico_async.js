@@ -1394,7 +1394,1136 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
       },
     }
 
-<<<<<<< SEARCH
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    // Adquirir lock
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    // Adquirir lock após promptsDef estar definido
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    // Adquirir lock
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    // Adquirir lock após promptsDef estar definido
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    // Adquirir lock
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    // Adquirir lock após promptsDef estar definido
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    // Adquirir lock
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    // Adquirir lock após promptsDef estar definido
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    // Adquirir lock
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    // Adquirir lock após promptsDef estar definido
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    const promptsDef = [
+      {
+        numero: 1,
+        prompt_id: 'P1',
+        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+        texto_prompt:
+          'CARGA DE DADOS — DOSSIÊ ' +
+          setorUpper +
+          ' ' +
+          protocolo +
+          '\n\n' +
+          'DOSSIÊ DO CLIENTE:\n' +
+          JSON.stringify(
+            Object.assign({}, payloadDossie, {
+              rb_ano_base_selecionada: rbDecisao,
+            }),
+            null,
+            2,
+          ),
+        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+      },
+      {
+        numero: 2,
+        prompt_id: 'P2',
+        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+      },
+      {
+        numero: 3,
+        prompt_id: 'P3',
+        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+      },
+      {
+        numero: 4,
+        prompt_id: 'P4',
+        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+      },
+      {
+        numero: 5,
+        prompt_id: 'P5',
+        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 6,
+        prompt_id: 'P6',
+        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+      },
+      {
+        numero: 7,
+        prompt_id: 'P7',
+        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+      },
+      {
+        numero: 8,
+        prompt_id: 'P8',
+        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+      },
+      {
+        numero: 9,
+        prompt_id: 'P9',
+        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+        texto_prompt:
+          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+          setorUpper +
+          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+      },
+      {
+        numero: 10,
+        prompt_id: 'P10',
+        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+      },
+      {
+        numero: 11,
+        prompt_id: 'P11',
+        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+      },
+      {
+        numero: 12,
+        prompt_id: 'P12',
+        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+      },
+      {
+        numero: 13,
+        prompt_id: 'P13',
+        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+        comando_avanco: 'PIPELINE_CONCLUIDO',
+      },
+    ]
+
+    // Adquirir lock
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
+    // Adquirir lock após promptsDef estar definido
+    lockInfo = lockInfo || {}
+    lockInfo.lock_timestamp = agoraMs
+    lockInfo.lock_fase = proximaFaseIndex + 1
+    diagRec.set('historico_versoes', lockInfo)
+    diagRec.set('status', 'processando')
+    $app.save(diagRec)
+
+    // Log legível com console.log para aparecer imediatamente em hooks logs
+    $app.logger().info(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+    console.log(
+      'Cron Async Step: Executando passo ' +
+        (proximaFaseIndex + 1) +
+        '/13 (Prompt ' +
+        promptsDef[proximaFaseIndex].prompt_id +
+        ') para lead ' +
+        targetLeadId,
+    )
+
+    const pDef = promptsDef[proximaFaseIndex]
+    let conversaId = diagRec.getString('conversa_id') || null
+    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
+=======
     const rbDecisao = extrairReceitaBruta(payloadDossie)
     const setorUpper = setor.toUpperCase()
     const modalidadeContratada = 'SaaS Puro'
@@ -1796,243 +2925,6 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
     )
 
     const pDef = promptsDef[proximaFaseIndex]
-    let conversaId = diagRec.getString('conversa_id') || null
-    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
-=======
-<<<<<<< SEARCH
-    const rbDecisao = extrairReceitaBruta(payloadDossie)
-    const setorUpper = setor.toUpperCase()
-    const modalidadeContratada = 'SaaS Puro'
-
-    const promptsDef = [
-      {
-        numero: 1,
-        prompt_id: 'P1',
-        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
-        texto_prompt:
-          'CARGA DE DADOS — DOSSIÊ ' +
-          setorUpper +
-          ' ' +
-          protocolo +
-          '\n\n' +
-          'DOSSIÊ DO CLIENTE:\n' +
-          JSON.stringify(
-            Object.assign({}, payloadDossie, {
-              rb_ano_base_selecionada: rbDecisao,
-            }),
-            null,
-            2,
-          ),
-        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-      },
-      {
-        numero: 2,
-        prompt_id: 'P2',
-        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
-      },
-      {
-        numero: 3,
-        prompt_id: 'P3',
-        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
-        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
-        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
-      },
-      {
-        numero: 4,
-        prompt_id: 'P4',
-        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
-        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
-        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
-      },
-      {
-        numero: 5,
-        prompt_id: 'P5',
-        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
-      },
-      {
-        numero: 6,
-        prompt_id: 'P6',
-        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
-      },
-      {
-        numero: 7,
-        prompt_id: 'P7',
-        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
-      },
-      {
-        numero: 8,
-        prompt_id: 'P8',
-        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
-      },
-      {
-        numero: 9,
-        prompt_id: 'P9',
-        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
-        texto_prompt:
-          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
-          setorUpper +
-          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
-        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
-      },
-      {
-        numero: 10,
-        prompt_id: 'P10',
-        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
-      },
-      {
-        numero: 11,
-        prompt_id: 'P11',
-        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
-        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
-      },
-      {
-        numero: 12,
-        prompt_id: 'P12',
-        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
-        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
-        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
-      },
-      {
-        numero: 13,
-        prompt_id: 'P13',
-        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
-        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
-        comando_avanco: 'PIPELINE_CONCLUIDO',
-      },
-    ]
-
-    const promptsDef = [
-      {
-        numero: 1,
-        prompt_id: 'P1',
-        titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
-        texto_prompt:
-          'CARGA DE DADOS — DOSSIÊ ' +
-          setorUpper +
-          ' ' +
-          protocolo +
-          '\n\n' +
-          'DOSSIÊ DO CLIENTE:\n' +
-          JSON.stringify(
-            Object.assign({}, payloadDossie, {
-              rb_ano_base_selecionada: rbDecisao,
-            }),
-            null,
-            2,
-          ),
-        comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-      },
-      {
-        numero: 2,
-        prompt_id: 'P2',
-        titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
-        comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
-      },
-      {
-        numero: 3,
-        prompt_id: 'P3',
-        titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
-        texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
-        comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
-      },
-      {
-        numero: 4,
-        prompt_id: 'P4',
-        titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
-        texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
-        comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
-      },
-      {
-        numero: 5,
-        prompt_id: 'P5',
-        titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
-      },
-      {
-        numero: 6,
-        prompt_id: 'P6',
-        titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
-      },
-      {
-        numero: 7,
-        prompt_id: 'P7',
-        titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
-      },
-      {
-        numero: 8,
-        prompt_id: 'P8',
-        titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
-      },
-      {
-        numero: 9,
-        prompt_id: 'P9',
-        titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
-        texto_prompt:
-          'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
-          setorUpper +
-          ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
-        comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
-      },
-      {
-        numero: 10,
-        prompt_id: 'P10',
-        titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
-        comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
-      },
-      {
-        numero: 11,
-        prompt_id: 'P11',
-        titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
-        texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
-        comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
-      },
-      {
-        numero: 12,
-        prompt_id: 'P12',
-        titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
-        texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
-        comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
-      },
-      {
-        numero: 13,
-        prompt_id: 'P13',
-        titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
-        texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
-        comando_avanco: 'PIPELINE_CONCLUIDO',
-      },
-    ]
-
-    const pDef = promptsDef[proximaFaseIndex]
-    let conversaId = diagRec.getString('conversa_id') || null
-    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
-    diagRec.set('user', callerUserId)
-=======
-    const pDef = promptsDef[proximaFaseIndex]
-    let conversaId = diagRec.getString('conversa_id') || null
-    const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
-    diagRec.set('user', callerUserId)
 =======
     const promptsDef = [
       {
@@ -2144,69 +3036,10 @@ cronAdd('pipeline_diagnostico_async_step_cron', '* * * * *', () => {
       },
     ]
 
-    // Adquirir lock
-    lockInfo = lockInfo || {}
-    lockInfo.lock_timestamp = agoraMs
-    lockInfo.lock_fase = proximaFaseIndex + 1
-    diagRec.set('historico_versoes', lockInfo)
-    diagRec.set('status', 'processando')
-    $app.save(diagRec)
-
-    // Log legível com console.log para aparecer imediatamente em hooks logs
-    $app.logger().info(
-      'Cron Async Step: Executando passo ' +
-        (proximaFaseIndex + 1) +
-        '/13 (Prompt ' +
-        promptsDef[proximaFaseIndex].prompt_id +
-        ') para lead ' +
-        targetLeadId,
-    )
-    console.log(
-      'Cron Async Step: Executando passo ' +
-        (proximaFaseIndex + 1) +
-        '/13 (Prompt ' +
-        promptsDef[proximaFaseIndex].prompt_id +
-        ') para lead ' +
-        targetLeadId,
-    )
-
     const pDef = promptsDef[proximaFaseIndex]
     let conversaId = diagRec.getString('conversa_id') || null
     const callerUserId = diagRec.getString('user') || '56r96tnoumhph2z'
 =======
-    // Adquirir lock após promptsDef estar definido
-    lockInfo = lockInfo || {}
-    lockInfo.lock_timestamp = agoraMs
-    lockInfo.lock_fase = proximaFaseIndex + 1
-    diagRec.set('historico_versoes', lockInfo)
-    diagRec.set('status', 'processando')
-    $app.save(diagRec)
-
-    // Log legível com console.log para aparecer imediatamente em hooks logs
-    $app.logger().info(
-      'Cron Async Step: Executando passo ' +
-        (proximaFaseIndex + 1) +
-        '/13 (Prompt ' +
-        promptsDef[proximaFaseIndex].prompt_id +
-        ') para lead ' +
-        targetLeadId,
-    )
-    console.log(
-      'Cron Async Step: Executando passo ' +
-        (proximaFaseIndex + 1) +
-        '/13 (Prompt ' +
-        promptsDef[proximaFaseIndex].prompt_id +
-        ') para lead ' +
-        targetLeadId,
-    )
-
-    const pDef = promptsDef[proximaFaseIndex]
-=======
-<<<<<<< SEARCH
-    const rbDecisao = extrairReceitaBruta(payloadDossie)
-    const setorUpper = setor.toUpperCase()
-    const modalidadeContratada = 'SaaS Puro'
-
     const promptsDef = [
       {
         numero: 1,
