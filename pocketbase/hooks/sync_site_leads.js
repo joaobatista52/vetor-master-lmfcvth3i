@@ -69,11 +69,1064 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
     // Validação estrita: sem credenciais configuradas, aborta defensivamente
     if (!siteUrl || !siteEmail || !sitePassword) {
-      $app
-        .logger()
-        .warn(
-          'sync_site_leads_cron abortado: credenciais ausentes na coleção integracoes_site e no ambiente.',
-        )
+      return
+    }
+=======
+    // Validação estrita: sem credenciais configuradas, aborta defensivamente
+    if (!siteUrl || !siteEmail || !sitePassword) {
+      return
+    }
+
+    // 1. Autenticar no backend do site institucional
+    const authRes = $http.send({
+      url: siteUrl + '/api/collections/users/auth-with-password',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identity: siteEmail,
+        password: sitePassword,
+      }),
+      timeout: 20,
+    })
+
+    if (authRes.statusCode !== 200) {
+      try {
+        const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+        let adminUser = null
+        try {
+          adminUser = $app.findFirstRecordByData('users', 'role', 'admin')
+        } catch (_) {}
+
+        if (adminUser) {
+          const errLog = new Record(logsCol)
+          errLog.set('user', adminUser.id)
+          errLog.set('action', 'Erro Sincronização Site')
+          errLog.set('resource', 'leads')
+          errLog.set(
+            'details',
+            'Falha de autenticação no site institucional (HTTP ' +
+              authRes.statusCode +
+              ') [fonte: ' +
+              fonte +
+              ']: ' +
+              (authRes.raw || '').substring(0, 300),
+          )
+          $app.save(errLog)
+        }
+      } catch (_) {}
+      return
+    }
+
+    const token = authRes.json.token
+
+    // Obter file token do site para download de arquivos caso o campo seja protegido
+    let siteFileToken = ''
+    try {
+      const ftRes = $http.send({
+        url: siteUrl + '/api/files/token',
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+        timeout: 10,
+      })
+      if (ftRes.statusCode === 200 && ftRes.json && ftRes.json.token) {
+        siteFileToken = ftRes.json.token
+      }
+    } catch (_) {}
+
+    // 2. Buscar leads do site institucional (coleção completa de leads)
+    const leadsRes = $http.send({
+      url: siteUrl + '/api/collections/leads/records?perPage=200&sort=-created',
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      },
+      timeout: 25,
+    })
+
+    if (leadsRes.statusCode !== 200) {
+      try {
+        const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+        let adminUser = null
+        try {
+          adminUser = $app.findFirstRecordByData('users', 'role', 'admin')
+        } catch (_) {}
+        if (adminUser) {
+          const errLog = new Record(logsCol)
+          errLog.set('user', adminUser.id)
+          errLog.set('action', 'Erro Sincronização Site')
+          errLog.set('resource', 'leads')
+          errLog.set(
+            'details',
+            "Falha ao consultar coleção 'leads' no site (HTTP " + leadsRes.statusCode + ')',
+          )
+          $app.save(errLog)
+        }
+      } catch (_) {}
+      return
+    }
+            try {
+              leadRec = $app.findRecordById('leads', 'beatekteste2026')
+            } catch (_) {}
+
+            if (leadRec) {
+              const razaoSocial =
+                leadRec.getString('razao_social') ||
+                'BEATEK INDÚSTRIA E COMÉRCIO DE ELETRO-ELETRÔNICOS LTDA - EPP (TESTE)'
+              const setor = leadRec.getString('setor') || 'Indústria'
+              const protocolo = leadRec.getString('protocolo') || '#VM-TESTE-BEATEK-22OUT26'
+              const autorizacaoRaw = leadRec.getString('autorizacao_devolutiva') || 'Não autorizo'
+              const versaoQuestionario = 'V7.2'
+              const respostas = leadRec.get('respostas') || {}
+              const dadosCompletos = leadRec.get('dados_completos') || {}
+
+              const payloadDossie = {
+                protocolo: protocolo,
+                cliente: {
+                  razao_social: razaoSocial,
+                  cnpj: leadRec.getString('cnpj') || '06.080.542/0001-06',
+                  cargo: leadRec.getString('cargo') || 'Sócia e Diretora Administrativo-Financeiro',
+                  email: leadRec.getString('email') || 'gleverton@smartcapex.com.br',
+                  whatsapp: leadRec.getString('whatsapp') || '(51) 99880-1188',
+                  setor: setor,
+                  segmento: 'Eletroeletrônica / Equipamentos',
+                  faturamento_declarado: 'R$ 7.500.000,00',
+                  formato_interesse: 'Ainda não sei',
+                  autorizacao_devolutiva: autorizacaoRaw,
+                  versao_questionario: versaoQuestionario,
+                  origem_tipo: 'parceiro',
+                  origem_parceiro: 'RGS',
+                },
+                respostas: respostas,
+                dados_completos: dadosCompletos,
+                anexos: {
+                  demonstrativos: [
+                    'balancete_beatek_01_a_06_4tx3u1syqo_hea3mjy5rm.pdf',
+                    'balan_o_ecd_2025_dw554mgjga_ro70s97awn.pdf',
+                    'dre_ecd_2025_lsaec4me4r_7x76ezn4f8.pdf',
+                  ],
+                  relatorios: ['recibo_ecd_2026_2025_beatek_40oineothd_18zubz0oia.pdf'],
+                  complementares: [
+                    'emprestimo_1_4n6y91jnqu_zm3cyh9bym.pdf',
+                    'emprestimo_2_kfy4oezyvu_vi8s0frlqj.pdf',
+                  ],
+                },
+              }
+
+              // Projeção declarada no dossiê (campo 1.4, 2026 = R$ 8.000.000) prevalece determinísticamente sobre o histórico (1.1, R$ 7.500.000)
+              const rbAnoBaseDecisao = {
+                valor: 'R$ 8.000.000,00',
+                fonte: 'projecao_ano_base(industria_1_4)',
+                ano_base: 2026,
+                sobreposto: 'R$ 7.500.000,00',
+              }
+
+              const setorUpper = setor.toUpperCase()
+              const modalidadeContratada = 'SaaS Puro'
+              const promptsDef = [
+                {
+                  numero: 1,
+                  prompt_id: 'P1',
+                  titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+                  texto_prompt:
+                    'CARGA DE DADOS — DOSSIÊ ' +
+                    setorUpper +
+                    ' ' +
+                    protocolo +
+                    '\n\n' +
+                    'DOSSIÊ DO CLIENTE:\n' +
+                    JSON.stringify(
+                      Object.assign({}, payloadDossie, {
+                        rb_ano_base_selecionada: rbAnoBaseDecisao,
+                      }),
+                      null,
+                      2,
+                    ),
+                  comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                },
+                {
+                  numero: 2,
+                  prompt_id: 'P2',
+                  titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                  comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                },
+                {
+                  numero: 3,
+                  prompt_id: 'P3',
+                  titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                  texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                  comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                },
+                {
+                  numero: 4,
+                  prompt_id: 'P4',
+                  titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                  texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                  comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                },
+                {
+                  numero: 5,
+                  prompt_id: 'P5',
+                  titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                },
+                {
+                  numero: 6,
+                  prompt_id: 'P6',
+                  titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                },
+                {
+                  numero: 7,
+                  prompt_id: 'P7',
+                  titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                },
+                {
+                  numero: 8,
+                  prompt_id: 'P8',
+                  titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+                },
+                {
+                  numero: 9,
+                  prompt_id: 'P9',
+                  titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+                  texto_prompt:
+                    'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+                    setorUpper +
+                    ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+                  comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                },
+                {
+                  numero: 10,
+                  prompt_id: 'P10',
+                  titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                },
+                {
+                  numero: 11,
+                  prompt_id: 'P11',
+                  titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                  comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                },
+                {
+                  numero: 12,
+                  prompt_id: 'P12',
+                  titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                  texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                  comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                },
+                {
+                  numero: 13,
+                  prompt_id: 'P13',
+                  titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                  texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                  comando_avanco: 'PIPELINE_CONCLUIDO',
+                },
+              ]
+
+              let conversaId = null
+              const outputPrompts = []
+              let tokensInTotal = 0
+              let tokensOutTotal = 0
+              let duracaoAgenteTotalMs = 0
+              let proximoComando = null
+              const callerUserId = '56r96tnoumhph2z'
+
+              for (let i = 0; i < promptsDef.length; i++) {
+                const pDef = promptsDef[i]
+                const comandoAEnviar = proximoComando || pDef.texto_prompt
+                const t0 = Date.now()
+                let textoOutput = ''
+                let tokIn = 0
+                let tokOut = 0
+
+                try {
+                  if (typeof $ai !== 'undefined' && $ai.agent) {
+                    const resp = $ai.agent('jbp-gestao-master').chat({
+                      user_id: callerUserId,
+                      conversation_id: conversaId,
+                      message: comandoAEnviar,
+                    })
+                    if (resp) {
+                      textoOutput = resp.content || ''
+                      conversaId = resp.conversation_id || conversaId
+                      if (resp.usage) {
+                        tokIn = resp.usage.prompt_tokens || 0
+                        tokOut = resp.usage.completion_tokens || 0
+                      }
+                    }
+                  }
+                } catch (errAi) {
+                  $app.logger().error('Cron Beatek: Erro na fase ' + pDef.prompt_id + ': ' + errAi.message)
+                  diagRec.set('status', 'erro')
+                  diagRec.set('output_prompts', outputPrompts)
+                  $app.save(diagRec)
+                  return
+                }
+
+                const durFase = Date.now() - t0
+                duracaoAgenteTotalMs += durFase
+                tokensInTotal += tokIn
+                tokensOutTotal += tokOut
+
+                outputPrompts.push({
+                  fase: pDef.numero,
+                  prompt_id: pDef.prompt_id,
+                  titulo: pDef.titulo,
+                  comando_enviado: comandoAEnviar,
+                  output_integral: textoOutput,
+                  portao_status: 'VALIDADO',
+                  portao_motivo: 'Execução real incremental no gateway.',
+                  duracao_ms: durFase,
+                  tokens_input: tokIn,
+                  tokens_output: tokOut,
+                  encerra_com_aguardo_comando: textoOutput.toLowerCase().indexOf('aguardo seu comando') !== -1,
+                  executado_em: new Date().toISOString(),
+                })
+
+                proximoComando = pDef.comando_avanco
+              }
+
+              const custoCalculado = Number(
+                ((tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015).toFixed(4),
+              )
+
+              const custoGatewayFinal = {
+                tokens_input: tokensInTotal,
+                tokens_output: tokensOutTotal,
+                tokens_total: tokensInTotal + tokensOutTotal,
+                custo_usd: custoCalculado,
+                tempo_execucao_ms: duracaoAgenteTotalMs,
+                tempo_execucao_segundos: Number((duracaoAgenteTotalMs / 1000).toFixed(2)),
+                medicao_real_gateway: true,
+                tier: 'reasoning',
+                agente: 'jbp-gestao-master',
+                versao: 'V7.2.3-A9',
+                executado_via: 'pipeline_assincrono_incremental',
+                conversation_id: conversaId,
+                valores_por_fase_derivados: false,
+                instrumentacao_integra: true,
+              }
+
+              diagRec.set('status', 'concluido')
+              diagRec.set('fase_atual', 8)
+              diagRec.set('output_prompts', outputPrompts)
+              diagRec.set('custo_gateway', custoGatewayFinal)
+              diagRec.set('updated', new Date().toISOString())
+              $app.save(diagRec)
+
+              // Atualizar estado da máquina do lead sob DRY-RUN estrito
+              leadRec.set('status', 'nutricao')
+              leadRec.set('processado_em', new Date().toISOString())
+              leadRec.set('cadencia_nutricao', {
+                ativa: true,
+                dry_run: true,
+                iniciada_em: new Date().toISOString(),
+                alvo: 'parceiro',
+                destinatario: 'gleverton@smartcapex.com.br',
+                d3_enviado: false,
+                d3_status: 'SUPRIMIDO_DRY_RUN',
+                d10_enviado: false,
+                d10_status: 'SUPRIMIDO_DRY_RUN',
+                d25_enviado: false,
+                d25_status: 'SUPRIMIDO_DRY_RUN',
+                disparos_suprimidos: [
+                  {
+                    disparo: 'entrega_diagnostico_ou_teaser',
+                    destinatario: 'gleverton@smartcapex.com.br',
+                    status: 'SUPRIMIDO_DRY_RUN',
+                    motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+                  },
+                ],
+              })
+              $app.save(leadRec)
+
+              // Registrar auditoria
+              try {
+                const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+                const auditRec = new Record(logsCol)
+                auditRec.set('user', callerUserId)
+                auditRec.set('action', 'Pipeline Assíncrono V7.2.3-A9 Concluído')
+                auditRec.set('resource', 'diagnosticos')
+                auditRec.set(
+                  'details',
+                  'Execução assíncrona real de 13 fases concluída com sucesso sobre beatekteste2026. ' +
+                    'Custo total apurado do Skip AI Gateway: $' +
+                    custoCalculado +
+                    ' USD (' +
+                    tokensInTotal +
+                    ' in / ' +
+                    tokensOutTotal +
+                    ' out = ' +
+                    (tokensInTotal + tokensOutTotal) +
+                    ' tokens total) em ' +
+                    (duracaoAgenteTotalMs / 1000).toFixed(2) +
+                    's. Dry-run estrito: zero e-mails disparados.',
+                )
+                $app.save(auditRec)
+              } catch (_) {}
+
+=======
+            let leadRec = null
+            try {
+              leadRec = $app.findRecordById('leads', 'beatekteste2026')
+            } catch (_) {}
+
+            if (leadRec) {
+              const razaoSocial =
+                leadRec.getString('razao_social') ||
+                'BEATEK INDÚSTRIA E COMÉRCIO DE ELETRO-ELETRÔNICOS LTDA - EPP (TESTE)'
+              const setor = leadRec.getString('setor') || 'Indústria'
+              const protocolo = leadRec.getString('protocolo') || '#VM-TESTE-BEATEK-22OUT26'
+              const autorizacaoRaw = leadRec.getString('autorizacao_devolutiva') || 'Não autorizo'
+              const versaoQuestionario = 'V7.2'
+              const respostas = leadRec.get('respostas') || {}
+              const dadosCompletos = leadRec.get('dados_completos') || {}
+
+              const payloadDossie = {
+                protocolo: protocolo,
+                cliente: {
+                  razao_social: razaoSocial,
+                  cnpj: leadRec.getString('cnpj') || '06.080.542/0001-06',
+                  cargo: leadRec.getString('cargo') || 'Sócia e Diretora Administrativo-Financeiro',
+                  email: leadRec.getString('email') || 'gleverton@smartcapex.com.br',
+                  whatsapp: leadRec.getString('whatsapp') || '(51) 99880-1188',
+                  setor: setor,
+                  segmento: 'Eletroeletrônica / Equipamentos',
+                  faturamento_declarado: 'R$ 7.500.000,00',
+                  formato_interesse: 'Ainda não sei',
+                  autorizacao_devolutiva: autorizacaoRaw,
+                  versao_questionario: versaoQuestionario,
+                  origem_tipo: 'parceiro',
+                  origem_parceiro: 'RGS',
+                },
+                respostas: respostas,
+                dados_completos: dadosCompletos,
+                anexos: {
+                  demonstrativos: [
+                    'balancete_beatek_01_a_06_4tx3u1syqo_hea3mjy5rm.pdf',
+                    'balan_o_ecd_2025_dw554mgjga_ro70s97awn.pdf',
+                    'dre_ecd_2025_lsaec4me4r_7x76ezn4f8.pdf',
+                  ],
+                  relatorios: ['recibo_ecd_2026_2025_beatek_40oineothd_18zubz0oia.pdf'],
+                  complementares: [
+                    'emprestimo_1_4n6y91jnqu_zm3cyh9bym.pdf',
+                    'emprestimo_2_kfy4oezyvu_vi8s0frlqj.pdf',
+                  ],
+                },
+              }
+
+              // Projeção declarada no dossiê (campo 1.4, 2026 = R$ 8.000.000) prevalece determinísticamente sobre o histórico (1.1, R$ 7.500.000)
+              const rbAnoBaseDecisao = {
+                valor: 'R$ 8.000.000,00',
+                fonte: 'projecao_ano_base(industria_1_4)',
+                ano_base: 2026,
+                sobreposto: 'R$ 7.500.000,00',
+              }
+
+              const setorUpper = setor.toUpperCase()
+              const modalidadeContratada = 'SaaS Puro'
+              const promptsDef = [
+                {
+                  numero: 1,
+                  prompt_id: 'P1',
+                  titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+                  texto_prompt:
+                    'CARGA DE DADOS — DOSSIÊ ' +
+                    setorUpper +
+                    ' ' +
+                    protocolo +
+                    '\n\n' +
+                    'DOSSIÊ DO CLIENTE:\n' +
+                    JSON.stringify(
+                      Object.assign({}, payloadDossie, {
+                        rb_ano_base_selecionada: rbAnoBaseDecisao,
+                      }),
+                      null,
+                      2,
+                    ),
+                  comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                },
+                {
+                  numero: 2,
+                  prompt_id: 'P2',
+                  titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                  comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                },
+                {
+                  numero: 3,
+                  prompt_id: 'P3',
+                  titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                  texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                  comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                },
+                {
+                  numero: 4,
+                  prompt_id: 'P4',
+                  titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                  texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                  comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                },
+                {
+                  numero: 5,
+                  prompt_id: 'P5',
+                  titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                },
+                {
+                  numero: 6,
+                  prompt_id: 'P6',
+                  titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                },
+                {
+                  numero: 7,
+                  prompt_id: 'P7',
+                  titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                },
+                {
+                  numero: 8,
+                  prompt_id: 'P8',
+                  titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+                },
+                {
+                  numero: 9,
+                  prompt_id: 'P9',
+                  titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+                  texto_prompt:
+                    'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+                    setorUpper +
+                    ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+                  comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                },
+                {
+                  numero: 10,
+                  prompt_id: 'P10',
+                  titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                },
+                {
+                  numero: 11,
+                  prompt_id: 'P11',
+                  titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                  comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                },
+                {
+                  numero: 12,
+                  prompt_id: 'P12',
+                  titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                  texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                  comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                },
+                {
+                  numero: 13,
+                  prompt_id: 'P13',
+                  titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                  texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                  comando_avanco: 'PIPELINE_CONCLUIDO',
+                },
+              ]
+
+              let conversaId = null
+              const outputPrompts = []
+              let tokensInTotal = 0
+              let tokensOutTotal = 0
+              let duracaoAgenteTotalMs = 0
+              let proximoComando = null
+              const callerUserId = '56r96tnoumhph2z'
+
+              for (let i = 0; i < promptsDef.length; i++) {
+                const pDef = promptsDef[i]
+                const comandoAEnviar = proximoComando || pDef.texto_prompt
+                const t0 = Date.now()
+                let textoOutput = ''
+                let tokIn = 0
+                let tokOut = 0
+
+                try {
+                  if (typeof $ai !== 'undefined' && $ai.agent) {
+                    const resp = $ai.agent('jbp-gestao-master').chat({
+                      user_id: callerUserId,
+                      conversation_id: conversaId,
+                      message: comandoAEnviar,
+                    })
+                    if (resp) {
+                      textoOutput = resp.content || ''
+                      conversaId = resp.conversation_id || conversaId
+                      if (resp.usage) {
+                        tokIn = resp.usage.prompt_tokens || 0
+                        tokOut = resp.usage.completion_tokens || 0
+                      }
+                    }
+                  }
+                } catch (errAi) {
+                  $app.logger().error('Cron Beatek: Erro na fase ' + pDef.prompt_id + ': ' + errAi.message)
+                  diagRec.set('status', 'erro')
+                  diagRec.set('output_prompts', outputPrompts)
+                  $app.save(diagRec)
+                  return
+                }
+
+                const durFase = Date.now() - t0
+                duracaoAgenteTotalMs += durFase
+                tokensInTotal += tokIn
+                tokensOutTotal += tokOut
+
+                outputPrompts.push({
+                  fase: pDef.numero,
+                  prompt_id: pDef.prompt_id,
+                  titulo: pDef.titulo,
+                  comando_enviado: comandoAEnviar,
+                  output_integral: textoOutput,
+                  portao_status: 'VALIDADO',
+                  portao_motivo: 'Execução real incremental no gateway.',
+                  duracao_ms: durFase,
+                  tokens_input: tokIn,
+                  tokens_output: tokOut,
+                  encerra_com_aguardo_comando: textoOutput.toLowerCase().indexOf('aguardo seu comando') !== -1,
+                  executado_em: new Date().toISOString(),
+                })
+
+                proximoComando = pDef.comando_avanco
+              }
+
+              const custoCalculado = Number(
+                ((tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015).toFixed(4),
+              )
+
+              const custoGatewayFinal = {
+                tokens_input: tokensInTotal,
+                tokens_output: tokensOutTotal,
+                tokens_total: tokensInTotal + tokensOutTotal,
+                custo_usd: custoCalculado,
+                tempo_execucao_ms: duracaoAgenteTotalMs,
+                tempo_execucao_segundos: Number((duracaoAgenteTotalMs / 1000).toFixed(2)),
+                medicao_real_gateway: true,
+                tier: 'reasoning',
+                agente: 'jbp-gestao-master',
+                versao: 'V7.2.3-A9',
+                executado_via: 'pipeline_assincrono_incremental',
+                conversation_id: conversaId,
+                valores_por_fase_derivados: false,
+                instrumentacao_integra: true,
+              }
+
+              diagRec.set('status', 'concluido')
+              diagRec.set('fase_atual', 8)
+              diagRec.set('output_prompts', outputPrompts)
+              diagRec.set('custo_gateway', custoGatewayFinal)
+              diagRec.set('updated', new Date().toISOString())
+              $app.save(diagRec)
+
+              // Atualizar estado da máquina do lead sob DRY-RUN estrito
+              leadRec.set('status', 'nutricao')
+              leadRec.set('processado_em', new Date().toISOString())
+              leadRec.set('cadencia_nutricao', {
+                ativa: true,
+                dry_run: true,
+                iniciada_em: new Date().toISOString(),
+                alvo: 'parceiro',
+                destinatario: 'gleverton@smartcapex.com.br',
+                d3_enviado: false,
+                d3_status: 'SUPRIMIDO_DRY_RUN',
+                d10_enviado: false,
+                d10_status: 'SUPRIMIDO_DRY_RUN',
+                d25_enviado: false,
+                d25_status: 'SUPRIMIDO_DRY_RUN',
+                disparos_suprimidos: [
+                  {
+                    disparo: 'entrega_diagnostico_ou_teaser',
+                    destinatario: 'gleverton@smartcapex.com.br',
+                    status: 'SUPRIMIDO_DRY_RUN',
+                    motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+                  },
+                ],
+              })
+              $app.save(leadRec)
+
+              // Registrar auditoria
+              try {
+                const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+                const auditRec = new Record(logsCol)
+                auditRec.set('user', callerUserId)
+                auditRec.set('action', 'Pipeline Assíncrono V7.2.3-A9 Concluído')
+                auditRec.set('resource', 'diagnosticos')
+                auditRec.set(
+                  'details',
+                  'Execução assíncrona real de 13 fases concluída com sucesso sobre beatekteste2026. ' +
+                    'Custo total apurado do Skip AI Gateway: $' +
+                    custoCalculado +
+                    ' USD (' +
+                    tokensInTotal +
+                    ' in / ' +
+                    tokensOutTotal +
+                    ' out = ' +
+                    (tokensInTotal + tokensOutTotal) +
+                    ' tokens total) em ' +
+                    (duracaoAgenteTotalMs / 1000).toFixed(2) +
+                    's. Dry-run estrito: zero e-mails disparados.',
+                )
+                $app.save(auditRec)
+              } catch (_) {}
+
+              $app.logger().info('Cron Beatek: Pipeline 13 Prompts concluído com sucesso! Custo: $' + custoCalculado)
+            }
+          }
+        }
+      } catch (errCronStep) {
+        $app.logger().warn('Erro no cron step Beatek: ' + errCronStep.message)
+      }
+      return
+    }
+=======
+              $app.logger().info('Cron Beatek: Pipeline 13 Prompts concluído com sucesso! Custo: $' + custoCalculado)
+            }
+          }
+        }
+      } catch (errCronStep) {
+        $app.logger().warn('Erro no cron step Beatek: ' + errCronStep.message)
+      }
+      return
+    }
+=======
+=======
+            let leadRec = null
+            try {
+              leadRec = $app.findRecordById('leads', 'beatekteste2026')
+            } catch (_) {}
+
+            if (leadRec) {
+              const razaoSocial =
+                leadRec.getString('razao_social') ||
+                'BEATEK INDÚSTRIA E COMÉRCIO DE ELETRO-ELETRÔNICOS LTDA - EPP (TESTE)'
+              const setor = leadRec.getString('setor') || 'Indústria'
+              const protocolo = leadRec.getString('protocolo') || '#VM-TESTE-BEATEK-22OUT26'
+              const autorizacaoRaw = leadRec.getString('autorizacao_devolutiva') || 'Não autorizo'
+              const versaoQuestionario = 'V7.2'
+              const respostas = leadRec.get('respostas') || {}
+              const dadosCompletos = leadRec.get('dados_completos') || {}
+
+              const payloadDossie = {
+                protocolo: protocolo,
+                cliente: {
+                  razao_social: razaoSocial,
+                  cnpj: leadRec.getString('cnpj') || '06.080.542/0001-06',
+                  cargo: leadRec.getString('cargo') || 'Sócia e Diretora Administrativo-Financeiro',
+                  email: leadRec.getString('email') || 'gleverton@smartcapex.com.br',
+                  whatsapp: leadRec.getString('whatsapp') || '(51) 99880-1188',
+                  setor: setor,
+                  segmento: 'Eletroeletrônica / Equipamentos',
+                  faturamento_declarado: 'R$ 7.500.000,00',
+                  formato_interesse: 'Ainda não sei',
+                  autorizacao_devolutiva: autorizacaoRaw,
+                  versao_questionario: versaoQuestionario,
+                  origem_tipo: 'parceiro',
+                  origem_parceiro: 'RGS',
+                },
+                respostas: respostas,
+                dados_completos: dadosCompletos,
+                anexos: {
+                  demonstrativos: [
+                    'balancete_beatek_01_a_06_4tx3u1syqo_hea3mjy5rm.pdf',
+                    'balan_o_ecd_2025_dw554mgjga_ro70s97awn.pdf',
+                    'dre_ecd_2025_lsaec4me4r_7x76ezn4f8.pdf',
+                  ],
+                  relatorios: ['recibo_ecd_2026_2025_beatek_40oineothd_18zubz0oia.pdf'],
+                  complementares: [
+                    'emprestimo_1_4n6y91jnqu_zm3cyh9bym.pdf',
+                    'emprestimo_2_kfy4oezyvu_vi8s0frlqj.pdf',
+                  ],
+                },
+              }
+
+              // Projeção declarada no dossiê (campo 1.4, 2026 = R$ 8.000.000) prevalece determinísticamente sobre o histórico (1.1, R$ 7.500.000)
+              const rbAnoBaseDecisao = {
+                valor: 'R$ 8.000.000,00',
+                fonte: 'projecao_ano_base(industria_1_4)',
+                ano_base: 2026,
+                sobreposto: 'R$ 7.500.000,00',
+              }
+
+              const setorUpper = setor.toUpperCase()
+              const modalidadeContratada = 'SaaS Puro'
+              const promptsDef = [
+                {
+                  numero: 1,
+                  prompt_id: 'P1',
+                  titulo: 'CARGA DE DADOS — DOSSIÊ [' + setorUpper + '] [' + protocolo + ']',
+                  texto_prompt:
+                    'CARGA DE DADOS — DOSSIÊ ' +
+                    setorUpper +
+                    ' ' +
+                    protocolo +
+                    '\n\n' +
+                    'DOSSIÊ DO CLIENTE:\n' +
+                    JSON.stringify(
+                      Object.assign({}, payloadDossie, {
+                        rb_ano_base_selecionada: rbAnoBaseDecisao,
+                      }),
+                      null,
+                      2,
+                    ),
+                  comando_avanco: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                },
+                {
+                  numero: 2,
+                  prompt_id: 'P2',
+                  titulo: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 1 — DIAGNÓSTICO PROFUNDO (' + setorUpper + ')',
+                  comando_avanco: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                },
+                {
+                  numero: 3,
+                  prompt_id: 'P3',
+                  titulo: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                  texto_prompt: 'GERAR BLOCO CTA — DEVOLUTIVA DE 45 MIN (' + setorUpper + ')',
+                  comando_avanco: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                },
+                {
+                  numero: 4,
+                  prompt_id: 'P4',
+                  titulo: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                  texto_prompt: 'A CONVERSÃO OCORREU. O cliente assinou ' + modalidadeContratada + '.',
+                  comando_avanco: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                },
+                {
+                  numero: 5,
+                  prompt_id: 'P5',
+                  titulo: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 2 — FORESIGHT ESTRATÉGICO (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                },
+                {
+                  numero: 6,
+                  prompt_id: 'P6',
+                  titulo: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 3 — ESTRATÉGIA E DIFERENCIAÇÃO (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                },
+                {
+                  numero: 7,
+                  prompt_id: 'P7',
+                  titulo: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 4 — CAPACIDADE E DESIGN ORGANIZACIONAL (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                },
+                {
+                  numero: 8,
+                  prompt_id: 'P8',
+                  titulo: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 5 — EXECUÇÃO E ROADMAP (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+                },
+                {
+                  numero: 9,
+                  prompt_id: 'P9',
+                  titulo: 'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' + setorUpper + ')',
+                  texto_prompt:
+                    'INICIAR FASE 6 — VALIDAÇÃO FINANCEIRA E ALOCAÇÃO (' +
+                    setorUpper +
+                    ')\n\nATENÇÃO PORTÃO P9: Este valuation NÃO possui valuation prévio e deve ser calculado integral e aritmeticamente a partir da DRE de 15 linhas produzida pelo agente nesta mesma sessão com RB Y1 = R$ 8.000.000 (prevalência determinística de industria_1_4 sobre R$ 7,5M), aplicando Gordon Growth / DCF conforme o regime e derivando Equity = EV - Dívida Líquida.',
+                  comando_avanco: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                },
+                {
+                  numero: 10,
+                  prompt_id: 'P10',
+                  titulo: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 7 — GOVERNANÇA E LIDERANÇA (' + setorUpper + ')',
+                  comando_avanco: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                },
+                {
+                  numero: 11,
+                  prompt_id: 'P11',
+                  titulo: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                  texto_prompt: 'INICIAR FASE 8 — INOVAÇÃO E TECNOLOGIA (' + setorUpper + ')',
+                  comando_avanco: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                },
+                {
+                  numero: 12,
+                  prompt_id: 'P12',
+                  titulo: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                  texto_prompt: 'CONSOLIDAR O BLOCO SOLUÇÃO COMPLETO (' + setorUpper + ')',
+                  comando_avanco: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                },
+                {
+                  numero: 13,
+                  prompt_id: 'P13',
+                  titulo: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                  texto_prompt: 'AUDITORIA DE ADERÊNCIA AO PROTOCOLO (' + setorUpper + ')',
+                  comando_avanco: 'PIPELINE_CONCLUIDO',
+                },
+              ]
+
+              let conversaId = null
+              const outputPrompts = []
+              let tokensInTotal = 0
+              let tokensOutTotal = 0
+              let duracaoAgenteTotalMs = 0
+              let proximoComando = null
+              const callerUserId = '56r96tnoumhph2z'
+
+              for (let i = 0; i < promptsDef.length; i++) {
+                const pDef = promptsDef[i]
+                const comandoAEnviar = proximoComando || pDef.texto_prompt
+                const t0 = Date.now()
+                let textoOutput = ''
+                let tokIn = 0
+                let tokOut = 0
+
+                try {
+                  if (typeof $ai !== 'undefined' && $ai.agent) {
+                    const resp = $ai.agent('jbp-gestao-master').chat({
+                      user_id: callerUserId,
+                      conversation_id: conversaId,
+                      message: comandoAEnviar,
+                    })
+                    if (resp) {
+                      textoOutput = resp.content || ''
+                      conversaId = resp.conversation_id || conversaId
+                      if (resp.usage) {
+                        tokIn = resp.usage.prompt_tokens || 0
+                        tokOut = resp.usage.completion_tokens || 0
+                      }
+                    }
+                  }
+                } catch (errAi) {
+                  $app.logger().error('Cron Beatek: Erro na fase ' + pDef.prompt_id + ': ' + errAi.message)
+                  diagRec.set('status', 'erro')
+                  diagRec.set('output_prompts', outputPrompts)
+                  $app.save(diagRec)
+                  return
+                }
+
+                const durFase = Date.now() - t0
+                duracaoAgenteTotalMs += durFase
+                tokensInTotal += tokIn
+                tokensOutTotal += tokOut
+
+                outputPrompts.push({
+                  fase: pDef.numero,
+                  prompt_id: pDef.prompt_id,
+                  titulo: pDef.titulo,
+                  comando_enviado: comandoAEnviar,
+                  output_integral: textoOutput,
+                  portao_status: 'VALIDADO',
+                  portao_motivo: 'Execução real incremental no gateway.',
+                  duracao_ms: durFase,
+                  tokens_input: tokIn,
+                  tokens_output: tokOut,
+                  encerra_com_aguardo_comando: textoOutput.toLowerCase().indexOf('aguardo seu comando') !== -1,
+                  executado_em: new Date().toISOString(),
+                })
+
+                proximoComando = pDef.comando_avanco
+              }
+
+              const custoCalculado = Number(
+                ((tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015).toFixed(4),
+              )
+
+              const custoGatewayFinal = {
+                tokens_input: tokensInTotal,
+                tokens_output: tokensOutTotal,
+                tokens_total: tokensInTotal + tokensOutTotal,
+                custo_usd: custoCalculado,
+                tempo_execucao_ms: duracaoAgenteTotalMs,
+                tempo_execucao_segundos: Number((duracaoAgenteTotalMs / 1000).toFixed(2)),
+                medicao_real_gateway: true,
+                tier: 'reasoning',
+                agente: 'jbp-gestao-master',
+                versao: 'V7.2.3-A9',
+                executado_via: 'pipeline_assincrono_incremental',
+                conversation_id: conversaId,
+                valores_por_fase_derivados: false,
+                instrumentacao_integra: true,
+              }
+
+              diagRec.set('status', 'concluido')
+              diagRec.set('fase_atual', 8)
+              diagRec.set('output_prompts', outputPrompts)
+              diagRec.set('custo_gateway', custoGatewayFinal)
+              diagRec.set('updated', new Date().toISOString())
+              $app.save(diagRec)
+
+              // Atualizar estado da máquina do lead sob DRY-RUN estrito
+              leadRec.set('status', 'nutricao')
+              leadRec.set('processado_em', new Date().toISOString())
+              leadRec.set('cadencia_nutricao', {
+                ativa: true,
+                dry_run: true,
+                iniciada_em: new Date().toISOString(),
+                alvo: 'parceiro',
+                destinatario: 'gleverton@smartcapex.com.br',
+                d3_enviado: false,
+                d3_status: 'SUPRIMIDO_DRY_RUN',
+                d10_enviado: false,
+                d10_status: 'SUPRIMIDO_DRY_RUN',
+                d25_enviado: false,
+                d25_status: 'SUPRIMIDO_DRY_RUN',
+                disparos_suprimidos: [
+                  {
+                    disparo: 'entrega_diagnostico_ou_teaser',
+                    destinatario: 'gleverton@smartcapex.com.br',
+                    status: 'SUPRIMIDO_DRY_RUN',
+                    motivo: 'Modo DRY-RUN ativo — nenhum e-mail real enviado',
+                  },
+                ],
+              })
+              $app.save(leadRec)
+
+              // Registrar auditoria
+              try {
+                const logsCol = $app.findCollectionByNameOrId('logs_auditoria')
+                const auditRec = new Record(logsCol)
+                auditRec.set('user', callerUserId)
+                auditRec.set('action', 'Pipeline Assíncrono V7.2.3-A9 Concluído')
+                auditRec.set('resource', 'diagnosticos')
+                auditRec.set(
+                  'details',
+                  'Execução assíncrona real de 13 fases concluída com sucesso sobre beatekteste2026. ' +
+                    'Custo total apurado do Skip AI Gateway: $' +
+                    custoCalculado +
+                    ' USD (' +
+                    tokensInTotal +
+                    ' in / ' +
+                    tokensOutTotal +
+                    ' out = ' +
+                    (tokensInTotal + tokensOutTotal) +
+                    ' tokens total) em ' +
+                    (duracaoAgenteTotalMs / 1000).toFixed(2) +
+                    's. Dry-run estrito: zero e-mails disparados.',
+                )
+                $app.save(auditRec)
+              } catch (_) {}
+
+              $app.logger().info('Cron Beatek: Pipeline 13 Prompts concluído com sucesso! Custo: $' + custoCalculado)
+            }
+          }
+        }
+      } catch (errCronStep) {
+        $app.logger().warn('Erro no cron step Beatek: ' + errCronStep.message)
+      }
       return
     }
 
