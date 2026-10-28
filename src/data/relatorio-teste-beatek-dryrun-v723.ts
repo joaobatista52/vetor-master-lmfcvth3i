@@ -52,7 +52,7 @@ export interface ItemComparadorLinhaALinha {
   valor_produzido_pipeline: string
   diferenca_absoluta: string
   diferenca_percentual: string
-  veredicto: 'PAR' | 'DIVERGENTE'
+  veredicto: 'PAR' | 'DIVERGENTE' | 'PENDENTE'
   nota_metodologica: string
 }
 
@@ -95,7 +95,13 @@ export interface RelatorioTesteDryRunBeatek {
     total_linhas_par: number
     total_linhas_divergentes: number
     taxa_paridade_percentual: number
-    veredicto_global: 'PARIDADE_TOTAL_CONFORME' | 'DIVERGENCIAS_DETECTADAS'
+    veredicto_global:
+      | 'PARIDADE_TOTAL_CONFORME'
+      | 'DIVERGENCIAS_DETECTADAS'
+      | 'PARIDADE_RESTRITA_VALORES_DECLARADOS_BLOCO'
+      | 'PAR'
+      | 'DIVERGENTE'
+      | 'PENDENTE'
   }
   custo_gateway_total: {
     tokens_input: number
