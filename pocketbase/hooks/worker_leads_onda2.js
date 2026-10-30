@@ -82,7 +82,17 @@ routerAdd('POST', '/backend/v1/teste-beatek-dryrun-fresco', (e) => {
 
   // 13 Prompts Fixos da Skill V7.2.3-A9
   const setorUpper = setor.toUpperCase()
-  const modalidadeContratada = 'SaaS Puro'
+  let modalidadeContratada = leadRecord.getString('nivel_assinatura') || ''
+  if (!modalidadeContratada) {
+    const fmt = leadRecord.getString('formato_interesse') || ''
+    if (fmt.indexOf('Bespoke') !== -1) {
+      modalidadeContratada = 'Bespoke CaaS'
+    } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
+      modalidadeContratada = 'MaaS Híbrido'
+    } else {
+      modalidadeContratada = 'SaaS Puro'
+    }
+  }
   const promptsDef = [
     {
       numero: 1,
@@ -301,6 +311,13 @@ routerAdd('POST', '/backend/v1/teste-beatek-dryrun-fresco', (e) => {
     relatoriosPorFase.join('\n\n---\n\n')
   if (relatorioFinal.length > 4900) {
     relatorioFinal = relatorioFinal.substring(0, 4880) + '\n[... truncado]'
+  }
+
+  // Fase 6: modo_execucao automático por nivel_assinatura (SaaS Puro -> completo; MaaS Híbrido / Bespoke CaaS -> pausado)
+  // NESTA FASE o modo é apenas REGISTRADO — não altera o comportamento do motor; execução pausada com pontos de curadoria é escopo futuro.
+  const modoExecucaoFresco = modalidadeContratada === 'SaaS Puro' ? 'completo' : 'pausado'
+  if (!diagRec.getString('modo_execucao')) {
+    diagRec.set('modo_execucao', modoExecucaoFresco)
   }
 
   diagRec.set('setor', setor)
@@ -606,6 +623,27 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
       versaoQuestionario = 'V6.7'
     }
 
+    // Derivação do nível de assinatura a partir de nivel_assinatura ou formato_interesse
+    let nivelAssinaturaLead = leadRecord.getString('nivel_assinatura') || ''
+    if (!nivelAssinaturaLead) {
+      const fmt = leadRecord.getString('formato_interesse') || ''
+      if (fmt.indexOf('Bespoke') !== -1) {
+        nivelAssinaturaLead = 'Bespoke CaaS'
+      } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
+        nivelAssinaturaLead = 'MaaS Híbrido'
+      } else {
+        nivelAssinaturaLead = 'SaaS Puro'
+      }
+      // Persistir a derivação no lead caso ainda não gravado
+      try {
+        leadRecord.set('nivel_assinatura', nivelAssinaturaLead)
+      } catch (_) {}
+    }
+
+    // Modo de execução automático conforme nivel_assinatura (SaaS Puro -> completo; MaaS Híbrido / Bespoke CaaS -> pausado)
+    // NESTA FASE o modo é apenas REGISTRADO — não altera o comportamento do motor; execução pausada com pontos de curadoria é escopo futuro.
+    const modoExecucaoDefinido = nivelAssinaturaLead === 'SaaS Puro' ? 'completo' : 'pausado'
+
     // Montar payload de contexto para o Agente nativo
     const payloadDossie = {
       protocolo: leadRecord.getString('protocolo') || '#VM-' + leadId,
@@ -619,6 +657,7 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
         segmento: leadRecord.getString('segmento') || '',
         faturamento_declarado: leadRecord.getString('faturamento_mensal') || '',
         formato_interesse: leadRecord.getString('formato_interesse') || '',
+        nivel_assinatura: nivelAssinaturaLead,
         autorizacao_devolutiva: autorizacaoRaw,
         versao_questionario: versaoQuestionario,
         origem_tipo: isParceiro ? 'parceiro' : 'direto',
@@ -815,6 +854,8 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
           autorizacao_devolutiva: autorizacaoRaw,
           origem_tipo: isParceiro ? 'parceiro' : 'direto',
           origem_parceiro: origemParceiro,
+          nivel_assinatura: nivelAssinaturaLead,
+          modo_execucao: modoExecucaoDefinido,
         },
         dry_run: dryRunParam,
       }
@@ -1071,6 +1112,10 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
     let relatorioFinal = relatorioConsolidado8Fases
     if (relatorioFinal && relatorioFinal.length > 4900) {
       relatorioFinal = relatorioFinal.substring(0, 4890) + '\n[... truncado]'
+    }
+
+    if (!diagRec.getString('modo_execucao')) {
+      diagRec.set('modo_execucao', modoExecucaoDefinido)
     }
 
     diagRec.set('lead', leadId)
@@ -1542,7 +1587,17 @@ cronAdd('cadencia_nutricao_leads', '0 9 * * *', () => {
         }
 
         const setorUpper = setor.toUpperCase()
-        const modalidadeContratada = 'SaaS Puro'
+        let modalidadeContratada = leadTeste.getString('nivel_assinatura') || ''
+        if (!modalidadeContratada) {
+          const fmt = leadTeste.getString('formato_interesse') || ''
+          if (fmt.indexOf('Bespoke') !== -1) {
+            modalidadeContratada = 'Bespoke CaaS'
+          } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
+            modalidadeContratada = 'MaaS Híbrido'
+          } else {
+            modalidadeContratada = 'SaaS Puro'
+          }
+        }
         const promptsDef = [
           {
             numero: 1,
@@ -1760,6 +1815,13 @@ cronAdd('cadencia_nutricao_leads', '0 9 * * *', () => {
             relatoriosPorFase.join('\n\n---\n\n')
           if (relatorioFinal.length > 4900) {
             relatorioFinal = relatorioFinal.substring(0, 4880) + '\n[... truncado]'
+          }
+
+          // Fase 6: modo_execucao automático por nivel_assinatura (SaaS Puro -> completo; MaaS Híbrido / Bespoke CaaS -> pausado)
+          // NESTA FASE o modo é apenas REGISTRADO — não altera o comportamento do motor; execução pausada com pontos de curadoria é escopo futuro.
+          const modoExecucaoCron = modalidadeContratada === 'SaaS Puro' ? 'completo' : 'pausado'
+          if (!diagRec.getString('modo_execucao')) {
+            diagRec.set('modo_execucao', modoExecucaoCron)
           }
 
           diagRec.set('setor', setor)

@@ -631,9 +631,13 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     versaoQuestionario,
     dossie,
     instrumentacaoSelecaoRB,
+    nivelAssinaturaLead,
   ) {
     const setorUpper = (setor || 'INDÚSTRIA').toUpperCase()
-    const modalidadeContratada = 'SaaS Puro'
+    const modalidadeContratada =
+      nivelAssinaturaLead ||
+      (dossie && dossie.cliente && dossie.cliente.nivel_assinatura) ||
+      'SaaS Puro'
     const contextoDadosBrutos = extrairContextoDadosBrutosDRE(dossie)
 
     const payloadP1Dossie = Object.assign({}, dossie, {
@@ -811,6 +815,42 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       JSON.stringify(instrumentacaoSelecaoRB),
   )
 
+  let nivelAssinaturaLead =
+    (metadados && metadados.nivel_assinatura) ||
+    (dossie && dossie.cliente && dossie.cliente.nivel_assinatura) ||
+    ''
+
+  const leadIdReq = (metadados && metadados.lead_id) || (dossie && dossie.lead_id) || ''
+  if (!nivelAssinaturaLead && leadIdReq) {
+    try {
+      const lRec = $app.findRecordById('leads', leadIdReq)
+      if (lRec) {
+        nivelAssinaturaLead = lRec.getString('nivel_assinatura') || ''
+        if (!nivelAssinaturaLead) {
+          const fmt = lRec.getString('formato_interesse') || ''
+          if (fmt.indexOf('Bespoke') !== -1) {
+            nivelAssinaturaLead = 'Bespoke CaaS'
+          } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
+            nivelAssinaturaLead = 'MaaS Híbrido'
+          } else {
+            nivelAssinaturaLead = 'SaaS Puro'
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (!nivelAssinaturaLead) {
+    const fmt = (dossie && dossie.cliente && dossie.cliente.formato_interesse) || ''
+    if (fmt.indexOf('Bespoke') !== -1) {
+      nivelAssinaturaLead = 'Bespoke CaaS'
+    } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
+      nivelAssinaturaLead = 'MaaS Híbrido'
+    } else {
+      nivelAssinaturaLead = 'SaaS Puro'
+    }
+  }
+
   const promptsDef = obterDefinicao13PromptsSkill(
     setor,
     protocolo,
@@ -818,6 +858,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     versaoQuestionario,
     dossie,
     instrumentacaoSelecaoRB,
+    nivelAssinaturaLead,
   )
 
   const outputPrompts = []

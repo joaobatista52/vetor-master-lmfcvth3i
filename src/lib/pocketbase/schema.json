@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T15:19:20.209Z",
+  "generatedAt": "2026-10-30T15:44:32.472Z",
   "collections": [
     {
       "name": "users",
@@ -548,6 +548,13 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "modo_execucao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["completo", "pausado"]
         }
       ],
       "indexes": ["CREATE INDEX idx_diagnosticos_user ON diagnosticos (user)"]
@@ -1125,6 +1132,13 @@
           "type": "bool",
           "required": false,
           "system": false
+        },
+        {
+          "name": "nivel_assinatura",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["SaaS Puro", "MaaS Híbrido", "Bespoke CaaS"]
         }
       ],
       "indexes": [
