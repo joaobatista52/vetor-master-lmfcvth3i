@@ -781,6 +781,15 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     })
   }
 
+  const faseUnica =
+    body && body.fase_unica !== undefined && body.fase_unica !== null
+      ? Number(body.fase_unica)
+      : null
+
+  if (faseUnica !== null && (!Number.isInteger(faseUnica) || faseUnica < 1 || faseUnica > 13)) {
+    return e.json(400, { erro: 'FASE_UNICA_INVALIDA' })
+  }
+
   const dossie = body.dossie || {}
   const metadados = body.metadados || {}
   const callerUserId = (e.auth && e.auth.id) || body.user_id || null
@@ -821,6 +830,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   let proximoComandoAEnviar = null
 
   for (let i = 0; i < promptsDef.length; i++) {
+    if (faseUnica !== null && i + 1 !== faseUnica) continue
     const pDef = promptsDef[i]
     const promptMsg = proximoComandoAEnviar || pDef.texto_prompt
     const t0 = Date.now()
@@ -934,12 +944,17 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
 
   const tFim = Date.now()
 
-  return e.json(200, {
+  const resposta200 = {
     sucesso: true,
     versao_servico: 'V7.2.3-A9-Skill13Prompts',
     executor: 'jbp-gestao-master',
     total_prompts_executados: outputPrompts.length,
     output_fases: outputPrompts,
+  }
+  if (faseUnica !== null) {
+    resposta200.fase_executada = faseUnica
+  }
+  Object.assign(resposta200, {
     dre_normalizada_15_linhas: dreNormalizada15Linhas,
     rb_y1_selecao: instrumentacaoSelecaoRB,
     contexto_dados_brutos: extrairContextoDadosBrutosDRE(dossie),
@@ -979,4 +994,6 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       duracao_total_ms: tFim - tInicio,
     },
   })
+
+  return e.json(200, resposta200)
 })
