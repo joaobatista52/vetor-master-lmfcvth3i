@@ -12,6 +12,8 @@ export interface OKR {
   resultados_chave: ResultadoChave[]
   progresso: number
   etapa?: number
+  fase_origem?: number
+  curadoria_vinculada?: string
   created: string
   updated: string
 }
@@ -25,6 +27,13 @@ export const getOKRs = async (): Promise<OKR[]> => {
     resultados_chave: Array.isArray(r.resultados_chave) ? r.resultados_chave : [],
     progresso: r.progresso || 0,
     etapa: r.etapa || undefined,
+    fase_origem:
+      typeof r.fase_origem === 'number'
+        ? r.fase_origem
+        : r.fase_origem
+          ? Number(r.fase_origem)
+          : undefined,
+    curadoria_vinculada: r.curadoria_vinculada || undefined,
     created: r.created,
     updated: r.updated,
   })) as OKR[]
@@ -35,6 +44,9 @@ export const createOKR = async (data: {
   objetivo: string
   resultados_chave?: ResultadoChave[]
   progresso?: number
+  etapa?: number
+  fase_origem?: number
+  curadoria_vinculada?: string
 }): Promise<OKR> => {
   const r: any = await pb.collection('okrs').create(data)
   return {
@@ -43,6 +55,14 @@ export const createOKR = async (data: {
     objetivo: r.objetivo,
     resultados_chave: r.resultados_chave || [],
     progresso: r.progresso || 0,
+    etapa: r.etapa || undefined,
+    fase_origem:
+      typeof r.fase_origem === 'number'
+        ? r.fase_origem
+        : r.fase_origem
+          ? Number(r.fase_origem)
+          : undefined,
+    curadoria_vinculada: r.curadoria_vinculada || undefined,
     created: r.created,
     updated: r.updated,
   } as OKR
@@ -56,6 +76,14 @@ export const updateOKR = async (id: string, data: Partial<OKR>): Promise<OKR> =>
     objetivo: r.objetivo,
     resultados_chave: r.resultados_chave || [],
     progresso: r.progresso || 0,
+    etapa: r.etapa || undefined,
+    fase_origem:
+      typeof r.fase_origem === 'number'
+        ? r.fase_origem
+        : r.fase_origem
+          ? Number(r.fase_origem)
+          : undefined,
+    curadoria_vinculada: r.curadoria_vinculada || undefined,
     created: r.created,
     updated: r.updated,
   } as OKR

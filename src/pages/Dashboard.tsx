@@ -40,6 +40,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { getDiagnosticos, type Diagnostico } from '@/services/diagnosticos'
 import { getPlanosAcao, type PlanoAcao } from '@/services/planos_acao'
 import { getOKRs, type OKR } from '@/services/okrs'
+import {
+  buscarAcompanhamento,
+  type CuradoriaAcompanhamento,
+  type CodigoErroAcompanhamento,
+} from '@/services/acompanhamento'
 import { ContextualCta, PerfilUsuario } from '@/components/contextual-cta'
 import { useAuth } from '@/hooks/use-auth'
 import { fasesStateMachineV72 } from '@/data/master-framework-v72'
@@ -232,6 +237,9 @@ export default function Dashboard() {
   const [planos, setPlanos] = useState<PlanoAcao[]>([])
   const [okrs, setOKRs] = useState<OKR[]>([])
   const [estagioWacc, setEstagioWacc] = useState<'pre_seed' | 'seed' | 'serie_a'>('serie_a')
+  const [curadoria, setCuradoria] = useState<CuradoriaAcompanhamento | null>(null)
+  const [loadingCuradoria, setLoadingCuradoria] = useState(false)
+  const [erroCuradoria, setErroCuradoria] = useState<CodigoErroAcompanhamento | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -246,6 +254,33 @@ export default function Dashboard() {
         setDiagnosticos(dList)
         setPlanos(pList)
         setOKRs(oList)
+
+        // Carregar bloco Curadoria via rota consolidada se houver lead vinculado
+        const leadIdAlvo = dList[0]?.lead
+        if (leadIdAlvo) {
+          setLoadingCuradoria(true)
+          try {
+            const resAcomp = await buscarAcompanhamento(leadIdAlvo)
+            if (!mounted) return
+            if (resAcomp.success && resAcomp.data) {
+              setCuradoria(resAcomp.data.curadoria)
+              setErroCuradoria(null)
+            } else {
+              setErroCuradoria(resAcomp.codigoErro || 'ERRO_GENERICO')
+              setCuradoria(null)
+            }
+          } catch {
+            if (mounted) {
+              setErroCuradoria('ERRO_GENERICO')
+              setCuradoria(null)
+            }
+          } finally {
+            if (mounted) setLoadingCuradoria(false)
+          }
+        } else {
+          setCuradoria(null)
+          setErroCuradoria(null)
+        }
       } catch (err) {
         console.error('Erro ao carregar dados do Dashboard:', err)
       } finally {
@@ -1295,7 +1330,200 @@ export default function Dashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* BLOCO 4 — BLOCO SOLUÇÃO COMPLETO COM ANEXOS A–G (PLANO V2) COM RASTREABILIDADE */}
+      {/* BLOCO 4 — CURADORIA & ACOMPANHAMENTO CaaS (FASE F1) */}
+      {/* ========================================================================= */}
+      <section className="space-y-4 pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-[#0066CC] bg-[#0066CC]/10 px-2 py-0.5 rounded">
+                BLOCO 4
+              </span>
+              <h2 className="text-lg md:text-xl font-bold text-[#333333] flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#0066CC]" />
+                Curadoria & Acompanhamento CaaS
+              </h2>
+            </div>
+            <p className="text-xs text-[#808080] mt-0.5">
+              Nível de assinatura contratado, integridade das 8 fases do Master Framework e status
+              das curadorias executivas.
+            </p>
+          </div>
+          {curadoria ? (
+            <Badge className="bg-[#22B14C] text-white text-[10px] font-mono self-start sm:self-auto border-none">
+              Curadoria Conectada
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
+            >
+              CaaS V7.2
+            </Badge>
+          )}
+        </div>
+
+        {loadingCuradoria ? (
+          <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs text-[#808080] font-semibold">
+              <Loader2 className="w-4 h-4 animate-spin text-[#0066CC]" />
+              <span>Carregando dados de curadoria do cliente...</span>
+            </div>
+          </Card>
+        ) : curadoria ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* Card 1: Nível de Assinatura */}
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-4 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-[#808080] uppercase font-bold tracking-wider block">
+                  Nível de Assinatura
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-[#333333]">
+                    {curadoria.nivel_assinatura || 'SaaS Puro'}
+                  </span>
+                  <Badge className="bg-[#0066CC] text-white text-[10px] font-semibold border-none">
+                    Ativo
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-[#808080] leading-snug">
+                  Modelo de entrega contratado na escada de valor Vetor Master.
+                </p>
+              </div>
+              <div className="pt-2 mt-2 border-t border-[#E0E0E0] text-[10px] text-[#0066CC] font-mono font-semibold">
+                Contrato CaaS V7.2
+              </div>
+            </Card>
+
+            {/* Card 2: Fases Desatualizadas */}
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-4 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-[#808080] uppercase font-bold tracking-wider block">
+                  Fases do Framework
+                </span>
+                {curadoria.fases_desatualizadas && curadoria.fases_desatualizadas.length > 0 ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <span className="text-sm font-bold text-amber-700">
+                        Fase(s) {curadoria.fases_desatualizadas.map((n) => `0${n}`).join(', ')}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-snug">
+                      Requer revisão de curadoria executiva para alinhamento.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-emerald-700">
+                      <CheckCircle2 className="w-4 h-4 text-[#22B14C]" />
+                      <span className="text-sm font-bold text-[#22B14C]">
+                        Todas as fases atualizadas
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#808080] leading-snug">
+                      As 8 fases do framework estão sincronizadas e auditadas.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="pt-2 mt-2 border-t border-[#E0E0E0] text-[10px] text-[#808080] font-mono">
+                {curadoria.fases_desatualizadas && curadoria.fases_desatualizadas.length > 0
+                  ? `${curadoria.fases_desatualizadas.length} fase(s) com revisão pendente`
+                  : '8/8 fases em conformidade'}
+              </div>
+            </Card>
+
+            {/* Card 3: Última Curadoria */}
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-4 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-[#808080] uppercase font-bold tracking-wider block">
+                  Última Curadoria
+                </span>
+                <div className="text-sm font-bold text-[#333333]">
+                  {curadoria.ultima_curadoria
+                    ? new Date(curadoria.ultima_curadoria).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Nenhuma curadoria registrada ainda'}
+                </div>
+                <p className="text-[11px] text-[#808080] leading-snug">
+                  Data e hora do fechamento executivo mais recente.
+                </p>
+              </div>
+              <div className="pt-2 mt-2 border-t border-[#E0E0E0] text-[10px] text-[#808080] font-mono">
+                {curadoria.ultima_curadoria ? 'Ciclo auditado' : 'Aguardando primeiro ciclo'}
+              </div>
+            </Card>
+
+            {/* Card 4: Planos Vinculados */}
+            <Card className="bg-white border border-[#E0E0E0] rounded-[4px] p-4 shadow-xs flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-[#808080] uppercase font-bold tracking-wider block">
+                  Planos Vinculados
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-extrabold text-[#0066CC] font-mono">
+                    {curadoria.planos_vinculados || 0}
+                  </span>
+                  <span className="text-xs font-semibold text-[#333333]">
+                    {curadoria.planos_vinculados === 1
+                      ? 'plano com curadoria'
+                      : 'planos com curadoria'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#808080] leading-snug">
+                  Planos de ação 5W2H vinculados formalmente a uma curadoria.
+                </p>
+              </div>
+              <div className="pt-2 mt-2 border-t border-[#E0E0E0] text-[10px] text-[#808080] font-mono">
+                Rastreabilidade de execução
+              </div>
+            </Card>
+          </div>
+        ) : (
+          /* Estado Vazio Informativo (quando não autenticado como admin ou lead sem diagnóstico vinculado) */
+          <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-[#0066CC]" />
+                  <span className="text-xs font-bold text-[#333333]">
+                    {erroCuradoria === 'NAO_AUTORIZADO'
+                      ? 'Acompanhamento Consolidado Reservado à Curadoria'
+                      : erroCuradoria === 'LEAD_NAO_ENCONTRADO' ||
+                          erroCuradoria === 'DIAGNOSTICO_NAO_ENCONTRADO'
+                        ? 'Diagnóstico ou Lead em Fase de Ativação'
+                        : 'Acompanhamento de Curadoria em Estruturação'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#808080] leading-relaxed max-w-2xl">
+                  {erroCuradoria === 'NAO_AUTORIZADO'
+                    ? 'A consolidação executiva das fases e planos de curadoria é gerida pelo administrador consultor. Os dados operacionais continuam acessíveis nos blocos acima.'
+                    : !ultimoDiagnostico?.lead
+                      ? 'Nenhum lead associado a este diagnóstico no momento. O bloco Curadoria será ativado assim que o vínculo de cadastro for estabelecido.'
+                      : 'O diagnóstico selecionado ainda não possui sessões de curadoria consolidadas na base de dados.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] border-[#808080]/30 text-[#808080] font-mono"
+                >
+                  {erroCuradoria ? `Status: ${erroCuradoria}` : 'Aguardando vínculo'}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+        )}
+      </section>
+
+      {/* ========================================================================= */}
+      {/* BLOCO 5 — BLOCO SOLUÇÃO COMPLETO COM ANEXOS A–G (PLANO V2) COM RASTREABILIDADE */}
       {/* ========================================================================= */}
       <section className="space-y-4 pt-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
