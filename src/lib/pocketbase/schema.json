@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T15:44:32.472Z",
+  "generatedAt": "2026-10-30T17:14:04.510Z",
   "collections": [
     {
       "name": "users",
@@ -622,6 +622,25 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "fase_origem",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "versao_diagnostico",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "curadoria_vinculada",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "diagnostico_fases"
         }
       ],
       "indexes": [
@@ -690,6 +709,19 @@
           "type": "text",
           "required": false,
           "system": false
+        },
+        {
+          "name": "fase_origem",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "curadoria_vinculada",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "diagnostico_fases"
         }
       ],
       "indexes": ["CREATE INDEX idx_okrs_user ON okrs (user)"]
