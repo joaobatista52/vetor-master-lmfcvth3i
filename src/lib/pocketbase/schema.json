@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T13:57:26.314Z",
+  "generatedAt": "2026-10-30T14:24:50.704Z",
   "collections": [
     {
       "name": "users",
@@ -1336,6 +1336,107 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "diagnostico_fases",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "diagnostico",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "diagnosticos"
+        },
+        {
+          "name": "lead",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "leads"
+        },
+        {
+          "name": "fase",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "versao",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "output",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["executada", "aprovada", "reprocessada", "desatualizada"]
+        },
+        {
+          "name": "consultor_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motivo_reprocessamento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cascata_aplicada",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["total", "seletiva", "nenhuma"]
+        },
+        {
+          "name": "executado_via",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pipeline_inicial", "reprocessamento_consultor"]
+        },
+        {
+          "name": "custo_gateway",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_diagnostico_fases_diag_fase_versao ON diagnostico_fases (diagnostico, fase, versao)"
+      ]
     }
   ]
 }
