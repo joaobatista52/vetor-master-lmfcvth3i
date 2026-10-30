@@ -1,13 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
-  Home,
-  Activity,
-  Award,
   ListTodo,
   LayoutDashboard,
   BookOpen,
-  Layers,
-  Settings,
   Shield,
   History,
   GitCompare,
@@ -33,26 +28,20 @@ import {
 } from '@/components/ui/sidebar'
 
 /**
- * MENU LATERAL OFICIAL VETOR MASTER — Ordem exata da jornada do cliente:
- * 1. Início (/)
- * 2. Diagnóstico (/diagnosticos)
- * 3. Resultados e Devolutiva (/resultados)
- * 4. Plano de Ação (/plano-de-acao)
- * 5. Dashboard (/dashboard)
- * 6. Biblioteca (/biblioteca)
- * 7. Níveis e Planos (/niveis-e-planos)
+ * MENU LATERAL OFICIAL VETOR MASTER — PORTAL DO CLIENTE CaaS (5 SEÇÕES):
+ * 1. Dashboard (/dashboard)
+ * 2. Plano de Ação (/plano-de-acao)
+ * 3. Curadoria (/dashboard#curadoria)
+ * 4. Biblioteca (/biblioteca)
+ * 5. Apoio Operacional (/notas)
  */
-const clientJourneyNavItems = [
-  { title: 'Início Jornada', path: '/app', icon: Home, step: '1' },
-  { title: 'Plano de Ação (+ Consultor)', path: '/plano-de-acao', icon: ListTodo, step: '2' },
-  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '3' },
-  { title: 'Devolutiva & Heat Map', path: '/resultados', icon: Award, step: '4' },
-  { title: 'Trilha de Etapas', path: '/areas-da-empresa', icon: Activity, step: '5' },
-  { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '6' },
-  { title: 'Níveis e Planos', path: '/niveis-e-planos', icon: Layers, step: '7' },
+const clientPortalNavItems = [
+  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '1' },
+  { title: 'Plano de Ação', path: '/plano-de-acao', icon: ListTodo, step: '2' },
+  { title: 'Curadoria', path: '/dashboard#curadoria', icon: Shield, step: '3' },
+  { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '4' },
+  { title: 'Apoio Operacional', path: '/notas', icon: StickyNote, step: '5' },
 ]
-
-const complementaryNavItems = [{ title: 'Notas do Projeto', path: '/notas', icon: StickyNote }]
 
 const adminNavItems = [
   { title: 'Painel Geral', path: '/admin', icon: Shield },
@@ -82,7 +71,11 @@ export function AppSidebar() {
     cn('w-4 h-4 shrink-0 transition-colors', isActive ? 'text-[#3DDC74]' : 'text-[#8B98B4]')
 
   const renderItem = (item: { title: string; path: string; icon: any; step?: string }) => {
-    const isActive = location.pathname === item.path
+    const itemPathOnly = item.path.split('#')[0]
+    const itemHash = item.path.includes('#') ? `#${item.path.split('#')[1]}` : ''
+    const isActive = itemHash
+      ? location.pathname === itemPathOnly && location.hash === itemHash
+      : location.pathname === itemPathOnly && (!location.hash || item.path === '/dashboard')
     return (
       <SidebarMenuItem key={item.path}>
         <SidebarMenuButton asChild tooltip={item.title}>
@@ -124,22 +117,11 @@ export function AppSidebar() {
         <SidebarGroup>
           {!isCollapsed && (
             <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#8B98B4] px-4">
-              Jornada Estratégica (Assinante)
+              Portal do Cliente CaaS
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">{clientJourneyNavItems.map(renderItem)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          {!isCollapsed && (
-            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-[#8B98B4] px-4">
-              Apoio Operacional
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-1">{complementaryNavItems.map(renderItem)}</SidebarMenu>
+            <SidebarMenu className="gap-1">{clientPortalNavItems.map(renderItem)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 

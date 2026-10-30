@@ -268,52 +268,78 @@ export default function InstitucionalVendedora() {
         </div>
       </section>
 
-      {/* 4. JORNADA DETERMINÍSTICA 01–05 (Seção 7.3) */}
+      {/* 4. AS 8 FASES REAIS DO MOTOR ANALÍTICO (Master Framework V2.4 / V7.2) */}
       <section className="py-20 md:py-24 border-b border-[#24334F]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <Badge className="bg-[#16213A] text-[#3DDC74] border-[#24334F] text-xs uppercase tracking-wider font-semibold">
-              Passo a Passo
+              Master Framework V2.4
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#F8FAFC] font-heading">
-              A Jornada Determinística da Sua Empresa
+              As 8 Fases Reais da Transformação Estratégica
             </h2>
             <p className="text-sm sm:text-base text-[#C7D0E0]">
-              Uma esteira clara e sequencial que transforma dores declaradas em autonomia e
-              governança.
+              Uma esteira analítica e determinística com metodologia de C-Level aplicada à realidade
+              da sua empresa.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
                 num: '01',
-                titulo: 'Diagnóstico',
-                desc: 'Identificação estrutural nos 3 Pilares e Seções Setoriais com SLA de 72h.',
+                fase: 'F1',
+                titulo: 'Diagnóstico Profundo',
+                desc: 'causa raiz, micro-epifanias e vazamentos de valor quantificados',
                 highlight: true,
               },
               {
                 num: '02',
-                titulo: 'Resultados (Heat Map)',
-                desc: 'Devolutiva executiva com mapeamento de calor das 8 áreas e causas-raiz.',
+                fase: 'F2',
+                titulo: 'Foresight Estratégico',
+                desc: 'cenários, sinais de alerta e backcasting do futuro preferível',
                 highlight: false,
               },
               {
                 num: '03',
-                titulo: 'Plano de Ação',
-                desc: 'Roadmap executável 5W2H priorizado e sincronizado com o Consultor Digital.',
+                fase: 'F3',
+                titulo: 'Estratégia e BSC',
+                desc: 'tese, EREC, Curva de Valor, Canvas To Be e Mapa Estratégico',
                 highlight: false,
               },
               {
                 num: '04',
-                titulo: 'Dashboard',
-                desc: 'Acompanhamento em tempo real de KPIs setoriais, OKRs e rituais de governança.',
+                fase: 'F4',
+                titulo: 'Capacidade e Design',
+                desc: 'condições de Hackman e classificação de lideranças em Tiers',
                 highlight: false,
               },
               {
                 num: '05',
-                titulo: 'Biblioteca & Níveis',
-                desc: 'Perguntas e respostas estratégicas, micro-lições e evolução na Escada de Valor.',
+                fase: 'F5',
+                titulo: 'Execução e Roadmap',
+                desc: 'Regra Camaleão, roadmap em três horizontes e rituais de gestão',
+                highlight: false,
+              },
+              {
+                num: '06',
+                fase: 'F6',
+                titulo: 'Validação Financeira',
+                desc: 'DRE, fluxo de caixa, valuation e stress test',
+                highlight: false,
+              },
+              {
+                num: '07',
+                fase: 'F7',
+                titulo: 'Governança e Liderança',
+                desc: 'conselho, sucessão, compliance e matriz de riscos',
+                highlight: false,
+              },
+              {
+                num: '08',
+                fase: 'F8',
+                titulo: 'Inovação e Tecnologia',
+                desc: 'maturidade digital, roadmap tecnológico e ROI por iniciativa',
                 highlight: false,
               },
             ].map((step) => (
@@ -326,12 +352,17 @@ export default function InstitucionalVendedora() {
                 } flex flex-col justify-between`}
               >
                 <div>
-                  <div className="text-2xl font-bold font-mono text-[#5B9DFF] mb-2">{step.num}</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl font-bold font-mono text-[#5B9DFF]">{step.num}</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#111A2E] text-[#3DDC74] border border-[#24334F]">
+                      {step.fase}
+                    </span>
+                  </div>
                   <h3 className="font-semibold text-base text-[#F8FAFC] mb-2">{step.titulo}</h3>
                   <p className="text-xs text-[#C7D0E0] leading-relaxed">{step.desc}</p>
                 </div>
                 <div className="mt-4 pt-3 border-t border-[#24334F] text-[11px] text-[#8B98B4] flex items-center justify-between">
-                  <span>Etapa {step.num}</span>
+                  <span>Fase {step.num}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-[#5B9DFF]" />
                 </div>
               </div>
