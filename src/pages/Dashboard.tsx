@@ -44,6 +44,7 @@ import {
   buscarAcompanhamento,
   type CuradoriaAcompanhamento,
   type FaseAcompanhamentoItem,
+  type EpifaniaItem,
   type CodigoErroAcompanhamento,
 } from '@/services/acompanhamento'
 import { ContextualCta, PerfilUsuario } from '@/components/contextual-cta'
@@ -239,6 +240,7 @@ export default function Dashboard() {
   const [estagioWacc, setEstagioWacc] = useState<'pre_seed' | 'seed' | 'serie_a'>('serie_a')
   const [curadoria, setCuradoria] = useState<CuradoriaAcompanhamento | null>(null)
   const [fasesAcompanhamento, setFasesAcompanhamento] = useState<FaseAcompanhamentoItem[]>([])
+  const [epifanias, setEpifanias] = useState<EpifaniaItem[]>([])
   const [loadingCuradoria, setLoadingCuradoria] = useState(false)
   const [erroCuradoria, setErroCuradoria] = useState<CodigoErroAcompanhamento | null>(null)
 
@@ -256,7 +258,7 @@ export default function Dashboard() {
         setPlanos(pList)
         setOKRs(oList)
 
-        // Carregar bloco Curadoria e Fases via rota consolidada se houver lead vinculado
+        // Carregar bloco Curadoria, Fases e Epifanias via rota consolidada se houver lead vinculado
         const leadIdAlvo = dList[0]?.lead
         if (leadIdAlvo) {
           setLoadingCuradoria(true)
@@ -266,17 +268,20 @@ export default function Dashboard() {
             if (resAcomp.success && resAcomp.data) {
               setCuradoria(resAcomp.data.curadoria)
               setFasesAcompanhamento(resAcomp.data.fases || [])
+              setEpifanias(resAcomp.data.epifanias || [])
               setErroCuradoria(null)
             } else {
               setErroCuradoria(resAcomp.codigoErro || 'ERRO_GENERICO')
               setCuradoria(null)
               setFasesAcompanhamento([])
+              setEpifanias([])
             }
           } catch {
             if (mounted) {
               setErroCuradoria('ERRO_GENERICO')
               setCuradoria(null)
               setFasesAcompanhamento([])
+              setEpifanias([])
             }
           } finally {
             if (mounted) setLoadingCuradoria(false)
@@ -284,6 +289,7 @@ export default function Dashboard() {
         } else {
           setCuradoria(null)
           setFasesAcompanhamento([])
+          setEpifanias([])
           setErroCuradoria(null)
         }
       } catch (err) {
@@ -1577,6 +1583,218 @@ export default function Dashboard() {
               </div>
             </div>
           </Card>
+        )}
+      </section>
+
+      {/* ========================================================================= */}
+      {/* BLOCO — OS 3 PILARES DAS EPIFANIAS (FASE F4 CaaS) */}
+      {/* ========================================================================= */}
+      <section className="space-y-4 pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-[#0066CC] bg-[#0066CC]/10 px-2 py-0.5 rounded">
+                EPIFANIAS
+              </span>
+              <h2 className="text-lg md:text-xl font-bold text-[#333333] flex items-center gap-2">
+                <Flame className="w-5 h-5 text-[#0066CC]" />
+                Os 3 Pilares das Epifanias
+              </h2>
+            </div>
+            <p className="text-xs text-[#808080] mt-0.5">
+              Unidades atômicas de consciência executiva do diagnóstico (Fase 1), com evolução
+              mensurada pelos OKRs das áreas críticas (Fase 3).
+            </p>
+          </div>
+          {epifanias.length > 0 ? (
+            <Badge className="bg-[#22B14C] text-white text-[10px] font-mono self-start sm:self-auto border-none">
+              {epifanias.length}{' '}
+              {epifanias.length === 1 ? 'Epifania Registrada' : 'Epifanias Registradas'}
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
+            >
+              Fase 1 • P2
+            </Badge>
+          )}
+        </div>
+
+        {loadingCuradoria ? (
+          <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs text-[#808080] font-semibold">
+              <Loader2 className="w-4 h-4 animate-spin text-[#0066CC]" />
+              <span>Carregando os 3 Pilares das Epifanias...</span>
+            </div>
+          </Card>
+        ) : epifanias.length === 0 ? (
+          /* Estado Vazio Informativo (quando não há epifanias registradas ou em caso de erro na rota) */
+          <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-[#0066CC]" />
+                  <span className="text-xs font-bold text-[#333333]">
+                    Nenhuma epifania registrada ainda
+                  </span>
+                </div>
+                <p className="text-xs text-[#808080] leading-relaxed max-w-2xl">
+                  {erroCuradoria === 'NAO_AUTORIZADO'
+                    ? 'A consolidação executiva das micro-epifanias e dos OKRs é gerida pela curadoria executiva. Assim que auditada, o painel será ativado.'
+                    : 'As micro-epifanias são geradas na Fase 1 do diagnóstico e vinculadas aos OKRs derivados do Mapa Estratégico BSC na Fase 3.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] border-[#808080]/30 text-[#808080] font-mono"
+                >
+                  {erroCuradoria ? `Status: ${erroCuradoria}` : 'Aguardando Fase 1'}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          /* Painel dos 3 Pilares e Seção Não Classificadas */
+          <div className="space-y-6">
+            {[
+              {
+                pilarId: 1 as const,
+                titulo: 'Pilar 1 — Prisão do Fundador',
+                subtitulo: 'Sobrecarga decisória, centralização e asfixia de liderança.',
+                corBadge: 'bg-[#0066CC]',
+                itens: epifanias.filter((e) => e.pilar === 1),
+              },
+              {
+                pilarId: 2 as const,
+                titulo: 'Pilar 2 — Ineficiência Invisível',
+                subtitulo: 'Vazamentos de margem, sangramentos de caixa e custos ocultos.',
+                corBadge: 'bg-amber-600',
+                itens: epifanias.filter((e) => e.pilar === 2),
+              },
+              {
+                pilarId: 3 as const,
+                titulo: 'Pilar 3 — Abismo Estratégia vs. Execução',
+                subtitulo: 'Desconexão entre tese de valor e capacidade de entrega real.',
+                corBadge: 'bg-purple-600',
+                itens: epifanias.filter((e) => e.pilar === 3),
+              },
+              {
+                pilarId: null,
+                titulo: 'Não classificadas',
+                subtitulo: 'Epifanias identificadas sem pilar canônico atribuído.',
+                corBadge: 'bg-[#808080]',
+                itens: epifanias.filter((e) => e.pilar !== 1 && e.pilar !== 2 && e.pilar !== 3),
+              },
+            ]
+              .filter((grupo) => grupo.pilarId !== null || grupo.itens.length > 0)
+              .map((grupo) => (
+                <div key={grupo.titulo} className="space-y-3">
+                  <div className="flex items-center justify-between border-l-4 border-[#0066CC] pl-3 py-0.5">
+                    <div>
+                      <h3 className="text-sm md:text-base font-bold text-[#333333] flex items-center gap-2">
+                        {grupo.titulo}
+                        <Badge
+                          className={`${grupo.corBadge} text-white text-[10px] font-mono border-none`}
+                        >
+                          {grupo.itens.length} {grupo.itens.length === 1 ? 'epifania' : 'epifanias'}
+                        </Badge>
+                      </h3>
+                      <p className="text-[11px] text-[#808080]">{grupo.subtitulo}</p>
+                    </div>
+                  </div>
+
+                  {grupo.itens.length === 0 ? (
+                    <Card className="bg-[#FAFAFA] border border-dashed border-[#E0E0E0] rounded-[4px] p-4 text-center">
+                      <p className="text-xs text-[#808080]">
+                        Nenhuma epifania associada a este pilar no diagnóstico ativo.
+                      </p>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {grupo.itens.map((epif, idx) => (
+                        <Card
+                          key={`${grupo.titulo}-${idx}`}
+                          className="bg-white border border-[#E0E0E0] rounded-[4px] p-4 shadow-xs flex flex-col justify-between hover:border-[#0066CC]/40 transition-colors"
+                        >
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-mono border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5"
+                              >
+                                {epif.area_critica
+                                  ? `Área: ${epif.area_critica}`
+                                  : 'Área: Requer verificação'}
+                              </Badge>
+
+                              <Badge
+                                className={
+                                  epif.status === 'Resolvida'
+                                    ? 'bg-[#22B14C] text-white text-[10px] border-none'
+                                    : epif.status === 'Endereçada'
+                                      ? 'bg-[#0066CC] text-white text-[10px] border-none'
+                                      : epif.status === 'Reconhecida'
+                                        ? 'bg-amber-600 text-white text-[10px] border-none'
+                                        : 'bg-[#808080] text-white text-[10px] border-none'
+                                }
+                              >
+                                {epif.status}
+                              </Badge>
+                            </div>
+
+                            <div>
+                              <p className="text-xs md:text-sm font-semibold text-[#333333] leading-snug">
+                                {epif.enunciado}
+                              </p>
+                              {epif.secao_fonte && (
+                                <p className="text-[10px] text-[#808080] mt-1 font-mono">
+                                  Fonte: {epif.secao_fonte}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="p-2 bg-[#F5F5F5] rounded border border-[#EAEAEA] flex items-center justify-between text-xs">
+                              <span className="text-[11px] text-[#808080]">
+                                Valor Quantificado:
+                              </span>
+                              <span className="font-mono font-bold text-[#333333]">
+                                {epif.valor ? epif.valor : 'Requer verificação'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 mt-3 border-t border-[#E0E0E0] space-y-1.5">
+                            <div className="text-[10px] uppercase font-bold text-[#808080] tracking-wider">
+                              OKR de Destravamento (Fase 3)
+                            </div>
+                            {epif.okr_vinculado ? (
+                              <div className="space-y-1 text-xs">
+                                <div className="text-[#333333] font-medium leading-tight line-clamp-2">
+                                  {epif.okr_vinculado.objetivo}
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-[#808080]">
+                                  <span>Perspectiva: {epif.okr_vinculado.perspectiva}</span>
+                                  <span className="font-mono font-bold text-[#0066CC]">
+                                    {epif.okr_vinculado.progresso}%
+                                  </span>
+                                </div>
+                                <Progress value={epif.okr_vinculado.progresso} className="h-1.5" />
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-amber-700 italic">
+                                Sem OKR vinculado na Fase 3 (status permanece Não reconhecida).
+                              </p>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
         )}
       </section>
 

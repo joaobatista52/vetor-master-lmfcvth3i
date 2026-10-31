@@ -38,10 +38,30 @@ export interface FaseAcompanhamentoItem {
   updated: string
 }
 
+export interface OkrVinculado {
+  id: string
+  objetivo: string
+  perspectiva: string
+  area: string | null
+  progresso: number
+}
+
+export interface EpifaniaItem {
+  enunciado: string
+  pilar: 1 | 2 | 3 | null
+  area_critica: string | null
+  secao_fonte: string | null
+  valor: string | null
+  fase_origem: number
+  status: 'Não reconhecida' | 'Reconhecida' | 'Endereçada' | 'Resolvida' | string
+  okr_vinculado: OkrVinculado | null
+}
+
 export interface AcompanhamentoResponse {
   fases?: FaseAcompanhamentoItem[]
   planos_acao: PlanoAcompanhamentoItem[]
   okrs: OKRAcompanhamentoItem[]
+  epifanias?: EpifaniaItem[]
   curadoria: CuradoriaAcompanhamento
 }
 
