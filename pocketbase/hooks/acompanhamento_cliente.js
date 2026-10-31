@@ -472,7 +472,7 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
           }
           areaCritica = normalizarAreaCritica(rawItem.area_critica || rawItem.area)
           secaoFonte = rawItem.secao_fonte || rawItem.secao_fonte_dossie || rawItem.fonte || null
-          valor = rawItem.valor || rawItem.valor_quantificado || null
+          valor = rawItem.valor || rawItem.valor_quantificado || rawItem.impacto_estimado || null
         }
 
         if (!enunciado) continue
