@@ -164,7 +164,8 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
       if (rec) {
         let artefatosVal = null
         try {
-          artefatosVal = rec.get('artefatos') || null
+          artefatosVal =
+            rec.get('artefatos') || (rec.get('output') && rec.get('output').artefatos) || null
         } catch (_) {
           artefatosVal = null
         }
@@ -216,15 +217,14 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
       let microEpifaniasRaw = []
       if (recFase1) {
         try {
-          const artFase1 = recFase1.get('artefatos')
+          const artFase1 =
+            recFase1.get('artefatos') ||
+            (recFase1.get('output') && recFase1.get('output').artefatos) ||
+            null
           if (artFase1) {
             const rawEpif = artFase1.micro_epifanias
             if (Array.isArray(rawEpif)) {
               microEpifaniasRaw = rawEpif
-            } else if (rawEpif && Array.isArray(rawEpif.itens)) {
-              microEpifaniasRaw = rawEpif.itens
-            } else if (rawEpif && typeof rawEpif === 'object' && Array.isArray(rawEpif.lista)) {
-              microEpifaniasRaw = rawEpif.lista
             }
           }
         } catch (_) {
@@ -311,9 +311,12 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
       const okrsBscFase3 = []
       if (recFase3) {
         try {
-          const artFase3 = recFase3.get('artefatos')
+          const artFase3 =
+            recFase3.get('artefatos') ||
+            (recFase3.get('output') && recFase3.get('output').artefatos) ||
+            null
           if (artFase3) {
-            const bscRaw = artFase3.mapa_estrategico_bsc || artFase3.bsc || null
+            const bscRaw = artFase3.mapa_estrategico_bsc || null
             const objEstratRaw = artFase3.objetivos_estrategicos || null
 
             // Extrair de array direto se houver
