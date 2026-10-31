@@ -385,6 +385,55 @@ routerAdd('POST', '/backend/v1/diagnostico/executar-passo-async/{leadId}', (e) =
   diagRec.set('conversa_id', conversaId)
   diagRec.set('custo_gateway', custoGatewayIncremental)
 
+  // Persistir registros em diagnostico_fases para cada fase retornada
+  try {
+    const colDiagFases = $app.findCollectionByNameOrId('diagnostico_fases')
+    for (let fIdx = 0; fIdx < fasesRetornadas.length; fIdx++) {
+      const fItem = fasesRetornadas[fIdx]
+      const fNum = fItem.fase || fIdx + 1
+      let recFaseExistente = null
+      try {
+        recFaseExistente = $app.findFirstRecordByFilter(
+          'diagnostico_fases',
+          "diagnostico = '" + diagRec.id + "' && fase = " + fNum + ' && versao = 1',
+        )
+      } catch (_) {
+        recFaseExistente = null
+      }
+
+      const recFase = recFaseExistente || new Record(colDiagFases)
+      if (!recFaseExistente) {
+        recFase.set('diagnostico', diagRec.id)
+        recFase.set('lead', leadId)
+        recFase.set('fase', fNum)
+        recFase.set('versao', 1)
+        recFase.set('status', 'executada')
+        recFase.set('executado_via', 'pipeline_inicial')
+      }
+      recFase.set('output', fItem)
+      if (fItem.artefatos) {
+        recFase.set('artefatos', fItem.artefatos)
+      }
+      recFase.set('custo_gateway', {
+        tokens_input: fItem.tokens_input || 0,
+        tokens_output: fItem.tokens_output || 0,
+        duracao_ms: fItem.duracao_ms || 0,
+      })
+      $app.save(recFase)
+    }
+  } catch (errPersistFases) {
+    $app
+      .logger()
+      .error(
+        'Async Step: Erro ao persistir em diagnostico_fases: ' +
+          (errPersistFases.message || String(errPersistFases)),
+      )
+    console.log(
+      'Async Step: Erro ao persistir em diagnostico_fases: ' +
+        (errPersistFases.message || String(errPersistFases)),
+    )
+  }
+
   // Liberar lock para o próximo tick
   delete lockInfo.lock_timestamp
   delete lockInfo.lock_fase

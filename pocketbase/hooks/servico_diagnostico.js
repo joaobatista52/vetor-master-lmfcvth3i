@@ -581,6 +581,763 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     }
   }
 
+  function extrairArtefatosDaFase(fasePromptNum, textoOutput, dossieRef) {
+    const texto = typeof textoOutput === 'string' ? textoOutput : ''
+    const textoLower = texto.toLowerCase()
+    const requerVerificacao = []
+
+    function extrairSecaoOuPadrao(regexSecao, regexItem) {
+      if (!texto) return null
+      const mSecao = texto.match(regexSecao)
+      if (mSecao && mSecao[1] && mSecao[1].trim().length > 10) {
+        return mSecao[1].trim()
+      }
+      if (regexItem) {
+        const mItem = texto.match(regexItem)
+        if (mItem && mItem[0] && mItem[0].trim().length > 10) {
+          return mItem[0].trim()
+        }
+      }
+      return null
+    }
+
+    function registrarOuNulo(chave, valor, descricaoAmigavel) {
+      if (valor !== null && valor !== undefined && String(valor).trim().length > 0) {
+        return valor
+      }
+      requerVerificacao.push(descricaoAmigavel || chave)
+      return null
+    }
+
+    let artefatos = null
+
+    switch (fasePromptNum) {
+      // Fase 1 (Prompt 2): Diagnóstico Profundo
+      case 2: {
+        // Causa raiz
+        let causaRaiz = null
+        const mCausa = texto.match(
+          /(?:causa\s*[-–—]?\s*raiz|problema\s+central|gargalo\s+estrutural)[\s:=*-]+([^\n\r]+(?:\n[^\n\r#]+)*)/i,
+        )
+        if (mCausa && mCausa[1] && mCausa[1].trim().length > 10) {
+          causaRaiz = mCausa[1]
+            .trim()
+            .split('\n\n')[0]
+            .replace(/^[-*•\s]+/, '')
+            .trim()
+        }
+
+        // Micro-epifanias
+        const microEpifanias = []
+        const linhasP2 = texto.split('\n')
+        let emSecaoEpifania = false
+        for (let idx = 0; idx < linhasP2.length; idx++) {
+          const l = linhasP2[idx].trim()
+          if (!l) continue
+          const lLow = l.toLowerCase()
+          if (lLow.indexOf('micro-epifania') !== -1 || lLow.indexOf('epifania') !== -1) {
+            emSecaoEpifania = true
+            continue
+          }
+          if (
+            emSecaoEpifania &&
+            (l.startsWith('#') || lLow.indexOf('vazamento') !== -1 || lLow.indexOf('canvas') !== -1)
+          ) {
+            emSecaoEpifania = false
+          }
+          if (emSecaoEpifania && (l.startsWith('-') || l.startsWith('*') || /^\d+[.)]/.test(l))) {
+            const itemLimpo = l.replace(/^[-*•]|\d+[.)]\s*/, '').trim()
+            if (itemLimpo.length > 15) {
+              microEpifanias.push(itemLimpo)
+            }
+          }
+        }
+        const microEpifaniasFinal = microEpifanias.length > 0 ? microEpifanias : null
+
+        // Vazamentos
+        const vazamentos = []
+        let emSecaoVazamentos = false
+        for (let idx = 0; idx < linhasP2.length; idx++) {
+          const l = linhasP2[idx].trim()
+          if (!l) continue
+          const lLow = l.toLowerCase()
+          if (
+            lLow.indexOf('vazamento') !== -1 ||
+            lLow.indexOf('sangramento') !== -1 ||
+            lLow.indexOf('perda') !== -1
+          ) {
+            emSecaoVazamentos = true
+            continue
+          }
+          if (
+            emSecaoVazamentos &&
+            (l.startsWith('#') || lLow.indexOf('canvas') !== -1 || lLow.indexOf('triangula') !== -1)
+          ) {
+            emSecaoVazamentos = false
+          }
+          if (
+            emSecaoVazamentos &&
+            (l.startsWith('-') || l.startsWith('*') || l.startsWith('|') || /^\d+[.)]/.test(l))
+          ) {
+            const itemLimpo = l
+              .replace(/^[-*•|]|\d+[.)]\s*/, '')
+              .replace(/\|$/, '')
+              .trim()
+            if (itemLimpo.length > 15 && itemLimpo.indexOf('---') === -1) {
+              vazamentos.push(itemLimpo)
+            }
+          }
+        }
+        const vazamentosFinal = vazamentos.length > 0 ? vazamentos : null
+
+        // Nota de triangulação
+        let notaTriangulacao = null
+        const mTriang = texto.match(
+          /(?:triangula[çc][ãa]o|dados\s+declarados\s+vs|diverg[êe]ncia\s+documental)[\s:=*-]+([^\n\r]+(?:\n[^\n\r#]+)*)/i,
+        )
+        if (mTriang && mTriang[1] && mTriang[1].trim().length > 10) {
+          notaTriangulacao = mTriang[1].trim().split('\n\n')[0].trim()
+        }
+
+        // Canvas As Is (9 blocos)
+        let canvasAsIs = null
+        if (
+          textoLower.indexOf('canvas') !== -1 ||
+          textoLower.indexOf('as is') !== -1 ||
+          textoLower.indexOf('proposta de valor') !== -1
+        ) {
+          const blocosCanvas = []
+          const blocosNomes = [
+            'Proposta de Valor',
+            'Segmentos de Clientes',
+            'Canais',
+            'Relacionamento com Clientes',
+            'Fontes de Receita',
+            'Recursos Principais',
+            'Atividades-Chave',
+            'Parcerias Principais',
+            'Estrutura de Custos',
+          ]
+          for (let b = 0; b < blocosNomes.length; b++) {
+            const bn = blocosNomes[b]
+            const rBloco = new RegExp(
+              '(?:' +
+                bn +
+                '|' +
+                (b + 1) +
+                '\\.\\s*' +
+                bn +
+                ')[\\s:=*|-]+([^#\\n|]+(?:\\n[^#\\n|]+)*)',
+              'i',
+            )
+            const mB = texto.match(rBloco)
+            if (mB && mB[1] && mB[1].trim().length > 5) {
+              blocosCanvas.push({ bloco: bn, conteudo: mB[1].trim() })
+            }
+          }
+          if (blocosCanvas.length >= 3) {
+            canvasAsIs = { blocos: blocosCanvas, total_blocos_identificados: blocosCanvas.length }
+          } else if (textoLower.indexOf('canvas') !== -1) {
+            canvasAsIs = {
+              mencao_textual: true,
+              trecho: extraSecaoGenerica(texto, /canvas[\s\S]*?(?=(?:###|aguardo seu comando|$))/i),
+            }
+          }
+        }
+
+        artefatos = {
+          causa_raiz: registrarOuNulo(
+            'causa_raiz',
+            causaRaiz,
+            'Causa Raiz do Estrangulamento Operacional',
+          ),
+          micro_epifanias: registrarOuNulo(
+            'micro_epifanias',
+            microEpifaniasFinal,
+            '3 a 5 Micro-epifanias com Citação de Fonte',
+          ),
+          vazamentos: registrarOuNulo(
+            'vazamentos',
+            vazamentosFinal,
+            'Matriz de Vazamentos de Valor Quantificados',
+          ),
+          nota_triangulacao: registrarOuNulo(
+            'nota_triangulacao',
+            notaTriangulacao,
+            'Nota de Triangulação (Dados Declarados vs. Demonstrativos)',
+          ),
+          canvas_as_is: registrarOuNulo(
+            'canvas_as_is',
+            canvasAsIs,
+            'Business Model Canvas As Is (9 blocos)',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 2 (Prompt 5): Foresight Estratégico
+      case 5: {
+        let steep = null
+        if (textoLower.indexOf('steep') !== -1 || textoLower.indexOf('pestel') !== -1) {
+          steep = extraSecaoGenerica(
+            texto,
+            /(?:steep|pestel)[\s\S]*?(?=(?:cone|roda|matriz|early|backcasting|swot|###|aguardo|$))/i,
+          )
+        }
+        let cone4Futuros = null
+        if (
+          textoLower.indexOf('cone') !== -1 ||
+          textoLower.indexOf('provável') !== -1 ||
+          textoLower.indexOf('plausível') !== -1
+        ) {
+          cone4Futuros = extraSecaoGenerica(
+            texto,
+            /(?:cone\s+(?:dos\s+)?4?\s*futuros|4\s+futuros)[\s\S]*?(?=(?:roda|matriz|early|backcasting|swot|###|aguardo|$))/i,
+          )
+        }
+        let rodaFuturos = null
+        if (textoLower.indexOf('roda') !== -1 && textoLower.indexOf('futuro') !== -1) {
+          rodaFuturos = extraSecaoGenerica(
+            texto,
+            /(?:roda\s+de\s+futuros?|impactos?\s+de\s+1[ºo])[\s\S]*?(?=(?:matriz|early|backcasting|swot|###|aguardo|$))/i,
+          )
+        }
+        let matriz2x2 = null
+        if (
+          textoLower.indexOf('2x2') !== -1 ||
+          textoLower.indexOf('cenários') !== -1 ||
+          textoLower.indexOf('cenarios') !== -1
+        ) {
+          matriz2x2 = extraSecaoGenerica(
+            texto,
+            /(?:matriz\s+2x2|4\s+cen[áa]rios|cen[áa]rios\s+nomeados)[\s\S]*?(?=(?:early|warning|sinais|backcasting|swot|###|aguardo|$))/i,
+          )
+        }
+        let ews = null
+        if (
+          textoLower.indexOf('early warning') !== -1 ||
+          textoLower.indexOf('sinais de alerta') !== -1 ||
+          textoLower.indexOf('ews') !== -1
+        ) {
+          ews = extraSecaoGenerica(
+            texto,
+            /(?:early\s+warning\s+signals?|ews|sinais?\s+de\s+alerta\s+precoce)[\s\S]*?(?=(?:backcasting|swot|###|aguardo|$))/i,
+          )
+        }
+        let backcasting = null
+        if (textoLower.indexOf('backcasting') !== -1) {
+          backcasting = extraSecaoGenerica(
+            texto,
+            /(?:backcasting|primeira\s+tarefa\s+de\s+amanh[ãa])[\s\S]*?(?=(?:swot|###|aguardo|$))/i,
+          )
+        }
+        let swot = null
+        if (textoLower.indexOf('swot') !== -1 || textoLower.indexOf('fofa') !== -1) {
+          swot = extraSecaoGenerica(texto, /(?:swot|fofa)[\s\S]*?(?=(?:###|aguardo|$))/i)
+        }
+
+        artefatos = {
+          steep_pestel: registrarOuNulo(
+            'steep_pestel',
+            steep,
+            'Análise STEEP/PESTEL com Leitura Executiva',
+          ),
+          cone_4_futuros: registrarOuNulo(
+            'cone_4_futuros',
+            cone4Futuros,
+            'Cone dos 4 Futuros (Provável, Plausível, Possível, Preferível)',
+          ),
+          roda_futuros: registrarOuNulo(
+            'roda_futuros',
+            rodaFuturos,
+            'Roda de Futuros (Impactos de 1º, 2º e 3º Níveis)',
+          ),
+          matriz_2x2: registrarOuNulo('matriz_2x2', matriz2x2, 'Matriz 2x2 de Cenários Nomeados'),
+          early_warning_signals: registrarOuNulo(
+            'early_warning_signals',
+            ews,
+            'Early Warning Signals (Tabela: Indicador / Nível / Gatilho / Ação)',
+          ),
+          backcasting: registrarOuNulo(
+            'backcasting',
+            backcasting,
+            'Backcasting Estratégico até a Primeira Tarefa de Amanhã',
+          ),
+          swot_dinamica: registrarOuNulo('swot_dinamica', swot, 'Matriz SWOT Dinâmica'),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 3 (Prompt 6): Estratégia e Diferenciação
+      case 6: {
+        let tese = null
+        const mTese = texto.match(
+          /(?:tese\s*(?:central|de\s+diferencia[çc][ãa]o)?|posicionamento|oceano\s+azul)[\s:=*-]+([^\n\r]+(?:\n[^\n\r#]+)*)/i,
+        )
+        if (mTese && mTese[1] && mTese[1].trim().length > 10) {
+          tese = mTese[1].trim().split('\n\n')[0].trim()
+        }
+
+        const erecA9Itens = extrairErecA9DoOutput(texto)
+        const erecA9 =
+          erecA9Itens.length > 0
+            ? { total_intervencoes: erecA9Itens.length, itens: erecA9Itens }
+            : null
+
+        let curvaValor = null
+        if (
+          textoLower.indexOf('curva de valor') !== -1 ||
+          textoLower.indexOf('fatores críticos') !== -1 ||
+          textoLower.indexOf('fatores criticos') !== -1
+        ) {
+          curvaValor = extraSecaoGenerica(
+            texto,
+            /(?:curva\s+de\s+valor|fatores?\s+cr[íi]ticos?)[\s\S]*?(?=(?:canvas|bsc|balanced|objetivos|###|aguardo|$))/i,
+          )
+        }
+
+        let canvasToBe = null
+        if (
+          textoLower.indexOf('canvas to be') !== -1 ||
+          (textoLower.indexOf('to be') !== -1 && textoLower.indexOf('canvas') !== -1)
+        ) {
+          canvasToBe = extraSecaoGenerica(
+            texto,
+            /(?:canvas\s+to\s+be|to\s+be[\s\S]*?canvas)[\s\S]*?(?=(?:bsc|balanced|mapa\s+estrat[ée]gico|objetivos|###|aguardo|$))/i,
+          )
+        }
+
+        let bsc = null
+        if (
+          textoLower.indexOf('bsc') !== -1 ||
+          textoLower.indexOf('balanced scorecard') !== -1 ||
+          textoLower.indexOf('mapa estratégico') !== -1 ||
+          textoLower.indexOf('mapa estrategico') !== -1
+        ) {
+          bsc = extraSecaoGenerica(
+            texto,
+            /(?:bsc|balanced\s+scorecard|mapa\s+estrat[ée]gico)[\s\S]*?(?=(?:objetivos|okrs?|###|aguardo|$))/i,
+          )
+        }
+
+        let objetivosEstrategicos = null
+        if (
+          textoLower.indexOf('objetivos estratégicos') !== -1 ||
+          textoLower.indexOf('objetivos estrategicos') !== -1 ||
+          textoLower.indexOf('okrs preliminares') !== -1
+        ) {
+          objetivosEstrategicos = extraSecaoGenerica(
+            texto,
+            /(?:objetivos\s+estrat[ée]gicos|okrs?\s+preliminares)[\s\S]*?(?=(?:###|aguardo|$))/i,
+          )
+        }
+
+        artefatos = {
+          tese_diferenciacao: registrarOuNulo(
+            'tese_diferenciacao',
+            tese,
+            'Tese Central de Diferenciação Competitiva',
+          ),
+          matriz_erec_a9: registrarOuNulo(
+            'matriz_erec_a9',
+            erecA9,
+            'Matriz EREC Canônica Padrão A9 (4 colunas)',
+          ),
+          curva_de_valor: registrarOuNulo('curva_de_valor', curvaValor, 'Curva de Valor Setorial'),
+          canvas_to_be: registrarOuNulo(
+            'canvas_to_be',
+            canvasToBe,
+            'Business Model Canvas To Be (9 blocos)',
+          ),
+          mapa_estrategico_bsc: registrarOuNulo(
+            'mapa_estrategico_bsc',
+            bsc,
+            'Mapa Estratégico Balanced Scorecard (BSC 4 perspectivas)',
+          ),
+          objetivos_estrategicos: registrarOuNulo(
+            'objetivos_estrategicos',
+            objetivosEstrategicos,
+            'Matriz Preliminar de Objetivos Estratégicos e OKRs',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 4 (Prompt 7): Capacidade e Design Organizacional
+      case 7: {
+        let hackman = null
+        if (
+          textoLower.indexOf('hackman') !== -1 ||
+          textoLower.indexOf('5 condições') !== -1 ||
+          textoLower.indexOf('5 condicoes') !== -1
+        ) {
+          hackman = extraSecaoGenerica(
+            texto,
+            /(?:hackman|5\s+condi[çc][õo]es)[\s\S]*?(?=(?:tiers?|gaps?|###|aguardo|$))/i,
+          )
+        }
+        let tiers = null
+        if (
+          textoLower.indexOf('tier') !== -1 ||
+          textoLower.indexOf('tiers a/b/c') !== -1 ||
+          textoLower.indexOf('liderança e talentos') !== -1
+        ) {
+          tiers = extraSecaoGenerica(
+            texto,
+            /(?:tiers?\s*(?:a\/b\/c|[abc])|mapeamento\s+de\s+tiers?)[\s\S]*?(?=(?:gaps?|capacidade|###|aguardo|$))/i,
+          )
+        }
+        let gaps = null
+        if (
+          textoLower.indexOf('gap') !== -1 ||
+          textoLower.indexOf('gargalos de capacidade') !== -1
+        ) {
+          gaps = extraSecaoGenerica(
+            texto,
+            /(?:gaps?\s*(?:estruturais|de\s+capacidade|organizacionais)?)[\s\S]*?(?=(?:###|aguardo|$))/i,
+          )
+        }
+
+        artefatos = {
+          hackman_5_condicoes: registrarOuNulo(
+            'hackman_5_condicoes',
+            hackman,
+            'Mapa de Calor das 5 Condições Facilitadoras de Hackman',
+          ),
+          tiers_a_b_c: registrarOuNulo(
+            'tiers_a_b_c',
+            tiers,
+            'Mapeamento de Tiers de Liderança e Talentos (Tiers A/B/C)',
+          ),
+          gaps_capacidade: registrarOuNulo(
+            'gaps_capacidade',
+            gaps,
+            'Matriz de Gaps de Capacidade Organizacional',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 5 (Prompt 8): Execução e Roadmap
+      case 8: {
+        let camaleao = null
+        if (
+          textoLower.indexOf('camaleão') !== -1 ||
+          textoLower.indexOf('camaleao') !== -1 ||
+          textoLower.indexOf('agile vs') !== -1
+        ) {
+          camaleao = extraSecaoGenerica(
+            texto,
+            /(?:regra\s+camale[ãa]o|alinhamento\s+camale[ãa]o)[\s\S]*?(?=(?:roadmap|okr|rituais|###|aguardo|$))/i,
+          )
+        }
+        let roadmapFaseado = null
+        if (
+          textoLower.indexOf('roadmap') !== -1 ||
+          textoLower.indexOf('0–90') !== -1 ||
+          textoLower.indexOf('0-90') !== -1
+        ) {
+          roadmapFaseado = extraSecaoGenerica(
+            texto,
+            /(?:roadmap\s*(?:faseado|de\s+implementa[çc][ãa]o)?|curto\s+prazo[\s\S]*?m[ée]dio)[\s\S]*?(?=(?:okrs?|rituais|calend[áa]rio|###|aguardo|$))/i,
+          )
+        }
+        let okrsHoshin = null
+        if (textoLower.indexOf('okr') !== -1 || textoLower.indexOf('hoshin kanri') !== -1) {
+          okrsHoshin = extraSecaoGenerica(
+            texto,
+            /(?:okrs?\s*(?:hoshin\s+kanri|estrat[ée]gicos)?|matriz\s+de\s+okrs?)[\s\S]*?(?=(?:rituais|calend[áa]rio|###|aguardo|$))/i,
+          )
+        }
+        let rituais = null
+        if (
+          textoLower.indexOf('ritual') !== -1 ||
+          textoLower.indexOf('daily') !== -1 ||
+          textoLower.indexOf('weekly') !== -1 ||
+          textoLower.indexOf('monthly') !== -1
+        ) {
+          rituais = extraSecaoGenerica(
+            texto,
+            /(?:rituais?\s*(?:de\s+gest[ãa]o|oficiais)?|daily[\s\S]*?weekly)[\s\S]*?(?=(?:###|aguardo|$))/i,
+          )
+        }
+
+        artefatos = {
+          regra_camaleao: registrarOuNulo(
+            'regra_camaleao',
+            camaleao,
+            'Matriz de Alinhamento da Regra Camaleão',
+          ),
+          roadmap_faseado: registrarOuNulo(
+            'roadmap_faseado',
+            roadmapFaseado,
+            'Roadmap Faseado de Implementação (Curto, Médio e Longo Prazo)',
+          ),
+          okrs_hoshin_kanri: registrarOuNulo(
+            'okrs_hoshin_kanri',
+            okrsHoshin,
+            'Matriz de OKRs Estratégicos Hoshin Kanri',
+          ),
+          rituais_gestao: registrarOuNulo(
+            'rituais_gestao',
+            rituais,
+            'Calendário Oficial de Rituais de Gestão (Daily, Weekly, Monthly)',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 6 (Prompt 9): Validação Financeira e Alocação
+      case 9: {
+        const dre15 = extrairDRE15LinhasDoOutput(texto)
+        const dreFinal = dre15.length > 0 ? { total_linhas: dre15.length, linhas: dre15 } : null
+
+        let fcf = null
+        if (textoLower.indexOf('fcf') !== -1 || textoLower.indexOf('fluxo de caixa livre') !== -1) {
+          fcf = extraSecaoGenerica(
+            texto,
+            /(?:fcf|fluxo\s+de\s+caixa\s+livre)[\s\S]*?(?=(?:valuation|wacc|buffett|stress|mapa\s+sem[âa]ntico|###|aguardo|$))/i,
+          )
+        }
+        let valuation = null
+        if (
+          textoLower.indexOf('valuation') !== -1 ||
+          textoLower.indexOf('equity value') !== -1 ||
+          textoLower.indexOf('enterprise value') !== -1
+        ) {
+          valuation = extraSecaoGenerica(
+            texto,
+            /(?:valuation|enterprise\s+value|equity\s+value|fcd)[\s\S]*?(?=(?:wacc|buffett|stress|mapa\s+sem[âa]ntico|###|aguardo|$))/i,
+          )
+        }
+        let wacc = null
+        if (
+          textoLower.indexOf('wacc') !== -1 ||
+          textoLower.indexOf('regime a') !== -1 ||
+          textoLower.indexOf('regime b') !== -1
+        ) {
+          wacc = extraSecaoGenerica(
+            texto,
+            /(?:wacc|regime\s+[ab]|taxa\s+de\s+desconto)[\s\S]*?(?=(?:buffett|stress|sensibilidade|mapa\s+sem[âa]ntico|###|aguardo|$))/i,
+          )
+        }
+        let sensibilidade = null
+        if (textoLower.indexOf('sensibilidade') !== -1) {
+          sensibilidade = extraSecaoGenerica(
+            texto,
+            /(?:an[áa]lise\s+de\s+sensibilidade|matriz\s+de\s+sensibilidade)[\s\S]*?(?=(?:buffett|stress|mapa|###|aguardo|$))/i,
+          )
+        }
+        let buffett = null
+        if (
+          textoLower.indexOf('buffett') !== -1 ||
+          textoLower.indexOf('margem de segurança') !== -1 ||
+          textoLower.indexOf('margem de seguranca') !== -1
+        ) {
+          buffett = extraSecaoGenerica(
+            texto,
+            /(?:lente\s+de\s+buffett|stress\s+test\s+(?:de\s+)?buffett|margem\s+de\s+seguran[çc]a)[\s\S]*?(?=(?:mapa\s+sem[âa]ntico|convers[ãa]o|###|aguardo|$))/i,
+          )
+        }
+        let mapaSemantico = null
+        if (
+          textoLower.indexOf('mapa de conversão') !== -1 ||
+          textoLower.indexOf('mapa de conversao') !== -1 ||
+          textoLower.indexOf('mapa semântico') !== -1 ||
+          textoLower.indexOf('mapa semantico') !== -1
+        ) {
+          mapaSemantico = extraSecaoGenerica(
+            texto,
+            /(?:mapa\s+(?:de\s+convers[ãa]o|sem[âa]ntico))[\s\S]*?(?=(?:###|aguardo|$))/i,
+          )
+        }
+
+        artefatos = {
+          dre_15_linhas: registrarOuNulo(
+            'dre_15_linhas',
+            dreFinal,
+            'DRE Institucional Normalizada de 15 Linhas',
+          ),
+          fcf: registrarOuNulo('fcf', fcf, 'Demonstração do Fluxo de Caixa Livre (FCF)'),
+          valuation: registrarOuNulo(
+            'valuation',
+            valuation,
+            'Relatório de Valuation Determinístico (FCD + Gordon)',
+          ),
+          wacc: registrarOuNulo('wacc', wacc, 'Memória de Cálculo do WACC (Regime A ou B)'),
+          sensibilidade: registrarOuNulo(
+            'sensibilidade',
+            sensibilidade,
+            'Análise de Sensibilidade',
+          ),
+          stress_test_buffett: registrarOuNulo(
+            'stress_test_buffett',
+            buffett,
+            'Matriz de Thresholds e Margem de Segurança da Lente de Buffett',
+          ),
+          mapa_semantico_conversao: registrarOuNulo(
+            'mapa_semantico_conversao',
+            mapaSemantico,
+            'Mapa Semântico de Conversão de Contas',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 7 (Prompt 10): Governança e Liderança
+      case 10: {
+        let conselho = null
+        if (textoLower.indexOf('conselho') !== -1 || textoLower.indexOf('2 etapas') !== -1) {
+          conselho = extraSecaoGenerica(
+            texto,
+            /(?:desenho\s+de\s+governan[çc]a|conselho\s+(?:consultivo|de\s+administra[çc][ãa]o)|estrutura\s+de\s+governan[çc]a)[\s\S]*?(?=(?:al[çc]adas|sucess[ãa]o|c[óo]digo|###|aguardo|$))/i,
+          )
+        }
+        let alcadas = null
+        if (
+          textoLower.indexOf('alçada') !== -1 ||
+          textoLower.indexOf('alcada') !== -1 ||
+          textoLower.indexOf('comitê') !== -1 ||
+          textoLower.indexOf('comite') !== -1
+        ) {
+          alcadas = extraSecaoGenerica(
+            texto,
+            /(?:matriz\s+de\s+al[çc]adas?|comit[êe]s?\s+de\s+gest[ãa]o)[\s\S]*?(?=(?:sucess[ãa]o|c[óo]digo|compliance|###|aguardo|$))/i,
+          )
+        }
+        let sucessao = null
+        if (
+          textoLower.indexOf('sucessão') !== -1 ||
+          textoLower.indexOf('sucessao') !== -1 ||
+          textoLower.indexOf('readiness') !== -1
+        ) {
+          sucessao = extraSecaoGenerica(
+            texto,
+            /(?:plano\s+de\s+sucess[ãa]o|readiness\s+score|posi[çc][õo]es\s+cr[íi]ticas)[\s\S]*?(?=(?:c[óo]digo|compliance|esg|###|aguardo|$))/i,
+          )
+        }
+        let compliance = null
+        if (
+          textoLower.indexOf('código de conduta') !== -1 ||
+          textoLower.indexOf('codigo de conduta') !== -1 ||
+          textoLower.indexOf('compliance') !== -1 ||
+          textoLower.indexOf('esg') !== -1
+        ) {
+          compliance = extraSecaoGenerica(
+            texto,
+            /(?:c[óo]digo\s+de\s+conduta|compliance|esg)[\s\S]*?(?=(?:###|aguardo|$))/i,
+          )
+        }
+
+        artefatos = {
+          desenho_governanca_conselho: registrarOuNulo(
+            'desenho_governanca_conselho',
+            conselho,
+            'Desenho de Governança PME em 2 Etapas (Conselho Consultivo/Administração)',
+          ),
+          matriz_alcadas_comites: registrarOuNulo(
+            'matriz_alcadas_comites',
+            alcadas,
+            'Matriz de Alçadas Decisórias e Comitês de Gestão',
+          ),
+          plano_sucessao: registrarOuNulo(
+            'plano_sucessao',
+            sucessao,
+            'Plano de Sucessão para Posições Críticas (Readiness Score)',
+          ),
+          codigo_conduta_compliance: registrarOuNulo(
+            'codigo_conduta_compliance',
+            compliance,
+            'Código de Conduta e Diretrizes de Compliance/ESG',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      // Fase 8 (Prompt 11): Inovação e Tecnologia
+      case 11: {
+        let maturidade = null
+        if (
+          textoLower.indexOf('maturidade digital') !== -1 ||
+          textoLower.indexOf('maturidade') !== -1
+        ) {
+          maturidade = extraSecaoGenerica(
+            texto,
+            /(?:maturidade\s+digital|n[íi]vel\s+de\s+maturidade)[\s\S]*?(?=(?:roadmap|automa[çc][ãa]o|moat|fosso|roi|###|aguardo|$))/i,
+          )
+        }
+        let roadmapTec = null
+        if (
+          textoLower.indexOf('roadmap tecnológico') !== -1 ||
+          textoLower.indexOf('roadmap tecnologico') !== -1 ||
+          textoLower.indexOf('automação') !== -1 ||
+          textoLower.indexOf('automacao') !== -1
+        ) {
+          roadmapTec = extraSecaoGenerica(
+            texto,
+            /(?:roadmap\s+tecnol[óo]gico|automa[çc][ãa]o|intelig[êe]ncia\s+artificial)[\s\S]*?(?=(?:moat|fosso|roi|m[ée]tricas|###|aguardo|$))/i,
+          )
+        }
+        let moatRoi = null
+        if (
+          textoLower.indexOf('moat') !== -1 ||
+          textoLower.indexOf('fosso defensivo') !== -1 ||
+          textoLower.indexOf('roi') !== -1
+        ) {
+          moatRoi = extraSecaoGenerica(
+            texto,
+            /(?:moat|fosso\s+defensivo|roi\s+(?:das\s+iniciativas|por\s+iniciativa))[\s\S]*?(?=(?:###|aguardo|$))/i,
+          )
+        }
+
+        artefatos = {
+          maturidade_digital: registrarOuNulo(
+            'maturidade_digital',
+            maturidade,
+            'Diagnóstico de Nível de Maturidade Digital (1 a 5)',
+          ),
+          roadmap_tecnologico_ia: registrarOuNulo(
+            'roadmap_tecnologico_ia',
+            roadmapTec,
+            'Roadmap Tecnológico e de Automação/IA',
+          ),
+          moat_e_roi: registrarOuNulo(
+            'moat_e_roi',
+            moatRoi,
+            'Matriz de Fortalecimento do Fosso Defensivo (Moat) e ROI por Iniciativa',
+          ),
+          requer_verificacao: requerVerificacao,
+        }
+        break
+      }
+
+      default:
+        artefatos = {
+          conteudo_bruto: texto ? texto.substring(0, 500) : null,
+          requer_verificacao: requerVerificacao,
+        }
+        break
+    }
+
+    return artefatos
+  }
+
+  function extraSecaoGenerica(textoCompleto, regexSecao) {
+    if (!textoCompleto) return null
+    const m = textoCompleto.match(regexSecao)
+    if (m && m[0] && m[0].trim().length > 15) {
+      return m[0].trim()
+    }
+    return null
+  }
+
   function extrairContextoDadosBrutosDRE(dossie) {
     const respostas =
       (dossie && (dossie.respostas || dossie.questionario || dossie.dados_entrada)) || {}
@@ -933,6 +1690,8 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       })
     }
 
+    const artefatosFase = extrairArtefatosDaFase(pDef.numero, textoOutput, dossie)
+
     outputPrompts.push({
       fase: pDef.numero,
       prompt_id: pDef.prompt_id,
@@ -945,6 +1704,7 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
       tokens_input: tokIn,
       tokens_output: tokOut,
       executado_em: new Date().toISOString(),
+      artefatos: artefatosFase,
     })
 
     relatoriosPorPrompt.push('### ' + pDef.titulo + '\n\n' + textoOutput)
