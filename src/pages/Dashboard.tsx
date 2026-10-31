@@ -43,11 +43,11 @@ import { getOKRs, type OKR } from '@/services/okrs'
 import {
   buscarAcompanhamento,
   type CuradoriaAcompanhamento,
+  type FaseAcompanhamentoItem,
   type CodigoErroAcompanhamento,
 } from '@/services/acompanhamento'
 import { ContextualCta, PerfilUsuario } from '@/components/contextual-cta'
 import { useAuth } from '@/hooks/use-auth'
-import { fasesStateMachineV72 } from '@/data/master-framework-v72'
 import { setores } from '@/data/setores-questionario'
 
 /**
@@ -238,6 +238,7 @@ export default function Dashboard() {
   const [okrs, setOKRs] = useState<OKR[]>([])
   const [estagioWacc, setEstagioWacc] = useState<'pre_seed' | 'seed' | 'serie_a'>('serie_a')
   const [curadoria, setCuradoria] = useState<CuradoriaAcompanhamento | null>(null)
+  const [fasesAcompanhamento, setFasesAcompanhamento] = useState<FaseAcompanhamentoItem[]>([])
   const [loadingCuradoria, setLoadingCuradoria] = useState(false)
   const [erroCuradoria, setErroCuradoria] = useState<CodigoErroAcompanhamento | null>(null)
 
@@ -255,7 +256,7 @@ export default function Dashboard() {
         setPlanos(pList)
         setOKRs(oList)
 
-        // Carregar bloco Curadoria via rota consolidada se houver lead vinculado
+        // Carregar bloco Curadoria e Fases via rota consolidada se houver lead vinculado
         const leadIdAlvo = dList[0]?.lead
         if (leadIdAlvo) {
           setLoadingCuradoria(true)
@@ -264,21 +265,25 @@ export default function Dashboard() {
             if (!mounted) return
             if (resAcomp.success && resAcomp.data) {
               setCuradoria(resAcomp.data.curadoria)
+              setFasesAcompanhamento(resAcomp.data.fases || [])
               setErroCuradoria(null)
             } else {
               setErroCuradoria(resAcomp.codigoErro || 'ERRO_GENERICO')
               setCuradoria(null)
+              setFasesAcompanhamento([])
             }
           } catch {
             if (mounted) {
               setErroCuradoria('ERRO_GENERICO')
               setCuradoria(null)
+              setFasesAcompanhamento([])
             }
           } finally {
             if (mounted) setLoadingCuradoria(false)
           }
         } else {
           setCuradoria(null)
+          setFasesAcompanhamento([])
           setErroCuradoria(null)
         }
       } catch (err) {
@@ -578,8 +583,9 @@ export default function Dashboard() {
             </Badge>
           </div>
           <p className="text-xs md:text-sm text-[#333333] leading-relaxed">
-            Painel C-Level estruturado em 3 blocos: Saúde Financeira (Fase 6 — DRE 15 linhas,
-            Buffett, WACC), Trilha de Etapas (Fase 5) e OKRs Vivos.
+            Painel C-Level estruturado em blocos analíticos: Saúde Financeira (Fase 6 — DRE 15
+            linhas, Buffett, WACC), As 8 Fases do Diagnóstico com Artefatos, OKRs Vivos e Curadoria
+            CaaS.
           </p>
         </div>
 
@@ -614,14 +620,6 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="border-[#0066CC] text-[#0066CC] rounded-[4px] text-xs h-9"
-              >
-                <Link to="/areas-da-empresa">Ver Trilha de Etapas</Link>
-              </Button>
               <Button
                 asChild
                 size="sm"
@@ -1020,7 +1018,7 @@ export default function Dashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* BLOCO 2 — TRILHA DE ETAPAS (FASE 5) */}
+      {/* BLOCO 2 — AS 8 FASES DO DIAGNÓSTICO (MODELO CaaS) */}
       {/* ========================================================================= */}
       <section className="space-y-4 pt-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
@@ -1031,109 +1029,169 @@ export default function Dashboard() {
               </span>
               <h2 className="text-lg md:text-xl font-bold text-[#333333] flex items-center gap-2">
                 <Layers className="w-5 h-5 text-[#0066CC]" />
-                Trilha de Etapas & Execução do Plano Real (Fase 5)
+                As 8 Fases do Diagnóstico
               </h2>
             </div>
             <p className="text-xs text-[#808080] mt-0.5">
-              Progresso por Etapa do plano real, Etapa corrente destacada, dono e prazo (substitui a
-              grade de 8 Áreas).
+              Esteira de 8 fases reais do Master Framework V2.4 com artefatos determinísticos
+              registrados.
             </p>
           </div>
-          {temDiagnosticoReal || temPlanosReais ? (
+          {fasesAcompanhamento.length > 0 ? (
             <Badge className="bg-[#22B14C] text-white text-[10px] font-mono self-start sm:self-auto border-none">
-              Trilha Ativa V7.2
+              {fasesAcompanhamento.length}/8 Fases Registradas
             </Badge>
           ) : (
             <Badge
               variant="outline"
               className="text-[10px] border-[#0066CC]/30 text-[#0066CC] font-mono self-start sm:self-auto"
             >
-              Demonstração
+              8 Fases Canônicas
             </Badge>
           )}
         </div>
 
-        {/* Grade das 8 Etapas com Dono, Prazo e Progresso */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {fasesStateMachineV72.map((f, idx) => {
-            const faseAtualDiag = ultimoDiagnostico?.fase_atual || 1
-            const isCorrente = f.numero === faseAtualDiag
-            const isConcluida = temDiagnosticoReal && f.numero < faseAtualDiag
-            const temDadoRealNestaEtapa = temDiagnosticoReal && f.numero <= faseAtualDiag
+        {loadingCuradoria ? (
+          <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-6 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs text-[#808080] font-semibold">
+              <Loader2 className="w-4 h-4 animate-spin text-[#0066CC]" />
+              <span>Carregando as 8 fases do diagnóstico...</span>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {[
+              { num: 1, prompt: 'P2', titulo: 'Diagnóstico Profundo' },
+              { num: 2, prompt: 'P5', titulo: 'Foresight Estratégico' },
+              { num: 3, prompt: 'P6', titulo: 'Estratégia e Diferenciação' },
+              { num: 4, prompt: 'P7', titulo: 'Capacidade e Design Organizacional' },
+              { num: 5, prompt: 'P8', titulo: 'Execução e Roadmap' },
+              { num: 6, prompt: 'P9', titulo: 'Validação Financeira e Alocação' },
+              { num: 7, prompt: 'P10', titulo: 'Governança e Liderança' },
+              { num: 8, prompt: 'P11', titulo: 'Inovação e Tecnologia' },
+            ].map((fItem) => {
+              const regFase = fasesAcompanhamento.find((f) => f.fase === fItem.num)
+              const statusTexto = regFase ? regFase.status : 'Não executada'
+              const versaoTexto = regFase ? `v${regFase.versao}` : null
+              const artefatosObj =
+                regFase?.artefatos && typeof regFase.artefatos === 'object'
+                  ? regFase.artefatos
+                  : null
+              const chavesArtefatos = artefatosObj ? Object.keys(artefatosObj) : []
 
-            return (
-              <Card
-                key={f.numero}
-                className={`rounded-[4px] p-4 shadow-xs flex flex-col justify-between transition-all ${
-                  isCorrente
-                    ? 'bg-white border-2 border-[#0066CC] ring-2 ring-[#0066CC]/15'
-                    : isConcluida
-                      ? 'bg-emerald-50/50 border border-emerald-300'
-                      : 'bg-[#F5F5F5] border border-[#E0E0E0]'
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      className={
-                        isCorrente
-                          ? 'bg-[#0066CC] text-white text-[10px] font-bold'
-                          : isConcluida
-                            ? 'bg-[#22B14C] text-white text-[10px] font-bold'
-                            : 'bg-[#111A2E] text-white text-[10px] font-mono'
-                      }
-                    >
-                      Etapa 0{f.numero}
-                    </Badge>
-                    <div className="flex items-center gap-1">
-                      {temDadoRealNestaEtapa ? (
-                        <Badge className="bg-[#22B14C]/10 text-[#1E9E43] border-none text-[9px] font-mono font-bold">
-                          {isConcluida ? 'Concluída' : 'Em Curso'}
+              const isExecutada =
+                regFase && (regFase.status === 'executada' || regFase.status === 'aprovada')
+              const isDesatualizada = regFase && regFase.status === 'desatualizada'
+              const isReprocessada = regFase && regFase.status === 'reprocessada'
+
+              return (
+                <Card
+                  key={fItem.num}
+                  className={`rounded-[4px] p-4 shadow-xs flex flex-col justify-between transition-all ${
+                    isExecutada
+                      ? 'bg-white border border-[#E0E0E0] hover:border-[#0066CC]/40'
+                      : isDesatualizada
+                        ? 'bg-amber-50/40 border border-amber-300'
+                        : isReprocessada
+                          ? 'bg-blue-50/40 border border-blue-300'
+                          : 'bg-[#F5F5F5] border border-[#E0E0E0]'
+                  }`}
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Badge className="bg-[#0066CC] text-white text-[10px] font-mono font-bold">
+                          F{fItem.num} ({fItem.prompt})
                         </Badge>
+                        {versaoTexto && (
+                          <span className="font-mono text-[10px] text-[#808080] font-semibold">
+                            {versaoTexto}
+                          </span>
+                        )}
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        className={`text-[9px] font-mono capitalize ${
+                          statusTexto === 'Não executada'
+                            ? 'border-[#808080]/30 text-[#808080] bg-white'
+                            : isDesatualizada
+                              ? 'border-amber-400 text-amber-800 bg-amber-50 font-bold'
+                              : 'border-emerald-400 text-emerald-800 bg-emerald-50 font-bold'
+                        }`}
+                      >
+                        {statusTexto}
+                      </Badge>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-[#333333] leading-tight">
+                        {fItem.titulo}
+                      </h3>
+                    </div>
+
+                    {/* Artefatos da Fase */}
+                    <div className="pt-2 border-t border-[#E0E0E0] space-y-1.5 text-xs">
+                      <span className="text-[10px] uppercase font-bold text-[#808080] block">
+                        Artefatos Produzidos
+                      </span>
+
+                      {chavesArtefatos.length > 0 ? (
+                        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                          {chavesArtefatos.map((chave) => {
+                            const val = artefatosObj ? artefatosObj[chave] : null
+                            const isNulo = val === null || val === undefined
+
+                            return (
+                              <div
+                                key={chave}
+                                className="p-1.5 bg-[#F9F9F9] rounded border border-[#EAEAEA] text-[11px] space-y-0.5"
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-mono font-semibold text-[#333333] truncate">
+                                    {chave}
+                                  </span>
+                                  {isNulo && (
+                                    <Badge
+                                      variant="outline"
+                                      className="border-amber-400 bg-amber-50 text-amber-800 text-[8px] font-mono px-1 py-0 shrink-0"
+                                    >
+                                      Requer verificação
+                                    </Badge>
+                                  )}
+                                </div>
+                                {!isNulo && (
+                                  <p className="text-[10px] text-[#666666] line-clamp-2 break-words">
+                                    {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                                  </p>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
                       ) : (
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] border-[#0066CC]/30 text-[#0066CC] font-mono"
-                        >
-                          Demonstração
-                        </Badge>
-                      )}
-                      {isCorrente && (
-                        <span className="text-[10px] font-bold text-[#22B14C] uppercase">
-                          Corrente
-                        </span>
+                        <div className="p-2 bg-[#F9F9F9] rounded border border-dashed border-[#D0D0D0] text-[11px] text-[#808080] text-center">
+                          {regFase
+                            ? 'Nenhum artefato estruturado registrado nesta fase.'
+                            : 'Fase aguardando processamento do motor determinístico.'}
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  <h3 className="text-sm font-bold text-[#333333] leading-tight">{f.titulo}</h3>
-                  <p className="text-xs text-[#808080] line-clamp-2 leading-relaxed">{f.foco}</p>
-                </div>
-
-                <div className="pt-3 mt-3 border-t border-[#E0E0E0] space-y-1.5 text-[11px] text-[#808080]">
-                  <div className="flex items-center justify-between">
-                    <span>Dono da Etapa:</span>
-                    <strong className="text-[#333333]">Diretoria Executiva</strong>
+                  <div className="pt-2 mt-3 border-t border-[#E0E0E0] text-[10px] text-[#808080] font-mono flex items-center justify-between">
+                    <span>Atualização:</span>
+                    <strong>
+                      {regFase?.updated
+                        ? new Date(regFase.updated).toLocaleDateString('pt-BR')
+                        : '—'}
+                    </strong>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Janela / Prazo:</span>
-                    <strong className="text-[#333333]">30 a 45 dias</strong>
-                  </div>
-                  <div className="flex items-center justify-between pt-1">
-                    <span>Progresso Real:</span>
-                    {temDadoRealNestaEtapa ? (
-                      <strong className="text-[#22B14C] font-mono">
-                        {isConcluida ? '100% Concluída' : 'Em Execução (Fase Ativa)'}
-                      </strong>
-                    ) : (
-                      <strong className="text-[#808080] font-mono">Aguardando Diagnóstico</strong>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+                </Card>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* ========================================================================= */}

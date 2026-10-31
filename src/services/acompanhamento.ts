@@ -30,7 +30,16 @@ export interface CuradoriaAcompanhamento {
   planos_vinculados: number
 }
 
+export interface FaseAcompanhamentoItem {
+  fase: number
+  versao: number
+  status: string
+  artefatos: Record<string, unknown> | null
+  updated: string
+}
+
 export interface AcompanhamentoResponse {
+  fases?: FaseAcompanhamentoItem[]
   planos_acao: PlanoAcompanhamentoItem[]
   okrs: OKRAcompanhamentoItem[]
   curadoria: CuradoriaAcompanhamento

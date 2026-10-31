@@ -140,7 +140,7 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
       fasesRecords = []
     }
 
-    // 5.3 fases_desatualizadas: lista dos números das fases cuja versão mais recente está com status 'desatualizada'
+    // 5.3 fases_desatualizadas e lista das fases mais recentes com artefatos
     // Como está ordenado por -versao, a primeira ocorrência de cada número de fase é a sua versão mais recente.
     const fasesMaisRecentes = {}
     for (let i = 0; i < fasesRecords.length; i++) {
@@ -152,6 +152,7 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
     }
 
     const fasesDesatualizadas = []
+    const fasesRetorno = []
     const chavesFases = Object.keys(fasesMaisRecentes)
     for (let k = 0; k < chavesFases.length; k++) {
       const fNumKey = Number(chavesFases[k])
@@ -159,8 +160,26 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
       if (rec && rec.getString('status') === 'desatualizada') {
         fasesDesatualizadas.push(fNumKey)
       }
+
+      if (rec) {
+        let artefatosVal = null
+        try {
+          artefatosVal = rec.get('artefatos') || null
+        } catch (_) {
+          artefatosVal = null
+        }
+
+        fasesRetorno.push({
+          fase: fNumKey,
+          versao: rec.getInt('versao') || 1,
+          status: rec.getString('status') || '',
+          artefatos: artefatosVal,
+          updated: rec.getString('updated') || '',
+        })
+      }
     }
     fasesDesatualizadas.sort((a, b) => a - b)
+    fasesRetorno.sort((a, b) => a.fase - b.fase)
 
     // 5.4 ultima_curadoria: data (updated) do registro mais recente em diagnostico_fases para o diagnóstico; null se nenhum
     let ultimaCuradoria = null
@@ -189,8 +208,9 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
       }
     }
 
-    // 6. Resposta consolidada 200 OK
+    // 6. Resposta consolidada 200 OK (somente leitura — zero gravações, zero chamadas externas)
     return e.json(200, {
+      fases: fasesRetorno,
       planos_acao: planosList,
       okrs: okrsList,
       curadoria: {
