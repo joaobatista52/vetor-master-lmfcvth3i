@@ -76,6 +76,7 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
           versao_diagnostico: p.getInt('versao_diagnostico') || 0,
           curadoria_vinculada: p.getString('curadoria_vinculada') || '',
           tarefas_5w2h: tarefas,
+          epifania_vinculada: null,
         }
       })
     } catch (errPlanos) {
@@ -605,6 +606,93 @@ routerAdd('GET', '/backend/v1/diagnostico/acompanhamento/{leadId}', (e) => {
           status: statusEpifania,
           okr_vinculado: okrVinculado,
         })
+      }
+
+      // 5.7 Vinculação entre Planos de Ação e Epifanias (Fase F5 CaaS)
+      // Para cada plano, identifica a epifania correspondente por área crítica ou correspondência textual
+      for (let pIdx = 0; pIdx < planosList.length; pIdx++) {
+        const plano = planosList[pIdx]
+        let epifaniaEncontrada = null
+
+        // Extrair áreas e descrições das tarefas 5W2H do plano
+        const areasPlano = []
+        const textosAcao = []
+        if (Array.isArray(plano.tarefas_5w2h)) {
+          for (let tIdx = 0; tIdx < plano.tarefas_5w2h.length; tIdx++) {
+            const t = plano.tarefas_5w2h[tIdx]
+            if (t && typeof t === 'object') {
+              const areaTarefa = t.area_critica || t.area || t.onde || ''
+              if (areaTarefa && typeof areaTarefa === 'string') {
+                const areaNorm = normalizarAreaCritica(areaTarefa) || areaTarefa.trim()
+                if (areaNorm) areasPlano.push(areaNorm.toLowerCase())
+              }
+              if (t.o_que && typeof t.o_que === 'string') textosAcao.push(t.o_que.toLowerCase())
+              if (t.por_que && typeof t.por_que === 'string')
+                textosAcao.push(t.por_que.toLowerCase())
+              if (t.como && typeof t.como === 'string') textosAcao.push(t.como.toLowerCase())
+            }
+          }
+        }
+
+        // Tentar correspondência com a lista de epifanias
+        for (let eIdx = 0; eIdx < epifaniasList.length; eIdx++) {
+          const epif = epifaniasList[eIdx]
+          const epifArea = epif.area_critica ? epif.area_critica.toLowerCase() : ''
+          const epifEnunciado = epif.enunciado ? epif.enunciado.toLowerCase() : ''
+
+          let match = false
+
+          // 1. Correspondência por área crítica (quando existir no plano/tarefa)
+          if (epifArea && areasPlano.length > 0) {
+            for (let aIdx = 0; aIdx < areasPlano.length; aIdx++) {
+              if (
+                areasPlano[aIdx].indexOf(epifArea) !== -1 ||
+                epifArea.indexOf(areasPlano[aIdx]) !== -1
+              ) {
+                match = true
+                break
+              }
+            }
+          }
+
+          // 2. Correspondência textual entre ação e enunciado da epifania
+          if (!match && epifEnunciado && textosAcao.length > 0) {
+            const palavrasEpif = epifEnunciado
+              .replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, ' ')
+              .split(/\s+/)
+              .filter((w) => w.length > 4)
+
+            for (let txIdx = 0; txIdx < textosAcao.length; txIdx++) {
+              const txt = textosAcao[txIdx]
+              let matchCount = 0
+              for (let wIdx = 0; wIdx < palavrasEpif.length; wIdx++) {
+                if (txt.indexOf(palavrasEpif[wIdx]) !== -1) {
+                  matchCount++
+                }
+              }
+              if (
+                matchCount >= 2 ||
+                (palavrasEpif.length === 1 && matchCount === 1) ||
+                txt.indexOf(epifEnunciado) !== -1 ||
+                epifEnunciado.indexOf(txt) !== -1
+              ) {
+                match = true
+                break
+              }
+            }
+          }
+
+          if (match) {
+            epifaniaEncontrada = {
+              enunciado: epif.enunciado,
+              pilar: epif.pilar,
+              area_critica: epif.area_critica || null,
+            }
+            break
+          }
+        }
+
+        plano.epifania_vinculada = epifaniaEncontrada
       }
     } catch (errEpif) {
       $app.logger().error('Erro ao montar bloco epifanias: ' + (errEpif.message || String(errEpif)))

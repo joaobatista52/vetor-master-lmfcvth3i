@@ -7,6 +7,12 @@
 import pb from '@/lib/pocketbase/client'
 import type { Tarefa5W2H } from '@/services/planos_acao'
 
+export interface EpifaniaVinculadaAoPlano {
+  enunciado: string
+  pilar: 1 | 2 | 3 | null
+  area_critica: string | null
+}
+
 export interface PlanoAcompanhamentoItem {
   id: string
   status: string
@@ -14,6 +20,7 @@ export interface PlanoAcompanhamentoItem {
   versao_diagnostico: number
   curadoria_vinculada: string
   tarefas_5w2h: Tarefa5W2H[]
+  epifania_vinculada?: EpifaniaVinculadaAoPlano | null
 }
 
 export interface OKRAcompanhamentoItem {

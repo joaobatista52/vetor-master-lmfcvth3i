@@ -46,6 +46,7 @@ import {
   type FaseAcompanhamentoItem,
   type EpifaniaItem,
   type CodigoErroAcompanhamento,
+  type PlanoAcompanhamentoItem,
 } from '@/services/acompanhamento'
 import { ContextualCta, PerfilUsuario } from '@/components/contextual-cta'
 import { useAuth } from '@/hooks/use-auth'
@@ -240,6 +241,8 @@ export default function Dashboard() {
   const [estagioWacc, setEstagioWacc] = useState<'pre_seed' | 'seed' | 'serie_a'>('serie_a')
   const [curadoria, setCuradoria] = useState<CuradoriaAcompanhamento | null>(null)
   const [fasesAcompanhamento, setFasesAcompanhamento] = useState<FaseAcompanhamentoItem[]>([])
+  const [planosAcompanhamento, setPlanosAcompanhamento] = useState<PlanoAcompanhamentoItem[]>([])
+  const [epifaniaDestacada, setEpifaniaDestacada] = useState<string | null>(null)
   const [epifanias, setEpifanias] = useState<EpifaniaItem[]>([])
   const [loadingCuradoria, setLoadingCuradoria] = useState(false)
   const [erroCuradoria, setErroCuradoria] = useState<CodigoErroAcompanhamento | null>(null)
@@ -268,12 +271,14 @@ export default function Dashboard() {
             if (resAcomp.success && resAcomp.data) {
               setCuradoria(resAcomp.data.curadoria)
               setFasesAcompanhamento(resAcomp.data.fases || [])
+              setPlanosAcompanhamento(resAcomp.data.planos_acao || [])
               setEpifanias(resAcomp.data.epifanias || [])
               setErroCuradoria(null)
             } else {
               setErroCuradoria(resAcomp.codigoErro || 'ERRO_GENERICO')
               setCuradoria(null)
               setFasesAcompanhamento([])
+              setPlanosAcompanhamento([])
               setEpifanias([])
             }
           } catch {
@@ -281,6 +286,7 @@ export default function Dashboard() {
               setErroCuradoria('ERRO_GENERICO')
               setCuradoria(null)
               setFasesAcompanhamento([])
+              setPlanosAcompanhamento([])
               setEpifanias([])
             }
           } finally {
@@ -289,6 +295,7 @@ export default function Dashboard() {
         } else {
           setCuradoria(null)
           setFasesAcompanhamento([])
+          setPlanosAcompanhamento([])
           setEpifanias([])
           setErroCuradoria(null)
         }
@@ -1788,6 +1795,27 @@ export default function Dashboard() {
                               </p>
                             )}
                           </div>
+
+                          {/* CTA Contextual F5: Leva da epifania à ação que a endereça */}
+                          <div className="pt-2.5 mt-2 border-t border-[#F0F0F0] flex items-center justify-between">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEpifaniaDestacada(epif.enunciado)
+                                const el = document.getElementById('bloco-plano-de-acao')
+                                if (el) {
+                                  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                }
+                              }}
+                              className="text-[11px] font-semibold text-[#0066CC] hover:text-[#0052A3] flex items-center gap-1 transition-colors group cursor-pointer focus:outline-none"
+                            >
+                              <span>Ver ações vinculadas</span>
+                              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                            <span className="text-[10px] text-[#808080] font-mono">
+                              {epif.area_critica || 'Ação 5W2H'}
+                            </span>
+                          </div>
                         </Card>
                       ))}
                     </div>
@@ -1795,6 +1823,265 @@ export default function Dashboard() {
                 </div>
               ))}
           </div>
+        )}
+      </section>
+
+      {/* ========================================================================= */}
+      {/* BLOCO DE PLANO DE AÇÃO (FASE F5 CaaS — CONEXÃO COM AS EPIFANIAS) */}
+      {/* ========================================================================= */}
+      <section id="bloco-plano-de-acao" className="space-y-4 pt-4 scroll-mt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-bold text-[#0066CC] bg-[#0066CC]/10 px-2 py-0.5 rounded">
+                PLANO DE AÇÃO
+              </span>
+              <h2 className="text-lg md:text-xl font-bold text-[#333333] flex items-center gap-2">
+                <ListTodo className="w-5 h-5 text-[#0066CC]" />
+                Plano de Ação 5W2H (Execução & Epifanias)
+              </h2>
+            </div>
+            <p className="text-xs text-[#808080] mt-0.5">
+              Ações estruturadas 5W2H vinculadas às epifanias do diagnóstico e auditadas na
+              curadoria executiva.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {epifaniaDestacada && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEpifaniaDestacada(null)}
+                className="text-[10px] h-7 border-[#0066CC]/30 text-[#0066CC] hover:bg-[#0066CC]/10"
+              >
+                Limpar Destaque
+              </Button>
+            )}
+            <Badge
+              className={
+                planosAcompanhamento.length > 0 || planos.length > 0
+                  ? 'bg-[#22B14C] text-white text-[10px] font-mono border-none'
+                  : 'border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono'
+              }
+            >
+              {planosAcompanhamento.length > 0
+                ? `${planosAcompanhamento.length} ${planosAcompanhamento.length === 1 ? 'Plano Vinculado' : 'Planos Vinculados'}`
+                : planos.length > 0
+                  ? `${planos.length} Planos Ativos`
+                  : 'Demonstração'}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Exibição dos planos com epifania vinculada ou estado vazio/demonstração */}
+        {planosAcompanhamento.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {planosAcompanhamento.map((planoItem, pIdx) => {
+              const temEpif = !!planoItem.epifania_vinculada
+              const isDestacado =
+                epifaniaDestacada &&
+                temEpif &&
+                planoItem.epifania_vinculada?.enunciado === epifaniaDestacada
+
+              return (
+                <Card
+                  key={planoItem.id || `plano-${pIdx}`}
+                  className={`rounded-[4px] p-5 shadow-xs flex flex-col justify-between transition-all ${
+                    isDestacado
+                      ? 'bg-blue-50/50 border-2 border-[#0066CC] ring-2 ring-[#0066CC]/20'
+                      : 'bg-white border border-[#E0E0E0] hover:border-[#0066CC]/40'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono font-bold"
+                        >
+                          Fase {planoItem.fase_origem ? `0${planoItem.fase_origem}` : '5W2H'}
+                        </Badge>
+                        <Badge
+                          className={
+                            planoItem.status === 'concluido' || planoItem.status === 'concluida'
+                              ? 'bg-[#22B14C] text-white text-[10px] border-none'
+                              : planoItem.status === 'em_andamento'
+                                ? 'bg-[#0066CC] text-white text-[10px] border-none'
+                                : 'bg-amber-600 text-white text-[10px] border-none'
+                          }
+                        >
+                          {planoItem.status || 'Pendente'}
+                        </Badge>
+                      </div>
+
+                      {planoItem.curadoria_vinculada && (
+                        <span className="text-[10px] font-mono text-[#22B14C] font-semibold">
+                          Curadoria Ativa
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Vínculo contextual com a Epifania endereçada */}
+                    {temEpif && planoItem.epifania_vinculada ? (
+                      <div className="p-3 bg-[#F0F7FF] border border-[#0066CC]/30 rounded-[3px] space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#0066CC] flex items-center gap-1">
+                            <Flame className="w-3 h-3 text-[#0066CC]" />
+                            Epifania Endereçada
+                          </span>
+                          {planoItem.epifania_vinculada.pilar && (
+                            <Badge className="bg-[#0066CC] text-white text-[9px] font-mono border-none px-1.5 py-0">
+                              Pilar {planoItem.epifania_vinculada.pilar}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs font-semibold text-[#1E3A8A] leading-snug">
+                          {planoItem.epifania_vinculada.enunciado}
+                        </p>
+                        {planoItem.epifania_vinculada.area_critica && (
+                          <div className="text-[10px] text-[#475569] font-mono">
+                            Área Crítica: {planoItem.epifania_vinculada.area_critica}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-2.5 bg-[#F9F9F9] border border-dashed border-[#E0E0E0] rounded-[3px] text-[11px] text-[#808080] italic">
+                        Plano autônomo sem epifania vinculada diretamente.
+                      </div>
+                    )}
+
+                    {/* Lista de tarefas 5W2H do plano */}
+                    <div className="space-y-2 pt-1">
+                      <div className="text-[10px] uppercase font-bold text-[#808080] tracking-wider">
+                        Iniciativas 5W2H
+                      </div>
+                      {Array.isArray(planoItem.tarefas_5w2h) &&
+                      planoItem.tarefas_5w2h.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {planoItem.tarefas_5w2h.slice(0, 3).map((t: any, tIdx: number) => (
+                            <div
+                              key={tIdx}
+                              className="p-2 bg-[#FAFAFA] rounded border border-[#EAEAEA] text-xs space-y-0.5"
+                            >
+                              <div className="font-semibold text-[#333333] flex items-center justify-between">
+                                <span className="line-clamp-1">
+                                  {t.o_que || t.acao || 'Ação 5W2H'}
+                                </span>
+                                {t.quem && (
+                                  <span className="text-[10px] text-[#808080] font-normal font-mono ml-2 shrink-0">
+                                    Resp: {t.quem}
+                                  </span>
+                                )}
+                              </div>
+                              {t.por_que && (
+                                <p className="text-[10px] text-[#666666] line-clamp-1">
+                                  Por quê: {t.por_que}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                          {planoItem.tarefas_5w2h.length > 3 && (
+                            <div className="text-[10px] text-[#808080] text-center pt-0.5">
+                              + {planoItem.tarefas_5w2h.length - 3} ações adicionais
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-[#808080] italic">
+                          Ações em detalhamento na curadoria executiva.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 mt-3 border-t border-[#E0E0E0] flex items-center justify-between text-xs">
+                    <span className="text-[10px] text-[#808080] font-mono">
+                      Versão Diagnóstico: {planoItem.versao_diagnostico || 1}
+                    </span>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-7 text-[#0066CC] hover:bg-[#0066CC]/10 p-0 px-2"
+                    >
+                      <Link to="/plano-de-acao" className="flex items-center gap-1">
+                        <span>Abrir no Portal</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        ) : planos.length > 0 ? (
+          /* Fallback quando não há dados da rota de acompanhamento mas há planos locais */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {planos.map((planoItem, pIdx) => (
+              <Card
+                key={planoItem.id || `plano-local-${pIdx}`}
+                className="bg-white border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs flex flex-col justify-between hover:border-[#0066CC]/40 transition-colors"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Badge
+                      variant="outline"
+                      className="border-[#0066CC]/30 text-[#0066CC] bg-[#0066CC]/5 text-[10px] font-mono font-bold"
+                    >
+                      Plano 5W2H
+                    </Badge>
+                    <Badge className="bg-[#22B14C] text-white text-[9px] font-mono border-none">
+                      Dado Local
+                    </Badge>
+                  </div>
+                  <div className="p-2.5 bg-[#F9F9F9] border border-dashed border-[#E0E0E0] rounded-[3px] text-xs text-[#808080]">
+                    {planoItem.tarefas_5w2h && planoItem.tarefas_5w2h.length > 0
+                      ? `${planoItem.tarefas_5w2h.length} ações registradas neste plano.`
+                      : 'Plano aguardando sincronização com a rota de acompanhamento.'}
+                  </div>
+                </div>
+                <div className="pt-3 mt-3 border-t border-[#E0E0E0] flex items-center justify-between text-xs">
+                  <span className="text-[10px] text-[#808080] font-mono">Status: Ativo</span>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7 text-[#0066CC] hover:bg-[#0066CC]/10 p-0 px-2"
+                  >
+                    <Link to="/plano-de-acao" className="flex items-center gap-1">
+                      <span>Ver no Portal</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          /* Estado Demonstrativo */
+          <Card className="bg-[#F5F5F5] border border-[#E0E0E0] rounded-[4px] p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-[#0066CC]" />
+                  <span className="text-xs font-bold text-[#333333]">
+                    Nenhum plano de ação registrado ainda
+                  </span>
+                </div>
+                <p className="text-xs text-[#808080] leading-relaxed max-w-2xl">
+                  Os planos de ação 5W2H são criados a partir das iniciativas do Roadmap (Fase 5) e
+                  endereçam diretamente as epifanias identificadas no diagnóstico.
+                </p>
+              </div>
+              <Button
+                asChild
+                size="sm"
+                className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-[4px] text-xs h-8 shadow-sm shrink-0"
+              >
+                <Link to="/plano-de-acao">Criar Plano 5W2H</Link>
+              </Button>
+            </div>
+          </Card>
         )}
       </section>
 
