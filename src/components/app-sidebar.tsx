@@ -1,13 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
-  ListTodo,
-  LayoutDashboard,
-  BookOpen,
+  Home,
+  Layers,
+  FolderKanban,
+  BarChart3,
   Shield,
+  BookOpen,
+  Headset,
   History,
   GitCompare,
   Mail,
-  StickyNote,
   Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -28,25 +30,29 @@ import {
 } from '@/components/ui/sidebar'
 
 /**
- * MENU LATERAL OFICIAL VETOR MASTER — PORTAL DO CLIENTE CaaS (5 SEÇÕES):
- * 1. Dashboard (/dashboard)
- * 2. Plano de Ação (/plano-de-acao)
- * 3. Curadoria (/dashboard#curadoria)
- * 4. Biblioteca (/biblioteca)
- * 5. Apoio Operacional (/notas)
+ * MENU LATERAL OFICIAL VETOR MASTER — PORTAL DO CLIENTE CaaS (FASE F5-BIS-A — 7 SEÇÕES, ORDEM CANÔNICA):
+ * 1. Início da Jornada (/app)
+ * 2. As 8 Fases (/fases)
+ * 3. Projetos e Planos de Ação (/projetos)
+ * 4. Dashboard (/dashboard)
+ * 5. Curadoria (/dashboard#curadoria)
+ * 6. Biblioteca (/biblioteca)
+ * 7. Apoio Operacional (/notas)
  */
 const clientPortalNavItems = [
-  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, step: '1' },
-  { title: 'Plano de Ação', path: '/plano-de-acao', icon: ListTodo, step: '2' },
-  { title: 'Curadoria', path: '/dashboard#curadoria', icon: Shield, step: '3' },
-  { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '4' },
-  { title: 'Apoio Operacional', path: '/notas', icon: StickyNote, step: '5' },
+  { title: 'Início da Jornada', path: '/app', icon: Home, step: '1' },
+  { title: 'As 8 Fases', path: '/fases', icon: Layers, step: '2' },
+  { title: 'Projetos e Planos de Ação', path: '/projetos', icon: FolderKanban, step: '3' },
+  { title: 'Dashboard', path: '/dashboard', icon: BarChart3, step: '4' },
+  { title: 'Curadoria', path: '/dashboard#curadoria', icon: Shield, step: '5' },
+  { title: 'Biblioteca', path: '/biblioteca', icon: BookOpen, step: '6' },
+  { title: 'Apoio Operacional', path: '/notas', icon: Headset, step: '7' },
 ]
 
 const adminNavItems = [
   { title: 'Painel Geral', path: '/admin', icon: Shield },
   { title: 'Leads do Site', path: '/admin/leads', icon: Users },
-  { title: 'Métricas Admin', path: '/admin/dashboard', icon: LayoutDashboard },
+  { title: 'Métricas Admin', path: '/admin/dashboard', icon: BarChart3 },
   { title: 'Biblioteca Profissional', path: '/admin/biblioteca', icon: BookOpen },
   { title: 'Log de Divergências', path: '/admin/divergencias', icon: GitCompare },
   { title: 'Logs de Auditoria', path: '/admin/logs', icon: History },
@@ -85,7 +91,7 @@ export function AppSidebar() {
             {!isCollapsed && item.step && (
               <span
                 className={cn(
-                  'text-[10px] font-mono px-1.5 py-0.2 rounded',
+                  'text-[10px] font-mono px-1.5 py-0.5 rounded',
                   isActive ? 'bg-white/20 text-white' : 'text-white/40',
                 )}
               >

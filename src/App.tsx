@@ -1,93 +1,260 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { Toaster } from '@/components/ui/toaster'
-import { Toaster as Sonner } from '@/components/ui/sonner'
+import { useEffect } from 'react'
+import { Route, Switch, useLocation, Navigate } from 'wouter'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { AuthProvider } from '@/hooks/use-auth'
+import ScrollToTop from '@/components/ScrollToTop'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/protected-route'
 import { AdminRoute } from '@/components/admin-route'
-import { ScrollToTop } from './components/ScrollToTop'
-import Layout from './components/Layout'
-import Index from './pages/Index'
-import Diagnosticos from './pages/Diagnosticos'
-import PlanoDeAcao from './pages/PlanoDeAcao'
-import Modelos from './pages/Modelos'
-import Notas from './pages/Notas'
-import Resultados from './pages/Resultados'
-import Biblioteca from './pages/Biblioteca'
-import NiveisEPlanos from './pages/NiveisEPlanos'
-import Dashboard from './pages/Dashboard'
-import AdminDashboard from './pages/AdminDashboard'
-import AdminMetrics from './pages/AdminMetrics'
-import AdminLogsPage from './pages/AdminLogs'
-import AdminDivergenciasPage from './pages/AdminDivergencias'
-import AdminInvitesPage from './pages/AdminInvites'
-import AdminLeadsPage from './pages/AdminLeads'
-import BibliotecaProfissional from './pages/BibliotecaProfissional'
-import AreasDaEmpresa from './pages/AreasDaEmpresa'
-import NotFound from './pages/NotFound'
-import Login from './pages/Login'
-import Landing from './pages/Landing'
-import InstitucionalVendedora from './pages/InstitucionalVendedora'
-import Questionario from './pages/Questionario'
-import QuestionarioSucesso from './pages/QuestionarioSucesso'
-import ListaPrioridade from './pages/ListaPrioridade'
-import PrivacidadeLGPD from './pages/PrivacidadeLGPD'
-import ContactSheet from './pages/ContactSheet'
+import Layout from '@/components/Layout'
+
+import Landing from '@/pages/Landing'
+import Login from '@/pages/Login'
+import InstitucionalVendedora from '@/pages/InstitucionalVendedora'
+import PrivacidadeLGPD from '@/pages/PrivacidadeLGPD'
+import Dashboard from '@/pages/Dashboard'
+import Resultados from '@/pages/Resultados'
+import PlanoDeAcao from '@/pages/PlanoDeAcao'
+import Biblioteca from '@/pages/Biblioteca'
+import Notas from '@/pages/Notas'
+import Modelos from '@/pages/Modelos'
+import AreasDaEmpresa from '@/pages/AreasDaEmpresa'
+import NiveisEPlanos from '@/pages/NiveisEPlanos'
+import Questionario from '@/pages/Questionario'
+import QuestionarioSucesso from '@/pages/QuestionarioSucesso'
+import Diagnosticos from '@/pages/Diagnosticos'
+import Index from '@/pages/Index'
+import NotFound from '@/pages/NotFound'
+import Admin from '@/pages/Admin'
+import AdminDashboard from '@/pages/AdminDashboard'
+import AdminLeads from '@/pages/AdminLeads'
+import AdminInvites from '@/pages/AdminInvites'
+import AdminLogs from '@/pages/AdminLogs'
+import AdminMetrics from '@/pages/AdminMetrics'
+import AdminDivergencias from '@/pages/AdminDivergencias'
+
+/**
+ * ROTEADOR — FASE F5-BIS-A (7 seções da régua lateral, ordem canônica):
+ *   1. Início da Jornada      → /app          (Index.tsx)
+ *   2. As 8 Fases             → /fases        (Diagnosticos.tsx)
+ *   3. Projetos e Planos      → /projetos     (PlanoDeAcao.tsx)
+ *   4. Dashboard              → /dashboard    (Dashboard.tsx)
+ *   5. Curadoria              → /dashboard#curadoria
+ *   6. Biblioteca             → /biblioteca   (Biblioteca.tsx)
+ *   7. Apoio Operacional      → /notas        (Notas.tsx)
+ *
+ * A rota pública "/" permanece com a página institucional/vendedora (divergência
+ * declarada: a régua usa "/app" para o Início da Jornada, preservando a página
+ * institucional intacta). A rota legada /plano-de-acao redireciona para /projetos.
+ */
+const RedirectPlanoDeAcao = () => <Navigate replace to="/projetos" />
+const RedirectCuradoria = () => <Navigate replace to="/dashboard#curadoria" />
+
+const Router = () => {
+  const { pathname, hash } = useLocation()
+
+  useEffect(() => {
+    if (hash === '#curadoria') {
+      const el = document.getElementById('curadoria')
+      if (el) {
+        // aguarda o conteúdo assíncrono do Dashboard montar antes de rolar
+        const t = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
+        return () => clearTimeout(t)
+      }
+    }
+  }, [hash, pathname])
+
+  return (
+    <Switch>
+      {/* Públicas */}
+      <Route path="/" component={InstitucionalVendedora} />
+      <Route path="/landing" component={Landing} />
+      <Route path="/login" component={Login} />
+      <Route path="/privacidade" component={PrivacidadeLGPD} />
+
+      {/* 1. Início da Jornada */}
+      <Route path="/app">
+        <ProtectedRoute>
+          <Layout>
+            <Index />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* 2. As 8 Fases */}
+      <Route path="/fases">
+        <ProtectedRoute>
+          <Layout>
+            <Diagnosticos />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* 3. Projetos e Planos de Ação (rota legada /plano-de-acao redireciona para cá) */}
+      <Route path="/projetos">
+        <ProtectedRoute>
+          <Layout>
+            <PlanoDeAcao />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/plano-de-acao">
+        <RedirectPlanoDeAcao />
+      </Route>
+
+      {/* 4. Dashboard */}
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Layout>
+            <Dashboard />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* 5. Curadoria */}
+      <Route path="/curadoria">
+        <RedirectCuradoria />
+      </Route>
+
+      {/* 6. Biblioteca */}
+      <Route path="/biblioteca">
+        <ProtectedRoute>
+          <Layout>
+            <Biblioteca />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* 7. Apoio Operacional */}
+      <Route path="/notas">
+        <ProtectedRoute>
+          <Layout>
+            <Notas />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* Páginas de suporte */}
+      <Route path="/modelos">
+        <ProtectedRoute>
+          <Layout>
+            <Modelos />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/areas-da-empresa">
+        <ProtectedRoute>
+          <Layout>
+            <AreasDaEmpresa />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/niveis-e-planos">
+        <ProtectedRoute>
+          <Layout>
+            <NiveisEPlanos />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/diagnosticos">
+        <ProtectedRoute>
+          <Layout>
+            <Diagnosticos />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/resultados">
+        <ProtectedRoute>
+          <Layout>
+            <Resultados />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/questionario">
+        <ProtectedRoute>
+          <Layout>
+            <Questionario />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/questionario/sucesso">
+        <ProtectedRoute>
+          <Layout>
+            <QuestionarioSucesso />
+          </Layout>
+        </ProtectedRoute>
+      </Route>
+
+      {/* Admin */}
+      <Route path="/admin">
+        <AdminRoute>
+          <Layout>
+            <Admin />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/dashboard">
+        <AdminRoute>
+          <Layout>
+            <AdminDashboard />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/leads">
+        <AdminRoute>
+          <Layout>
+            <AdminLeads />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/convites">
+        <AdminRoute>
+          <Layout>
+            <AdminInvites />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/logs">
+        <AdminRoute>
+          <Layout>
+            <AdminLogs />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/metricas">
+        <AdminRoute>
+          <Layout>
+            <AdminMetrics />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/biblioteca">
+        <AdminRoute>
+          <Layout>
+            <AdminDivergencias />
+          </Layout>
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/divergencias">
+        <AdminRoute>
+          <Layout>
+            <AdminDivergencias />
+          </Layout>
+        </AdminRoute>
+      </Route>
+
+      {/* 404 */}
+      <Route component={NotFound} />
+    </Switch>
+  )
+}
 
 const App = () => (
-  <BrowserRouter>
+  <TooltipProvider delayDuration={0}>
     <ScrollToTop />
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          {/* Camada 0: Institucional/Vendedora como 1ª tela para todos */}
-          <Route path="/" element={<InstitucionalVendedora />} />
-          <Route path="/landing" element={<Landing />} />
-          <Route path="/contact-sheet" element={<ContactSheet />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/privacidade" element={<PrivacidadeLGPD />} />
-          {/* Camada 1: Conversão acessível sem login obrigatório para diagnóstico gratuito */}
-          <Route path="/questionario" element={<Questionario />} />
-          <Route path="/questionario/:setorParam" element={<Questionario />} />
-          <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
-          <Route path="/lista-prioridade" element={<ListaPrioridade />} />
-          <Route path="/planos" element={<NiveisEPlanos />} />
-          <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
-              {/* Jornada do Assinante Vetor Master V7.2 / V1.3 */}
-              <Route path="/app" element={<Index />} />
-              <Route path="/diagnosticos" element={<Diagnosticos />} />
-              <Route path="/resultados" element={<Resultados />} />
-              <Route path="/plano-de-acao" element={<PlanoDeAcao />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/areas-da-empresa" element={<AreasDaEmpresa />} />
-              <Route path="/biblioteca" element={<Biblioteca />} />
-
-              {/* Fluxos Complementares */}
-              <Route path="/notas" element={<Notas />} />
-              <Route path="/modelos" element={<Modelos />} />
-            </Route>
-          </Route>
-          <Route element={<AdminRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/leads" element={<AdminLeadsPage />} />
-              <Route path="/admin/dashboard" element={<AdminMetrics />} />
-              <Route path="/admin/biblioteca" element={<BibliotecaProfissional />} />
-              <Route path="/admin/divergencias" element={<AdminDivergenciasPage />} />
-              <Route path="/admin/logs" element={<AdminLogsPage />} />
-              <Route path="/admin/convites" element={<AdminInvitesPage />} />
-            </Route>
-          </Route>
-
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
+      <Router />
     </AuthProvider>
-  </BrowserRouter>
+  </TooltipProvider>
 )
 
 export default App
