@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { Route, Switch, useLocation, Navigate } from 'wouter'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import ScrollToTop from '@/components/ScrollToTop'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/protected-route'
 import { AdminRoute } from '@/components/admin-route'
@@ -46,213 +46,72 @@ import AdminDivergencias from '@/pages/AdminDivergencias'
  * declarada: a régua usa "/app" para o Início da Jornada, preservando a página
  * institucional intacta). A rota legada /plano-de-acao redireciona para /projetos.
  */
-const RedirectPlanoDeAcao = () => <Navigate replace to="/projetos" />
-const RedirectCuradoria = () => <Navigate replace to="/dashboard#curadoria" />
-
-const Router = () => {
-  const { pathname, hash } = useLocation()
-
-  useEffect(() => {
-    if (hash === '#curadoria') {
-      const el = document.getElementById('curadoria')
-      if (el) {
-        // aguarda o conteúdo assíncrono do Dashboard montar antes de rolar
-        const t = setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
-        return () => clearTimeout(t)
-      }
-    }
-  }, [hash, pathname])
-
-  return (
-    <Switch>
-      {/* Públicas */}
-      <Route path="/" component={InstitucionalVendedora} />
-      <Route path="/landing" component={Landing} />
-      <Route path="/login" component={Login} />
-      <Route path="/privacidade" component={PrivacidadeLGPD} />
-
-      {/* 1. Início da Jornada */}
-      <Route path="/app">
-        <ProtectedRoute>
-          <Layout>
-            <Index />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-
-      {/* 2. As 8 Fases */}
-      <Route path="/fases">
-        <ProtectedRoute>
-          <Layout>
-            <Diagnosticos />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-
-      {/* 3. Projetos e Planos de Ação (rota legada /plano-de-acao redireciona para cá) */}
-      <Route path="/projetos">
-        <ProtectedRoute>
-          <Layout>
-            <PlanoDeAcao />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/plano-de-acao">
-        <RedirectPlanoDeAcao />
-      </Route>
-
-      {/* 4. Dashboard */}
-      <Route path="/dashboard">
-        <ProtectedRoute>
-          <Layout>
-            <Dashboard />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-
-      {/* 5. Curadoria */}
-      <Route path="/curadoria">
-        <RedirectCuradoria />
-      </Route>
-
-      {/* 6. Biblioteca */}
-      <Route path="/biblioteca">
-        <ProtectedRoute>
-          <Layout>
-            <Biblioteca />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-
-      {/* 7. Apoio Operacional */}
-      <Route path="/notas">
-        <ProtectedRoute>
-          <Layout>
-            <Notas />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-
-      {/* Páginas de suporte */}
-      <Route path="/modelos">
-        <ProtectedRoute>
-          <Layout>
-            <Modelos />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/areas-da-empresa">
-        <ProtectedRoute>
-          <Layout>
-            <AreasDaEmpresa />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/niveis-e-planos">
-        <ProtectedRoute>
-          <Layout>
-            <NiveisEPlanos />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/diagnosticos">
-        <ProtectedRoute>
-          <Layout>
-            <Diagnosticos />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/resultados">
-        <ProtectedRoute>
-          <Layout>
-            <Resultados />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/questionario">
-        <ProtectedRoute>
-          <Layout>
-            <Questionario />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-      <Route path="/questionario/sucesso">
-        <ProtectedRoute>
-          <Layout>
-            <QuestionarioSucesso />
-          </Layout>
-        </ProtectedRoute>
-      </Route>
-
-      {/* Admin */}
-      <Route path="/admin">
-        <AdminRoute>
-          <Layout>
-            <Admin />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/dashboard">
-        <AdminRoute>
-          <Layout>
-            <AdminDashboard />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/leads">
-        <AdminRoute>
-          <Layout>
-            <AdminLeads />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/convites">
-        <AdminRoute>
-          <Layout>
-            <AdminInvites />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/logs">
-        <AdminRoute>
-          <Layout>
-            <AdminLogs />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/metricas">
-        <AdminRoute>
-          <Layout>
-            <AdminMetrics />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/biblioteca">
-        <AdminRoute>
-          <Layout>
-            <AdminDivergencias />
-          </Layout>
-        </AdminRoute>
-      </Route>
-      <Route path="/admin/divergencias">
-        <AdminRoute>
-          <Layout>
-            <AdminDivergencias />
-          </Layout>
-        </AdminRoute>
-      </Route>
-
-      {/* 404 */}
-      <Route component={NotFound} />
-    </Switch>
-  )
-}
-
 const App = () => (
   <TooltipProvider delayDuration={0}>
-    <ScrollToTop />
     <AuthProvider>
-      <Router />
+      <BrowserRouter>
+        <ScrollToTop />
+        <Routes>
+          {/* Públicas */}
+          <Route path="/" element={<InstitucionalVendedora />} />
+          <Route path="/landing" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/privacidade" element={<PrivacidadeLGPD />} />
+
+          {/* Rotas Protegidas com Layout */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              {/* 1. Início da Jornada */}
+              <Route path="/app" element={<Index />} />
+
+              {/* 2. As 8 Fases */}
+              <Route path="/fases" element={<Diagnosticos />} />
+
+              {/* 3. Projetos e Planos de Ação */}
+              <Route path="/projetos" element={<PlanoDeAcao />} />
+              <Route path="/plano-de-acao" element={<Navigate to="/projetos" replace />} />
+
+              {/* 4. Dashboard */}
+              <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* 5. Curadoria */}
+              <Route path="/curadoria" element={<Navigate to="/dashboard#curadoria" replace />} />
+
+              {/* 6. Biblioteca */}
+              <Route path="/biblioteca" element={<Biblioteca />} />
+
+              {/* 7. Apoio Operacional */}
+              <Route path="/notas" element={<Notas />} />
+
+              {/* Páginas de suporte */}
+              <Route path="/modelos" element={<Modelos />} />
+              <Route path="/areas-da-empresa" element={<AreasDaEmpresa />} />
+              <Route path="/niveis-e-planos" element={<NiveisEPlanos />} />
+              <Route path="/diagnosticos" element={<Diagnosticos />} />
+              <Route path="/resultados" element={<Resultados />} />
+              <Route path="/questionario" element={<Questionario />} />
+              <Route path="/questionario/sucesso" element={<QuestionarioSucesso />} />
+            </Route>
+          </Route>
+
+          {/* Rotas Admin com Layout */}
+          <Route element={<AdminRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/leads" element={<AdminLeads />} />
+              <Route path="/admin/convites" element={<AdminInvites />} />
+              <Route path="/admin/logs" element={<AdminLogs />} />
+              <Route path="/admin/metricas" element={<AdminMetrics />} />
+              <Route path="/admin/biblioteca" element={<AdminDivergencias />} />
+              <Route path="/admin/divergencias" element={<AdminDivergencias />} />
+            </Route>
+          </Route>
+
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   </TooltipProvider>
 )
