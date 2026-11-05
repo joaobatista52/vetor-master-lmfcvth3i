@@ -1,5 +1,5 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Search, User } from 'lucide-react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Bell, ExternalLink, Globe, Search, User } from 'lucide-react'
 import { AppSidebar } from './app-sidebar'
 import { Logo } from '@/components/Logo'
 import { useAuth } from '@/hooks/use-auth'
@@ -58,22 +58,46 @@ export default function Layout() {
           <header className="h-16 flex items-center justify-between px-6 border-b border-[#24334F] bg-[#111A2E]/95 backdrop-blur-md z-10 sticky top-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-[#C7D0E0] hover:text-[#5B9DFF] transition-colors" />
+
+              {/* Link ← Início da Jornada: visível em todas as rotas protegidas exceto /app */}
+              {location.pathname !== '/app' && (
+                <Link
+                  to="/app"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#C7D0E0] hover:text-[#5B9DFF] transition-colors px-2.5 py-1.5 rounded-[4px] hover:bg-[#16213A] border border-transparent hover:border-[#24334F]"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Início da Jornada</span>
+                </Link>
+              )}
+
               <Breadcrumb className="hidden sm:block">
                 <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink
-                      href="/"
-                      className="text-[#8B98B4] hover:text-[#5B9DFF] transition-colors text-xs font-medium"
-                    >
-                      Início
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="text-[#8B98B4]/50" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="font-semibold text-[#5B9DFF] text-xs">
-                      {currentPage}
-                    </BreadcrumbPage>
-                  </BreadcrumbItem>
+                  {location.pathname !== '/app' ? (
+                    <>
+                      <BreadcrumbItem>
+                        <BreadcrumbLink asChild>
+                          <Link
+                            to="/app"
+                            className="text-[#8B98B4] hover:text-[#5B9DFF] transition-colors text-xs font-medium"
+                          >
+                            Início da Jornada
+                          </Link>
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator className="text-[#8B98B4]/50" />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage className="font-semibold text-[#5B9DFF] text-xs">
+                          {currentPage}
+                        </BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </>
+                  ) : (
+                    <BreadcrumbItem>
+                      <BreadcrumbPage className="font-semibold text-[#5B9DFF] text-xs">
+                        Início da Jornada
+                      </BreadcrumbPage>
+                    </BreadcrumbItem>
+                  )}
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
@@ -123,6 +147,19 @@ export default function Layout() {
                     onClick={() => navigate('/biblioteca')}
                   >
                     Biblioteca (Perguntas, Respostas & Insights)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-[#24334F]" />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to="/"
+                      className="text-xs cursor-pointer text-[#8B98B4] hover:text-[#5B9DFF] hover:bg-[#1B2742] flex items-center justify-between w-full"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>Site institucional</span>
+                      </span>
+                      <ExternalLink className="w-3 h-3 text-[#8B98B4]" />
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-[#24334F]" />
                   <DropdownMenuItem

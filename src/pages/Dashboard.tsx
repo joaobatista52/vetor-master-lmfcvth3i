@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState, useMemo, useRef } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import {
   TrendingUp,
   AlertTriangle,
@@ -234,6 +234,7 @@ const THRESHOLDS_BUFFETT = [
 
 export default function Dashboard() {
   const { user, isAuthenticated, isAdmin } = useAuth()
+  const location = useLocation()
   const [loading, setLoading] = useState(true)
   const [diagnosticos, setDiagnosticos] = useState<Diagnostico[]>([])
   const [planos, setPlanos] = useState<PlanoAcao[]>([])
@@ -246,6 +247,35 @@ export default function Dashboard() {
   const [epifanias, setEpifanias] = useState<EpifaniaItem[]>([])
   const [loadingCuradoria, setLoadingCuradoria] = useState(false)
   const [erroCuradoria, setErroCuradoria] = useState<CodigoErroAcompanhamento | null>(null)
+
+  // Rolagem suave para a âncora #curadoria quando presente na URL
+  const curadoriaRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (location.hash === '#curadoria') {
+      const tentarRolar = () => {
+        const elemento = curadoriaRef.current || document.getElementById('curadoria')
+        if (elemento) {
+          elemento.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          return true
+        }
+        return false
+      }
+
+      // Tentativa imediata
+      const rolou = tentarRolar()
+
+      // Se ainda não rolou (ou se dados estavam carregando), tenta com pequenos intervalos
+      if (!rolou) {
+        const timer1 = setTimeout(tentarRolar, 150)
+        const timer2 = setTimeout(tentarRolar, 600)
+        return () => {
+          clearTimeout(timer1)
+          clearTimeout(timer2)
+        }
+      }
+    }
+  }, [location.hash, loading, loadingCuradoria])
 
   useEffect(() => {
     let mounted = true
@@ -1403,7 +1433,7 @@ export default function Dashboard() {
       {/* ========================================================================= */}
       {/* BLOCO 4 — CURADORIA & ACOMPANHAMENTO CaaS (FASE F1) */}
       {/* ========================================================================= */}
-      <section className="space-y-4 pt-4">
+      <section id="curadoria" ref={curadoriaRef} className="space-y-4 pt-4 scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E0E0E0] pb-2">
           <div>
             <div className="flex items-center gap-2">
