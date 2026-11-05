@@ -22,6 +22,46 @@ import pb from '@/lib/pocketbase/client'
 interface DadosEmpresa {
   razaoSocial: string | null
   setor: string | null
+  nivelContratado: string | null
+}
+
+/**
+ * Mapeia um valor bruto de plano/nível para o rótulo oficial da escada de valor.
+ * Valor ausente, vazio ou não reconhecido → null (nunca assume padrão).
+ */
+function mapearRotuloNivel(valor: string): string | null {
+  const v = (valor || '').trim().toLowerCase()
+  if (!v) return null
+  if (v.includes('bespoke') || v.includes('caas') || v.includes('customizado'))
+    return 'Bespoke CaaS'
+  if (v.includes('híbrid') || v.includes('hibrid') || v.includes('maas') || v.includes('assistido'))
+    return 'MaaS Híbrido'
+  if (v.includes('saas')) return 'SaaS Puro'
+  return null
+}
+
+/**
+ * Resolve o nível contratado a partir de dados REAIS do lead vinculado ao usuário logado.
+ * Ordem de prioridade: nivel_assinatura → formato_interesse → plano_interesse →
+ * dados_completos.plano_escolhido. Tolerante a campo ausente/erro: 'A definir'.
+ */
+function resolverNivelPlano(lead: any): string {
+  try {
+    if (!lead) return 'A definir'
+    const candidatos: string[] = []
+    if (typeof lead.nivel_assinatura === 'string') candidatos.push(lead.nivel_assinatura)
+    if (typeof lead.formato_interesse === 'string') candidatos.push(lead.formato_interesse)
+    if (typeof lead.plano_interesse === 'string') candidatos.push(lead.plano_interesse)
+    const planoEscolhido = lead?.dados_completos?.plano_escolhido
+    if (typeof planoEscolhido === 'string') candidatos.push(planoEscolhido)
+    for (const bruto of candidatos) {
+      const rotulo = mapearRotuloNivel(bruto)
+      if (rotulo) return rotulo
+    }
+    return 'A definir'
+  } catch {
+    return 'A definir'
+  }
 }
 
 interface DadosSituacaoGeral {
@@ -56,6 +96,7 @@ export default function Index() {
     empresa: {
       razaoSocial: null,
       setor: null,
+      nivelContratado: null,
     },
   })
 
@@ -183,15 +224,17 @@ export default function Index() {
               )
             : 0
 
-        // 5. Identificação da Empresa (Razão Social e Setor)
+        // 5. Identificação da Empresa (Razão Social, Setor e Nível Contratado)
         let razaoSocial: string | null = null
         let setor: string | null = null
+        let leadVinculado: any = null
 
         // Tentar obter lead vinculado ao diagnóstico mais recente
         const leadIdVinculado = diagnosticosItems.find((d) => d.lead)?.lead
         if (leadIdVinculado) {
           try {
             const leadRecord = await pb.collection('leads').getOne(leadIdVinculado)
+            leadVinculado = leadRecord
             razaoSocial = leadRecord.razao_social || leadRecord.nome_completo || null
             setor = leadRecord.setor || null
           } catch (err) {
@@ -205,6 +248,7 @@ export default function Index() {
             const leadRecord = await pb
               .collection('leads')
               .getFirstListItem(`email = "${userEmail}"`, { sort: '-created' })
+            leadVinculado = leadRecord
             razaoSocial = leadRecord.razao_social || leadRecord.nome_completo || null
             setor = leadRecord.setor || null
           } catch {
@@ -216,6 +260,9 @@ export default function Index() {
         if (!setor && diagnosticosItems[0]?.setor) {
           setor = diagnosticosItems[0].setor
         }
+
+        // Nível contratado: sempre de dado real do lead vinculado ('A definir' se ausente)
+        const nivelContratado = resolverNivelPlano(leadVinculado)
 
         if (mounted) {
           setDados({
@@ -232,6 +279,7 @@ export default function Index() {
             empresa: {
               razaoSocial,
               setor,
+              nivelContratado,
             },
           })
         }
@@ -358,6 +406,14 @@ export default function Index() {
                   Identificação da empresa vinculada ao diagnóstico estratégico
                 </span>
               )}
+            </p>
+          )}
+          {!loading && (
+            <p className="text-[11px] text-[#808080] mt-1">
+              Plano contratado:{' '}
+              <span className="text-[#555555] font-medium">
+                {dados.empresa.nivelContratado || 'A definir'}
+              </span>
             </p>
           )}
         </div>

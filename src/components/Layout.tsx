@@ -54,7 +54,8 @@ export default function Layout() {
     <SidebarProvider>
       <div className="flex min-h-screen bg-[#0B1120] text-[#F8FAFC] w-full">
         <AppSidebar />
-        <SidebarInset className="flex flex-col flex-1 w-full overflow-hidden bg-[#0B1120]">
+        {/* Sem overflow-hidden no container: overflow em ancestral anula o sticky do header */}
+        <SidebarInset className="flex flex-col flex-1 w-full bg-[#0B1120]">
           <header className="h-16 flex items-center justify-between px-6 border-b border-[#24334F] bg-[#111A2E]/95 backdrop-blur-md z-10 sticky top-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-[#C7D0E0] hover:text-[#5B9DFF] transition-colors" />
