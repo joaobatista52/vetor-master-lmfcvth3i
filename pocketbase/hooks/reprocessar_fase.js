@@ -13,22 +13,12 @@
  */
 
 routerAdd('POST', '/backend/v1/diagnostico/reprocessar-fase/{leadId}/{fase}', (e) => {
-  // 1. Autenticação e autorização: verificação do usuário autenticado (papel admin / consultor)
-  let authUser = null
-  try {
-    authUser = e.auth || (e.requestInfo && e.requestInfo().auth)
-  } catch (_) {}
-
-  let isAdmin = false
-  if (authUser) {
-    if (authUser.role === 'admin' || authUser.getString?.('role') === 'admin') {
-      isAdmin = true
-    }
+  // 1. Autenticação e autorização (E0): papel admin OU consultor via helper verificarPermissao
+  const gate = exigirPermissao(e, 'reprocessar_fase', 'fase')
+  if (gate.resposta) {
+    return gate.resposta
   }
-
-  if (!isAdmin) {
-    return e.json(403, { erro: 'NAO_AUTORIZADO' })
-  }
+  const authUser = e.auth || (e.requestInfo && e.requestInfo().auth) || null
 
   const consultorId = (authUser && authUser.id) || (authUser && authUser.getString?.('id')) || ''
 

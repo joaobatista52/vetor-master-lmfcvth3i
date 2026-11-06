@@ -5,6 +5,7 @@ import { ScrollToTop } from '@/components/ScrollToTop'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/protected-route'
 import { AdminRoute } from '@/components/admin-route'
+import { OperacionalRoute } from '@/components/operacional-route'
 import Layout from '@/components/Layout'
 
 import Landing from '@/pages/Landing'
@@ -31,6 +32,7 @@ import AdminInvites from '@/pages/AdminInvites'
 import AdminLogs from '@/pages/AdminLogs'
 import AdminMetrics from '@/pages/AdminMetrics'
 import AdminDivergencias from '@/pages/AdminDivergencias'
+import AdminUsersPage from '@/pages/AdminUsersPage'
 
 /**
  * ROTEADOR — FASE F5-BIS-A (7 seções da régua lateral, ordem canônica):
@@ -61,21 +63,23 @@ const App = () => (
           {/* Rotas Protegidas com Layout */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              {/* 1. Início da Jornada */}
-              <Route path="/app" element={<Index />} />
+              {/* 1. Início da Jornada — E0: operacional (admin, consultor, user legado) */}
+              <Route element={<OperacionalRoute />}>
+                <Route path="/app" element={<Index />} />
 
-              {/* 2. As 8 Fases */}
-              <Route path="/fases" element={<Diagnosticos />} />
+                {/* 2. As 8 Fases */}
+                <Route path="/fases" element={<Diagnosticos />} />
 
-              {/* 3. Projetos e Planos de Ação */}
-              <Route path="/projetos" element={<PlanoDeAcao />} />
-              <Route path="/plano-de-acao" element={<Navigate to="/projetos" replace />} />
+                {/* 3. Projetos e Planos de Ação */}
+                <Route path="/projetos" element={<PlanoDeAcao />} />
+                <Route path="/plano-de-acao" element={<Navigate to="/projetos" replace />} />
 
-              {/* 4. Dashboard */}
-              <Route path="/dashboard" element={<Dashboard />} />
+                {/* 4. Dashboard */}
+                <Route path="/dashboard" element={<Dashboard />} />
 
-              {/* 5. Curadoria */}
-              <Route path="/curadoria" element={<Navigate to="/dashboard#curadoria" replace />} />
+                {/* 5. Curadoria */}
+                <Route path="/curadoria" element={<Navigate to="/dashboard#curadoria" replace />} />
+              </Route>
 
               {/* 6. Biblioteca */}
               <Route path="/biblioteca" element={<Biblioteca />} />
@@ -105,6 +109,7 @@ const App = () => (
               <Route path="/admin/metricas" element={<AdminMetrics />} />
               <Route path="/admin/biblioteca" element={<AdminDivergencias />} />
               <Route path="/admin/divergencias" element={<AdminDivergencias />} />
+              <Route path="/admin/usuarios" element={<AdminUsersPage />} />
             </Route>
           </Route>
 

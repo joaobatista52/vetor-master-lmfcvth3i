@@ -20,6 +20,8 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { getAllUsers, updateUserRole, type UserRecord } from '@/services/users'
 import { extractFieldErrors, type FieldErrors } from '@/lib/pocketbase/errors'
 import { toast } from 'sonner'
+import { PAPEIS } from '@/lib/permissoes'
+import { UserCog } from 'lucide-react'
 
 export function AdminUsers() {
   const [users, setUsers] = useState<UserRecord[]>([])
@@ -85,7 +87,14 @@ export function AdminUsers() {
             ) : (
               users.map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name || '—'}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {u.role === PAPEIS.CONSULTOR ? (
+                        <UserCog className="w-4 h-4 text-blue-500" />
+                      ) : null}
+                      {u.name || '—'}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell>
                     <Select
@@ -97,8 +106,10 @@ export function AdminUsers() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">admin</SelectItem>
-                        <SelectItem value="user">user</SelectItem>
+                        <SelectItem value={PAPEIS.ADMIN}>admin</SelectItem>
+                        <SelectItem value={PAPEIS.CONSULTOR}>consultor</SelectItem>
+                        <SelectItem value={PAPEIS.CLIENTE}>cliente</SelectItem>
+                        <SelectItem value={PAPEIS.USER}>user (legado)</SelectItem>
                       </SelectContent>
                     </Select>
                     {fieldErrors[u.id]?.role && (

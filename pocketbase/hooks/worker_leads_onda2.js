@@ -426,12 +426,20 @@ const registrarMetricasExecucao = (
 }
 
 routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
-  // Validação de permissão: exige autenticação de admin (ou chave interna)
+  // Validação de permissão (E0): exige papel admin OU consultor (helper verificarPermissao)
+  // ou chamada administrativa interna (chave de API no header Authorization).
   let isAdmin = false
   try {
     const authUser = e.auth || (e.requestInfo && e.requestInfo().auth)
-    if (authUser && (authUser.role === 'admin' || authUser.getString?.('role') === 'admin')) {
-      isAdmin = true
+    if (authUser) {
+      const papelAuth = String(
+        (typeof authUser.getString === 'function' && authUser.getString('role')) ||
+          authUser.role ||
+          '',
+      ).toLowerCase()
+      if (papelAuth === 'admin' || papelAuth === 'consultor') {
+        isAdmin = true
+      }
     }
   } catch (_) {}
 

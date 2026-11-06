@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import pb from '@/lib/pocketbase/client'
 import { useRealtime } from '@/hooks/use-realtime'
+import { papelEhAdmin, papelEhConsultor, papelEhOperacional } from '@/lib/papeis'
 
 interface AuthUser {
   id: string
@@ -14,6 +15,8 @@ interface AuthContextType {
   user: AuthUser | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isConsultor: boolean
+  isOperacional: boolean
   signUp: (email: string, password: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => void
@@ -35,7 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(pb.authStore.isValid)
   const [loading, setLoading] = useState(true)
 
-  const isAdmin = user?.role === 'admin'
+  const isAdmin = papelEhAdmin(user?.role)
+  const isConsultor = papelEhConsultor(user?.role)
+  const isOperacional = papelEhOperacional(user?.role)
 
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
@@ -99,7 +104,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, isAdmin, signUp, signIn, signOut, loading }}
+      value={{
+        user,
+        isAuthenticated,
+        isAdmin,
+        isConsultor,
+        isOperacional,
+        signUp,
+        signIn,
+        signOut,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>

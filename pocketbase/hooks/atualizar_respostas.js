@@ -13,21 +13,10 @@
 
 routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) => {
   try {
-    // 1. Autenticação e autorização: replicar padrão da Fase 4 (role === 'admin')
-    let authUser = null
-    try {
-      authUser = e.auth || (e.requestInfo && e.requestInfo().auth)
-    } catch (_) {}
-
-    let isAdmin = false
-    if (authUser) {
-      if (authUser.role === 'admin' || authUser.getString?.('role') === 'admin') {
-        isAdmin = true
-      }
-    }
-
-    if (!isAdmin) {
-      return e.json(403, { erro: 'NAO_AUTORIZADO' })
+    // 1. Autenticação e autorização (E0): papel admin OU consultor via helper verificarPermissao
+    const gate = exigirPermissao(e, 'atualizar_respostas', 'diagnostico')
+    if (gate.resposta) {
+      return gate.resposta
     }
 
     // 2. Validação de entrada
