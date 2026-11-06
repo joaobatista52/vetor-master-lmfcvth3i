@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T19:47:47.851Z",
+  "generatedAt": "2026-11-06T20:18:14.409Z",
   "collections": [
     {
       "name": "users",
@@ -1488,6 +1488,645 @@
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_diagnostico_fases_diag_fase_versao ON diagnostico_fases (diagnostico, fase, versao)"
+      ]
+    },
+    {
+      "name": "pacotes_v2",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "parte",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "execucao_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "payload",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_validacao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "erros_validacao",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "lead",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "leads"
+        },
+        {
+          "name": "diagnostico",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "diagnosticos"
+        },
+        {
+          "name": "importado_por",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "importado_em",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_pacotes_v2_lead ON pacotes_v2 (lead)"]
+    },
+    {
+      "name": "objetivos_estrategicos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "perspectiva_bsc",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ancora",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "indicadores",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pacote",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pacotes_v2"
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "projetos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "projeto_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo_estrategico_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "projeto_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sponsor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "escopo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivos",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "melhorias_esperadas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aplicacao_abrangencia",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "planos_acao_ids",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fundamentacao",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "benchmark_setorial",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "criterio_aceite",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pacote",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pacotes_v2"
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "planos_acao_v2",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "plano_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "projeto_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo_estrategico_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "plano_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sponsor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "escopo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivos",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "melhorias_esperadas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aplicacao_abrangencia",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "etapas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fundamentacao",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pacote",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pacotes_v2"
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "okrs_v2",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "okr_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo_estrategico_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "projeto_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "plano_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "key_results",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pacote",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pacotes_v2"
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "matriz_hoshin",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo_estrategico_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "area",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "meta",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsavel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pacote",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pacotes_v2"
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "dossies_versoes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "lead",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "leads"
+        },
+        {
+          "name": "versao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "dados_entrada",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motivo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "criado_por",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_dossies_versoes_lead_versao ON dossies_versoes (lead, versao)"
       ]
     }
   ]
