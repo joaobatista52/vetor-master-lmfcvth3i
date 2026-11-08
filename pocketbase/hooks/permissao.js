@@ -6,21 +6,14 @@
  * Helper centralizado de autorização para as rotas operacionais do backend.
  * Espelho frontend: src/lib/permissoes.ts (mesma matriz, para rotas/páginas).
  *
- * PAPÉIS (users.role):
- * - admin:     acesso total, incluindo /admin/*.
- * - consultor: acesso às rotas operacionais (processar, reprocessar, atualizar
- *              respostas, comparador, liberação de download) e às páginas
- *              /projetos, /dashboard, /app. NÃO acessa /admin/* e NÃO configura download.
- * - cliente:   acesso somente-leitura ao próprio diagnóstico (ação "baixar" apenas
- *              do próprio recurso — validação de posse feita pela rota).
- * - user:      papel legado, mantido como está (nenhuma das ações novas).
- *
+ * PAPÉIS (users.role): admin | consultor | cliente | user
  * AÇÕES E0: processar_lead, reprocessar_fase, atualizar_respostas, comparar,
  *           liberar_download, baixar, configurar_download, ingestar_pacote (E2).
  * RECURSOS E0: lead, diagnostico, pacote, relatorio, tabela, demonstrativo, fase.
  *
- * As lógicas de E4–E8 (devolutiva, comparação, download, Fase Fundador) NÃO
- * estão implementadas aqui — apenas a base de verificação desta matriz.
+ * PADRÃO DE CARREGAMENTO (JSVM): este arquivo é um módulo CommonJS. Os hooks
+ * que o usam carregam com require(`${__hooks}/permissao.js`) DENTRO do callback
+ * (handlers rodam em contexto isolado — símbolos de topo não são visíveis).
  */
 
 var PAPEIS = {
@@ -60,8 +53,6 @@ var RECURSOS = ['lead', 'diagnostico', 'pacote', 'relatorio', 'tabela', 'demonst
 /**
  * Extrai o papel do usuário autenticado de forma tolerante (PocketBase JSVM):
  * aceita registro completo (authUser.role) ou modelo dinâmico (getString('role')).
- * @param {Object|null} authUser - usuário autenticado (e.auth)
- * @returns {string} papel em minúsculas ('' quando não identificado)
  */
 function extrairPapel(authUser) {
   if (!authUser) return ''
@@ -77,7 +68,7 @@ function extrairPapel(authUser) {
 
 /**
  * Verificação centralizada de permissão da matriz E0.
- * @param {Object|null} authUser - usuário autenticado (e.auth) — NÃO aceita objeto fabricado
+ * @param {Object|null} authUser - usuário autenticado (e.auth)
  * @param {string} acao - uma das ações previstas (ex.: 'processar_lead')
  * @param {string} recurso - um dos recursos previstos (ex.: 'lead')
  * @returns {{ permitido: boolean, motivo: string }}
@@ -123,11 +114,7 @@ function verificarPermissao(authUser, acao, recurso) {
 /**
  * Gate de rota: extrai o usuário autenticado, verifica a permissão e, quando
  * negada, responde 403 em pt-BR. Retorna o papel extraído para uso da rota.
- * @param {Object} e - contexto da requisição (routerAdd)
- * @param {string} acao - ação exigida
- * @param {string} recurso - recurso exigido
- * @returns {{ permitido: boolean, papel: string, resposta: Object|null }}
- *          resposta não-nulo significa que a rota DEVE retorná-lo imediatamente.
+ * resposta não-nulo significa que a rota DEVE retorná-lo imediatamente.
  */
 function exigirPermissao(e, acao, recurso) {
   let authUser = null
@@ -146,4 +133,13 @@ function exigirPermissao(e, acao, recurso) {
     }
   }
   return { permitido: true, papel: extrairPapel(authUser), resposta: null }
+}
+
+module.exports = {
+  PAPEIS,
+  MATRIZ_ACOES,
+  RECURSOS,
+  extrairPapel,
+  verificarPermissao,
+  exigirPermissao,
 }
