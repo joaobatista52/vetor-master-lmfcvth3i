@@ -6,6 +6,7 @@ import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/protected-route'
 import { AdminRoute } from '@/components/admin-route'
 import { OperacionalRoute } from '@/components/operacional-route'
+import { IngestaoRoute } from '@/components/ingestao-route'
 import Layout from '@/components/Layout'
 
 import Landing from '@/pages/Landing'

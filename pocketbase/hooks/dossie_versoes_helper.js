@@ -8,6 +8,8 @@
  *
  * Auto-contido: não referencia funções de outros arquivos (o JSVM executa
  * callbacks em pools de VMs separados).
+ * ETAPA E2-B: `snapshot` opcional passa a permitir versionar fontes fora do
+ * record leads (ex.: diagnostico.dados_entrada), mantendo o mecanismo único.
  */
 
 /**
@@ -18,20 +20,29 @@
  * @param {Object} $app    instância do app PocketBase
  * @param {Object} leadRec record da collection leads (já carregado)
  * @param {Object} novoEstado { respostas, dados_completos }
- * @param {Object} opts    { criadoPor: id|null, motivo: string }
+ * @param {Object} opts    { criadoPor: id|null, motivo: string, snapshot?: {respostas?, dados_completos?} }
+ *                          `snapshot` opcional: quando informado, usa esses valores como
+ *                          ESTADO ANTERIOR (fontes fora do record leads, ex. dados_entrada
+ *                          do diagnóstico na atualização de respostas). Sem `snapshot`,
+ *                          compara e captura o estado de leads.respostas / dados_completos.
  * @returns {number} versão criada (0 = nenhuma mudança)
  */
 function versionarDossieAntesDeSobrescrever($app, leadRec, novoEstado, opts) {
   opts = opts || {}
   if (!leadRec || !leadRec.id) return 0
 
-  var anteriorRespostas = leadRec.get('respostas')
-  var anteriorDados = leadRec.get('dados_completos')
+  var snapshotOpt = opts.snapshot || null
+  var anteriorRespostas = snapshotOpt ? snapshotOpt.respostas : leadRec.get('respostas')
+  var anteriorDados = snapshotOpt ? snapshotOpt.dados_completos : leadRec.get('dados_completos')
 
   var houveMudancaRespostas =
-    JSON.stringify(anteriorRespostas || null) !== JSON.stringify(novoEstado.respostas || null)
+    JSON.stringify(anteriorRespostas === undefined ? null : anteriorRespostas) !==
+    JSON.stringify(novoEstado && novoEstado.respostas !== undefined ? novoEstado.respostas : null)
   var houveMudancaDados =
-    JSON.stringify(anteriorDados || null) !== JSON.stringify(novoEstado.dados_completos || null)
+    JSON.stringify(anteriorDados === undefined ? null : anteriorDados) !==
+    JSON.stringify(
+      novoEstado && novoEstado.dados_completos !== undefined ? novoEstado.dados_completos : null,
+    )
 
   if (!houveMudancaRespostas && !houveMudancaDados) {
     return 0 // sem mudança => NÃO cria versão

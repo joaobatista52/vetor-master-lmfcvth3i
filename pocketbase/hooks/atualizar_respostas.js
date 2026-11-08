@@ -13,8 +13,13 @@
 
 routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) => {
   try {
+    // REGRA DE DEPLOY (JSVM — padrão E2-A): require() DENTRO do callback,
+    // com path absoluto ${__hooks} — declarações de topo não são visíveis
+    // dentro dos handlers do pool de VMs.
+    const perm = require(`${__hooks}/permissao.js`)
+
     // 1. Autenticação e autorização (E0): papel admin OU consultor via helper verificarPermissao
-    const gate = exigirPermissao(e, 'atualizar_respostas', 'diagnostico')
+    const gate = perm.exigirPermissao(e, 'atualizar_respostas', 'diagnostico')
     if (gate.resposta) {
       return gate.resposta
     }
@@ -50,6 +55,15 @@ routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) =>
     const leadId = e.request.pathValue('leadId')
     if (!leadId) {
       return e.json(404, { erro: 'DIAGNOSTICO_NAO_ENCONTRADO' })
+    }
+
+    // ETAPA E2-B (Decisão 4): carregar também o lead (para versionamento)
+    // e o usuário autenticado (criado_por), ANTES de qualquer mutação.
+    let authUser = null
+    try {
+      authUser = e.auth || (e.requestInfo && e.requestInfo().auth) || null
+    } catch (_) {
+      authUser = null
     }
 
     // 3. Leitura do diagnóstico pelo leadId
@@ -113,6 +127,20 @@ routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) =>
     const perguntasAtualizadas = []
     const perguntasIgnoradas = []
 
+    // ETAPA E2-B (2.1): clone profundo do estado ANTERIOR — capturado ANTES de
+    // qualquer mutação. Necessário porque dossieRespostas referencia o mesmo
+    // objeto de dadosEntrada (comparação por valor, nunca por referência).
+    let estadoAnteriorClone = {}
+    try {
+      estadoAnteriorClone = JSON.parse(JSON.stringify(dadosEntrada))
+    } catch (_) {
+      estadoAnteriorClone = {}
+    }
+
+    // ETAPA E2-B (2.3): só conta como mudança real quando o VALOR efetivamente
+    // diverge do estado anterior (comparação por valor, nunca por referência).
+    let houveMudancaReal = false
+
     const chavesRespostas = Object.keys(respostasRecebidas)
     for (let i = 0; i < chavesRespostas.length; i++) {
       const idPergunta = chavesRespostas[i]
@@ -123,6 +151,15 @@ routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) =>
       const existeNoLead = Object.prototype.hasOwnProperty.call(leadRespostas, idPergunta)
 
       if (existeNoDossie || existeNoLead) {
+        // Mudança real? compara o valor atual com o novo (deep, via JSON)
+        const valorAtual = existeNoDossie ? dossieRespostas[idPergunta] : leadRespostas[idPergunta]
+        const mudou =
+          JSON.stringify(valorAtual === undefined ? null : valorAtual) !==
+          JSON.stringify(novaResposta === undefined ? null : novaResposta)
+        if (mudou) {
+          houveMudancaReal = true
+        }
+
         // Se existir no dossiê armazenado, atualiza o valor da resposta
         dossieRespostas[idPergunta] = novaResposta
         perguntasAtualizadasEm[idPergunta] = timestampIso
@@ -139,6 +176,42 @@ routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) =>
     }
 
     // 5. Registro da atualização
+    // ETAPA E2-B (Decisão 4): VERSIONAMENTO ANTES da sobrescrita —
+    // snapshot do estado ANTERIOR de dados_entrada em dossies_versoes,
+    // criado SOMENTE se o novo estado divergir do anterior.
+    const novoEstadoCompleto = {
+      respostas: dossieRespostas,
+      perguntas_atualizadas_em: perguntasAtualizadasEm,
+      ultima_atualizacao_respostas: {
+        data: timestampIso,
+        motivo: motivoRecebido.trim(),
+        perguntas_atualizadas: perguntasAtualizadas,
+        perguntas_ignoradas: perguntasIgnoradas,
+      },
+    }
+
+    // ETAPA E2-B (2.1): helper via require() DENTRO do callback (padrão E2-A).
+    // snapshot = dados_entrada completo do ESTADO ANTERIOR (clone pré-mutação).
+    // Se nada divergiu de valor, helper retorna 0 e NENHUMA versão é criada.
+    let versaoCriada = 0
+    if (houveMudancaReal) {
+      const helper = require(`${__hooks}/dossie_versoes_helper.js`)
+      const estadoAnterior = {
+        respostas: estadoAnteriorClone.respostas,
+        dados_completos: estadoAnteriorClone,
+      }
+      versaoCriada = helper.versionarDossieAntesDeSobrescrever(
+        $app,
+        leadRec || { id: leadId },
+        novoEstadoCompleto,
+        {
+          snapshot: estadoAnterior,
+          motivo: 'atualizacao_respostas',
+          criadoPor: authUser ? authUser.id : null,
+        },
+      )
+    }
+
     dadosEntrada.respostas = dossieRespostas
     dadosEntrada.perguntas_atualizadas_em = perguntasAtualizadasEm
 
@@ -156,6 +229,12 @@ routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) =>
     // Grava exclusivamente via $app.save sem tocar output_prompts, fase_atual ou status
     $app.save(diagRec)
 
+    console.log('[atualizar-respostas] Estado gravado', {
+      lead: leadId,
+      versao_criada: versaoCriada,
+      sem_alteracao: versaoCriada === 0,
+    })
+
     // Se o lead foi atualizado, salvar o lead também preservando a consistência
     if (leadRec && perguntasAtualizadas.length > 0) {
       try {
@@ -165,10 +244,24 @@ routerAdd('POST', '/backend/v1/diagnostico/atualizar-respostas/{leadId}', (e) =>
     }
 
     // 6. Retorno 200 com estrutura estrita solicitada
+    // ETAPA E2-B (2.3): sem mudança real => sem_alteracao: true, sem versão criada.
+    if (perguntasAtualizadas.length === 0) {
+      return e.json(200, {
+        sucesso: true,
+        sem_alteracao: true,
+        perguntas_atualizadas: [],
+        perguntas_ignoradas: perguntasIgnoradas,
+        versao_criada: 0,
+        aviso: 'Nenhuma resposta efetivamente alterada — nenhuma versão do dossiê foi criada.',
+      })
+    }
+
     return e.json(200, {
       sucesso: true,
+      sem_alteracao: false,
       perguntas_atualizadas: perguntasAtualizadas,
       perguntas_ignoradas: perguntasIgnoradas,
+      versao_criada: versaoCriada,
       aviso:
         'Respostas atualizadas. O diagnóstico não foi reprocessado — acione o consultor para reprocessar as fases afetadas.',
     })

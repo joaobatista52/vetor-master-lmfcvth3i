@@ -167,6 +167,7 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
 
     let novosLeads = 0
     let atualizadosLeads = 0
+    let versoesCriadas = 0
 
     // Função interna para baixar arquivos do site e converter em Filesystem Files
     const downloadRemoteFiles = (collectionIdOrName, recordId, fileNames) => {
@@ -434,6 +435,34 @@ cronAdd('sync_site_leads_cron', '* * * * *', () => {
       rec.set('segmento', item.segmento || '')
       rec.set('faturamento_mensal', item.faturamento_mensal || cad.faturamento || '')
       rec.set('plano_interesse', item.plano_interesse || '')
+      // ETAPA E2-B (Bloco 3 — Decisão 4): VERSIONAMENTO ANTES de sobrescrever.
+      // Toca EXCLUSIVAMENTE no par respostas/dados_completos (exceção autorizada);
+      // autenticação, anexos, status/parceiro, cron e lock (historico_versoes)
+      // permanecem intocados. Compara por valor (JSON.stringify — nunca referência);
+      // respostas E dados_completos mutando juntos => UMA ÚNICA versão.
+      if (!isNew) {
+        try {
+          const novoRespostas = item.respostas
+            ? item.respostas
+            : item.dados_completos && item.dados_completos.respostas
+              ? item.dados_completos.respostas
+              : null
+          const novoDados = item.dados_completos || item
+          const helper = require(`${__hooks}/dossie_versoes_helper.js`)
+          const versaoSync = helper.versionarDossieAntesDeSobrescrever(
+            $app,
+            rec,
+            { respostas: novoRespostas, dados_completos: novoDados },
+            { motivo: 'sync_site', criadoPor: null },
+          )
+          if (versaoSync > 0) {
+            versoesCriadas++
+          }
+        } catch (errVers) {
+          $app.logger().warn('sync_site_leads: falha ao versionar dossiê: ' + errVers.message)
+        }
+      }
+
       rec.set('responsavel_envio', item.responsavel_envio || cad.nomeCompleto || '')
       rec.set('dados_completos', item.dados_completos || item)
       rec.set('site_lead_id', siteId)
@@ -774,6 +803,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
   let novosLeads = 0
   let atualizadosLeads = 0
   let totalArquivosBaixados = 0
+  let versoesCriadas = 0
 
   // Função interna para baixar arquivos do site e converter em Filesystem Files
   const downloadRemoteFiles = (collectionIdOrName, recordId, fileNames) => {
@@ -1028,6 +1058,34 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     rec.set('faturamento_mensal', item.faturamento_mensal || cad.faturamento || '')
     rec.set('plano_interesse', item.plano_interesse || '')
     rec.set('responsavel_envio', item.responsavel_envio || cad.nomeCompleto || '')
+    // ETAPA E2-B (Bloco 3 — Decisão 4): VERSIONAMENTO ANTES de sobrescrever.
+    // Toca EXCLUSIVAMENTE no par respostas/dados_completos (exceção autorizada);
+    // autenticação, anexos, status/parceiro, cron e lock (historico_versoes)
+    // permanecem intocados. Compara por valor (JSON.stringify — nunca referência);
+    // respostas E dados_completos mutando juntos => UMA ÚNICA versão.
+    if (!isNew) {
+      try {
+        const novoRespostas = item.respostas
+          ? item.respostas
+          : item.dados_completos && item.dados_completos.respostas
+            ? item.dados_completos.respostas
+            : null
+        const novoDados = item.dados_completos || item
+        const helper = require(`${__hooks}/dossie_versoes_helper.js`)
+        const versaoSync = helper.versionarDossieAntesDeSobrescrever(
+          $app,
+          rec,
+          { respostas: novoRespostas, dados_completos: novoDados },
+          { motivo: 'sync_site', criadoPor: null },
+        )
+        if (versaoSync > 0) {
+          versoesCriadas++
+        }
+      } catch (errVers) {
+        $app.logger().warn('sync_site_leads: falha ao versionar dossiê: ' + errVers.message)
+      }
+    }
+
     rec.set('dados_completos', item.dados_completos || item)
     rec.set('site_lead_id', siteId)
     rec.set('site_created', item.created || '')
@@ -1126,6 +1184,7 @@ routerAdd('POST', '/backend/v1/sync/leads', (e) => {
     totalRemote: remoteItems.length,
     novosLeads: novosLeads,
     atualizadosLeads: atualizadosLeads,
+    versoesCriadas: versoesCriadas,
     arquivosRehospedados: totalArquivosBaixados,
     credentialsSource: fonte,
     syncedAt: new Date().toISOString(),
@@ -1314,6 +1373,7 @@ routerAdd(
     let novosLeads = 0
     let atualizadosLeads = 0
     let totalArquivosBaixados = 0
+    let versoesCriadas = 0
 
     const downloadRemoteFiles = (collectionIdOrName, recordId, fileNames) => {
       const resultFiles = []
@@ -1494,6 +1554,32 @@ routerAdd(
       rec.set('segmento', item.segmento || '')
       rec.set('faturamento_mensal', item.faturamento_mensal || '')
       rec.set('plano_interesse', item.plano_interesse || '')
+      // ETAPA E2-B (Bloco 3 — Decisão 4): versionamento ANTES de sobrescrever
+      // o par respostas/dados_completos (exceção autorizada). Mesma regra do
+      // cron: por valor, uma única versão quando ambos mudam juntos.
+      if (!isNew) {
+        try {
+          const novoRespostas = item.respostas
+            ? item.respostas
+            : item.dados_completos && item.dados_completos.respostas
+              ? item.dados_completos.respostas
+              : null
+          const novoDados = item.dados_completos || item
+          const helper = require(`${__hooks}/dossie_versoes_helper.js`)
+          const versaoSync = helper.versionarDossieAntesDeSobrescrever(
+            $app,
+            rec,
+            { respostas: novoRespostas, dados_completos: novoDados },
+            { motivo: 'sync_site', criadoPor: null },
+          )
+          if (versaoSync > 0) {
+            versoesCriadas++
+          }
+        } catch (errVers) {
+          $app.logger().warn('sync_site_leads: falha ao versionar dossiê: ' + errVers.message)
+        }
+      }
+
       rec.set('responsavel_envio', item.responsavel_envio || '')
       rec.set('dados_completos', item.dados_completos || item)
       rec.set('site_lead_id', siteId)
@@ -1589,6 +1675,7 @@ routerAdd(
       totalRemote: remoteItems.length,
       novosLeads: novosLeads,
       atualizadosLeads: atualizadosLeads,
+      versoesCriadas: versoesCriadas,
       arquivosRehospedados: totalArquivosBaixados,
       syncedAt: new Date().toISOString(),
     })

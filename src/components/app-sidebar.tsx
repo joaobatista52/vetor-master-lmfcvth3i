@@ -11,6 +11,7 @@ import {
   GitCompare,
   Mail,
   Users,
+  PackagePlus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -57,6 +58,7 @@ const adminNavItems = [
   { title: 'Log de Divergências', path: '/admin/divergencias', icon: GitCompare },
   { title: 'Logs de Auditoria', path: '/admin/logs', icon: History },
   { title: 'Gestão de Convites', path: '/admin/convites', icon: Mail },
+  { title: 'Ingestão Pacote V2', path: '/admin/ingestao', icon: PackagePlus },
 ]
 
 export function AppSidebar() {
