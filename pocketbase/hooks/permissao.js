@@ -16,7 +16,7 @@
  * - user:      papel legado, mantido como está (nenhuma das ações novas).
  *
  * AÇÕES E0: processar_lead, reprocessar_fase, atualizar_respostas, comparar,
- *           liberar_download, baixar, configurar_download.
+ *           liberar_download, baixar, configurar_download, ingestar_pacote (E2).
  * RECURSOS E0: lead, diagnostico, pacote, relatorio, tabela, demonstrativo, fase.
  *
  * As lógicas de E4–E8 (devolutiva, comparação, download, Fase Fundador) NÃO
@@ -41,6 +41,7 @@ var MATRIZ_ACOES = {
     'liberar_download',
     'baixar',
     'configurar_download',
+    'ingestar_pacote',
   ],
   consultor: [
     'processar_lead',
@@ -48,6 +49,7 @@ var MATRIZ_ACOES = {
     'atualizar_respostas',
     'comparar',
     'liberar_download',
+    'ingestar_pacote',
   ],
   cliente: ['baixar'],
   user: [], // papel legado: nada das ações novas
