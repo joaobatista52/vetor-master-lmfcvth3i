@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { toast } from 'src/hooks/use-toast'
-import { pb } from '@/lib/pocketbase/client'
-import { useAuth } from '@/hooks/use-auth'
+import { toast } from 'sonner'
+import pb from '@/lib/pocketbase/client'
 import { extrairJsonDeTexto } from '@/services/pacote-v2'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -41,6 +40,7 @@ import { cn } from '@/lib/utils'
 interface LeadOpcao {
   id: string
   nome: string
+  nome_completo: string
   razao_social: string
   cnpj: string
   dossie_id: string
@@ -116,8 +116,6 @@ const LABEL_PARTE: Record<string, string> = {
 }
 
 export default function AdminIngestao() {
-  const { user } = useAuth()
-
   // ---- contexto (1.1) ----
   const [leads, setLeads] = useState<LeadOpcao[]>([])
   const [leadSelecionado, setLeadSelecionado] = useState<string>('')
@@ -167,7 +165,7 @@ export default function AdminIngestao() {
         )
       })
       .catch(() => {
-        if (ativo) toast({ title: 'Falha ao carregar leads', variant: 'destructive' })
+        if (ativo) toast.error('Falha ao carregar leads')
       })
       .finally(() => {
         if (ativo) setCarregandoLeads(false)
@@ -191,7 +189,7 @@ export default function AdminIngestao() {
         setPacotes(res.items as unknown as PacoteV2Item[])
       })
       .catch(() => {
-        toast({ title: 'Falha ao carregar histórico', variant: 'destructive' })
+        toast.error('Falha ao carregar histórico')
       })
       .finally(() => setCarregandoPacotes(false))
   }, [filtroStatus])
@@ -220,14 +218,10 @@ export default function AdminIngestao() {
       const txt = await navigator.clipboard.readText()
       if (txt) {
         handleTextoChange(txt)
-        toast({ title: 'Conteúdo colado da área de transferência' })
+        toast.success('Conteúdo colado da área de transferência')
       }
     } catch {
-      toast({
-        title: 'Não foi possível ler a área de transferência',
-        description: 'Cole manualmente com Ctrl+V.',
-        variant: 'destructive',
-      })
+      toast.error('Não foi possível ler a área de transferência — cole manualmente com Ctrl+V.')
     }
   }
 
@@ -253,7 +247,7 @@ export default function AdminIngestao() {
       })
       setValidacao(res as unknown as ResultadoValidacao)
       if (!(res as unknown as ResultadoValidacao).valido) {
-        toast({ title: 'Pacote com erros de validação', variant: 'destructive' })
+        toast.error('Pacote com erros de validação')
       }
     } catch (err: unknown) {
       const e = err as { status?: number; message?: string; response?: { message?: string } }
@@ -293,13 +287,9 @@ export default function AdminIngestao() {
         }
       }
       if (divergencias.length > 0) {
-        toast({
-          title: 'Pacote importado com divergências',
-          description: divergencias.join(' · '),
-          variant: 'destructive',
-        })
+        toast.error(`Pacote importado com divergências: ${divergencias.join(' · ')}`)
       } else {
-        toast({ title: 'Pacote importado com sucesso!' })
+        toast.success('Pacote importado com sucesso!')
       }
       setTexto('')
       setJsonExtraido(false)

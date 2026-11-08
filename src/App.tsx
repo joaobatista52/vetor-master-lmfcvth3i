@@ -34,6 +34,7 @@ import AdminLogs from '@/pages/AdminLogs'
 import AdminMetrics from '@/pages/AdminMetrics'
 import AdminDivergencias from '@/pages/AdminDivergencias'
 import AdminUsersPage from '@/pages/AdminUsersPage'
+import AdminIngestao from '@/pages/AdminIngestao'
 
 /**
  * ROTEADOR — FASE F5-BIS-A (7 seções da régua lateral, ordem canônica):
@@ -111,6 +112,10 @@ const App = () => (
               <Route path="/admin/biblioteca" element={<AdminDivergencias />} />
               <Route path="/admin/divergencias" element={<AdminDivergencias />} />
               <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+              {/* ETAPA E2-B — Ingestão do Pacote V2.0: admin + consultor (cliente/user → /app) */}
+              <Route element={<IngestaoRoute />}>
+                <Route path="/admin/ingestao" element={<AdminIngestao />} />
+              </Route>
             </Route>
           </Route>
 
