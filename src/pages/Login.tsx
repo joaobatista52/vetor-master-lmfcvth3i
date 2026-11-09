@@ -224,9 +224,9 @@ export default function Login() {
           <div className="mt-3 text-center">
             <Link
               to="/recuperar-senha"
-              className="text-xs font-medium text-[#0066CC] hover:text-[#22B14C] underline underline-offset-2 transition-colors"
+              className="text-xs font-medium text-[#0066CC] hover:text-[#22B14C] underline underline-offset-2 transition-colors py-1.5 px-2 inline-block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0066CC]"
             >
-              Esqueci minha senha
+              Esqueceu a senha?
             </Link>
           </div>
           <div className="text-center mt-4 text-xs text-[#808080]">
