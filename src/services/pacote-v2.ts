@@ -22,6 +22,10 @@ export interface ResultadoValidacao {
   sucesso: boolean
   valido: boolean
   parte: string
+  /** E2-E — parte detectada pela detecção em 4 níveis */
+  parte_detectada?: string
+  /** E2-E — campo_parte | blocos_conteudo | chaves_auxiliares */
+  metodo_deteccao?: string
   blocos: BlocoValidacao[]
   erros: ErroValidacao[]
   dossie_id: string

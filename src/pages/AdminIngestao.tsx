@@ -64,6 +64,8 @@ interface BlocoValidacao {
 interface ResultadoValidacao {
   valido: boolean
   parte: string
+  parte_detectada?: string
+  metodo_deteccao?: string
   blocos: BlocoValidacao[]
   erros: ErroValidacao[]
   dossie_id: string
@@ -120,6 +122,24 @@ interface ErroHttp {
   status?: number
   message?: string
   response?: unknown
+}
+
+/** E2-E Bloco 3 — payload do 415 com diagnóstico completo */
+interface Diagnostico415 {
+  codigo?: string
+  mensagem?: string
+  chaves_encontradas?: string[]
+  campo_parte?: string | null
+  conteudo_fases?: string | null
+  projetos_e_planos?: string | null
+  artefatos_financeiros?: string | null
+}
+
+/** Rótulo do método de detecção para o badge 4.2 */
+const LABEL_METODO_DETECCAO: Record<string, string> = {
+  campo_parte: 'via campo_parte',
+  blocos_conteudo: 'via blocos_conteudo',
+  chaves_auxiliares: 'via chaves_auxiliares',
 }
 
 /** Formata o detalhe de auditoria (encontrado vs esperado) de uma regra */
@@ -191,6 +211,8 @@ export default function AdminIngestao() {
   const [ingestao, setIngestao] = useState<ResultadoIngestao | null>(null)
   const [erroValidar, setErroValidar] = useState<string | null>(null)
   const [erroImportar, setErroImportar] = useState<string | null>(null)
+  // E2-E — 415 com diagnóstico completo (chaves_encontradas etc.)
+  const [diagnostico415, setDiagnostico415] = useState<Diagnostico415 | null>(null)
 
   // ---- histórico (1.5) ----
   const [pacotes, setPacotes] = useState<PacoteV2Item[]>([])
@@ -310,12 +332,14 @@ export default function AdminIngestao() {
     setValidando(true)
     setValidacao(null)
     setIngestao(null)
+    setDiagnostico415(null)
     try {
       const res = await pb.send('/backend/v1/pacote-v2/validar', {
         method: 'POST',
         body: { texto, lead_id: leadSelecionado || undefined },
       })
       setValidacao(res as unknown as ResultadoValidacao)
+      setDiagnostico415(null)
       if (!(res as unknown as ResultadoValidacao).valido) {
         toast.error('Pacote com erros de validação')
       }
@@ -325,6 +349,11 @@ export default function AdminIngestao() {
         setErroValidar('Sem permissão: apenas admin e consultor podem validar pacotes.')
       } else {
         setErroValidar(extrairErroBackend(err))
+        // E2-E Bloco 3 — 415 traz diagnóstico completo (chaves + status dos blocos)
+        const body = e?.response as Record<string, unknown> | undefined
+        setDiagnostico415(
+          e?.status === 415 && body && typeof body === 'object' ? (body as Diagnostico415) : null,
+        )
       }
     } finally {
       setValidando(false)
@@ -503,6 +532,41 @@ export default function AdminIngestao() {
             </div>
           )}
 
+          {/* 4.1 + 4.3 — Diagnóstico completo do 415 (chaves e status dos blocos) */}
+          {diagnostico415 && (
+            <div
+              className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
+              role="alert"
+            >
+              <div className="font-medium text-destructive">
+                [PACOTE_V2_PARTE_INDETERMINADA_415]{' '}
+                {diagnostico415.mensagem || 'Não foi possível determinar a parte do pacote'}
+              </div>
+              <div className="mt-2 text-xs space-y-1">
+                <div>
+                  <span className="font-medium">Chaves no JSON: </span>
+                  {diagnostico415.chaves_encontradas?.length
+                    ? diagnostico415.chaves_encontradas.join(', ')
+                    : 'nenhuma'}
+                </div>
+                <div>
+                  <span className="font-medium">Campo "parte": </span>
+                  {diagnostico415.campo_parte ?? 'null'}
+                </div>
+                <div>
+                  <span className="font-medium">conteudo_fases: </span>
+                  {diagnostico415.conteudo_fases ?? 'ausente'}
+                  <span className="mx-2 font-medium">·</span>
+                  <span className="font-medium">projetos_e_planos: </span>
+                  {diagnostico415.projetos_e_planos ?? 'ausente'}
+                  <span className="mx-2 font-medium">·</span>
+                  <span className="font-medium">artefatos_financeiros: </span>
+                  {diagnostico415.artefatos_financeiros ?? 'ausente'}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Button onClick={validar} disabled={!podeValidar}>
               {validando ? 'Validando…' : 'Validar'}
@@ -521,6 +585,16 @@ export default function AdminIngestao() {
                 </Badge>
                 {validacao.parte && (
                   <Badge variant="outline">{LABEL_PARTE[validacao.parte] || validacao.parte}</Badge>
+                )}
+                {/* 4.2 — Parte detectada + método de detecção */}
+                {validacao.parte_detectada && (
+                  <Badge variant="secondary">
+                    {`Parte detectada: ${validacao.parte_detectada}${
+                      validacao.metodo_deteccao
+                        ? ` (${LABEL_METODO_DETECCAO[validacao.metodo_deteccao] || validacao.metodo_deteccao})`
+                        : ''
+                    }`}
+                  </Badge>
                 )}
               </div>
               <div className="space-y-2">

@@ -43,6 +43,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     FK: 'PACOTE_V2_FK_INVALIDA_412',
     DESDOBRAMENTO: 'PACOTE_V2_DESDOBRAMENTO_INVALIDO_413',
     PARTE_INDETERMINADA: 'PACOTE_V2_PARTE_INDETERMINADA_415',
+    PARTE_INCOERENTE: 'PACOTE_V2_PARTE_INCOERENTE_416',
     AVISO_DRE: 'PACOTE_V2_DRE_AVISO_404A',
   }
   const CODIGO_INTERNO = 'PACOTE_V2_ERRO_INTERNO_500'
@@ -469,12 +470,114 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     return { ok: erros.length === 0, erros: erros, avisos: avisos }
   }
 
-  function detectarParte(pacote) {
-    const temA = !!pacote && (!!pacote.dre || !!pacote.fases)
-    const temB = !!pacote && (!!pacote.projetos || !!pacote.planos_acao || !!pacote.okrs)
-    if (temA && !temB) return 'A'
-    if (temB && !temA) return 'B'
-    if (temA && temB) return 'AB'
+  // ---------- ETAPA E2-E: DETECÇÃO DE PARTE EM 4 NÍVEIS ----------
+  // Causa-raiz E2-E: Pacote V2.0 usa "conteudo_fases" e "projetos_e_planos"
+  // (com valor null na Parte A). O detectarParte antigo olhava chaves
+  // inexistentes (dre/fases/projetos/planos_acao/okrs) → 415 na Parte A real.
+
+  // "presente_não_vazio" | "null" | "ausente" (para objetos)
+  function statusBlocoObjeto(v) {
+    if (v === null) return 'null'
+    if (v === undefined) return 'ausente'
+    if (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0)
+      return 'presente_não_vazio'
+    if (typeof v === 'object') return 'presente_vazio'
+    return 'presente'
+  }
+
+  // "presente" | "null" | "ausente" (para chaves auxiliares)
+  function statusBlocoSimples(v) {
+    if (v === null) return 'null'
+    if (v === undefined) return 'ausente'
+    return 'presente'
+  }
+
+  // Bloco de conteúdo presente = objeto NÃO-nulo com pelo menos 1 chave
+  function temConteudo(v) {
+    return !!v && typeof v === 'object' && Object.keys(v).length > 0
+  }
+
+  function analisarDeteccao(pacote) {
+    const out = {
+      parte: null,
+      metodo: null,
+      campo_parte: null,
+      tem_fases: false,
+      tem_planos: false,
+    }
+    if (!ehObjeto(pacote)) return out
+    out.campo_parte =
+      typeof pacote.parte === 'string' && pacote.parte.trim() ? pacote.parte.trim() : null
+    out.tem_fases = temConteudo(pacote.conteudo_fases)
+    out.tem_planos = temConteudo(pacote.projetos_e_planos)
+
+    // NÍVEL 1 — campo "parte" explícito (tem prioridade sobre blocos)
+    if (out.campo_parte) {
+      if (out.campo_parte === 'A' || out.campo_parte === 'B' || out.campo_parte === 'AB') {
+        out.parte = out.campo_parte
+        out.metodo = 'campo_parte'
+      } else {
+        // valor existe mas não é A/B/AB → indeterminado (415 com campo_parte preenchido)
+        out.parte = null
+        out.metodo = null
+      }
+      return out
+    }
+
+    // NÍVEL 2 — blocos de conteúdo ("projetos_e_planos": null conta como AUSENTE)
+    if (out.tem_fases && !out.tem_planos) {
+      out.parte = 'A'
+      out.metodo = 'blocos_conteudo'
+      return out
+    }
+    if (!out.tem_fases && out.tem_planos) {
+      out.parte = 'B'
+      out.metodo = 'blocos_conteudo'
+      return out
+    }
+    if (out.tem_fases && out.tem_planos) {
+      out.parte = 'AB'
+      out.metodo = 'blocos_conteudo'
+      return out
+    }
+
+    // NÍVEL 3 — chaves auxiliares (fallback)
+    const auxA =
+      temConteudo(pacote.artefatos_financeiros) ||
+      temConteudo(pacote.fases) ||
+      temConteudo(pacote.dre)
+    const auxB =
+      temConteudo(pacote.objetivos_estrategicos) ||
+      temConteudo(pacote.projetos) ||
+      temConteudo(pacote.planos_acao) ||
+      temConteudo(pacote.okrs)
+    if (auxA && !auxB) {
+      out.parte = 'A'
+      out.metodo = 'chaves_auxiliares'
+      return out
+    }
+    if (auxB && !auxA) {
+      out.parte = 'B'
+      out.metodo = 'chaves_auxiliares'
+      return out
+    }
+    if (auxA && auxB) {
+      out.parte = 'AB'
+      out.metodo = 'chaves_auxiliares'
+      return out
+    }
+
+    // NÍVEL 4 — nada determinável → 415 (tratado pelo chamador)
+    return out
+  }
+
+  // BLOCO 2 — campo "parte" declara uma coisa, blocos dizem outra → 416
+  function mensagemIncoerencia(parte, deteccao) {
+    if (deteccao.metodo !== 'campo_parte') return null
+    if (parte === 'A' && !deteccao.tem_fases)
+      return "Campo 'parte' indica A, mas 'conteudo_fases' não foi encontrado."
+    if (parte === 'B' && !deteccao.tem_planos)
+      return "Campo 'parte' indica B, mas 'projetos_e_planos' não está presente."
     return null
   }
 
@@ -516,13 +619,44 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       })
     }
 
-    const parte = typeof body.parte === 'string' && body.parte ? body.parte : detectarParte(pacote)
+    // ETAPA E2-E — detecção em 4 níveis (analisarDeteccao acima)
+    const parteSolicitada =
+      typeof body.parte === 'string' && body.parte.trim() ? body.parte.trim() : null
+    const deteccao = analisarDeteccao(pacote)
+    let parte = deteccao.parte
+    let metodo = deteccao.metodo
+    if (parteSolicitada) {
+      if (parteSolicitada === 'A' || parteSolicitada === 'B' || parteSolicitada === 'AB') {
+        parte = parteSolicitada
+        metodo = 'campo_parte'
+      } else {
+        parte = null
+        deteccao.valor_parte_invalido = parteSolicitada
+      }
+    }
     if (!parte) {
-      return e.json(400, {
+      // BLOCO 3 — 415 com diagnóstico completo
+      return e.json(415, {
         ok: false,
         codigo: CODIGOS.PARTE_INDETERMINADA,
-        mensagem:
-          'Não foi possível determinar se o pacote é Parte A, B ou AB (nenhum bloco reconhecível).',
+        mensagem: 'Não foi possível determinar a parte do pacote',
+        chaves_encontradas: Object.keys(pacote),
+        campo_parte: deteccao.valor_parte_invalido || deteccao.campo_parte || null,
+        conteudo_fases: statusBlocoObjeto(pacote.conteudo_fases),
+        projetos_e_planos: statusBlocoObjeto(pacote.projetos_e_planos),
+        artefatos_financeiros: statusBlocoSimples(pacote.artefatos_financeiros),
+      })
+    }
+    // BLOCO 2 — parte declarada mas bloco correspondente ausente → 416
+    const msgIncoerente = mensagemIncoerencia(parte, deteccao)
+    if (msgIncoerente) {
+      return e.json(416, {
+        ok: false,
+        codigo: CODIGOS.PARTE_INCOERENTE,
+        mensagem: msgIncoerente,
+        chaves_encontradas: Object.keys(pacote),
+        campo_parte: deteccao.campo_parte || parteSolicitada || null,
+        parte_detectada: parte,
       })
     }
 
@@ -549,6 +683,8 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       ok: true,
       valido: erros.length === 0,
       parte: parte,
+      parte_detectada: parte,
+      metodo_deteccao: metodo || null,
       dossie_id: ehObjeto(pacote) && typeof pacote.dossie_id === 'string' ? pacote.dossie_id : '',
       blocos: [
         {
@@ -574,6 +710,162 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
   }
 })
 
+// ============================================================================
+// ETAPA E2-E — SELFTEST (SÓ ADMIN; consultor NÃO; NÃO persiste nada)
+// Executa 4 casos com estruturas mínimas mockadas e retorna SIM/NÃO por caso.
+// ============================================================================
+routerAdd('POST', '/backend/v1/pacote-v2/selftest', (e) => {
+  try {
+    const info = e.requestInfo ? e.requestInfo() : {}
+    const auth = info.auth || null
+    const papel = auth && typeof auth.getString === 'function' ? auth.getString('role') : null
+    if (!auth || papel !== 'admin') {
+      return e.json(403, {
+        ok: false,
+        codigo: 'PACOTE_V2_SEM_PERMISSAO_403',
+        mensagem: 'Selftest restrito a admin (consultor não tem acesso).',
+      })
+    }
+
+    // Detecção em 4 níveis — cópia inline idêntica às rotas acima
+    function ehObjeto(v) {
+      return !!v && typeof v === 'object' && !Array.isArray(v)
+    }
+    function temConteudo(v) {
+      return !!v && typeof v === 'object' && Object.keys(v).length > 0
+    }
+    function analisarDeteccao(pacote) {
+      const out = { parte: null, metodo: null, tem_fases: false, tem_planos: false }
+      if (!ehObjeto(pacote)) return out
+      out.tem_fases = temConteudo(pacote.conteudo_fases)
+      out.tem_planos = temConteudo(pacote.projetos_e_planos)
+      const campoParte =
+        typeof pacote.parte === 'string' && pacote.parte.trim() ? pacote.parte.trim() : null
+      if (campoParte) {
+        if (campoParte === 'A' || campoParte === 'B' || campoParte === 'AB') {
+          out.parte = campoParte
+          out.metodo = 'campo_parte'
+        }
+        return out
+      }
+      if (out.tem_fases && !out.tem_planos) {
+        out.parte = 'A'
+        out.metodo = 'blocos_conteudo'
+        return out
+      }
+      if (!out.tem_fases && out.tem_planos) {
+        out.parte = 'B'
+        out.metodo = 'blocos_conteudo'
+        return out
+      }
+      if (out.tem_fases && out.tem_planos) {
+        out.parte = 'AB'
+        out.metodo = 'blocos_conteudo'
+        return out
+      }
+      const auxA =
+        temConteudo(pacote.artefatos_financeiros) ||
+        temConteudo(pacote.fases) ||
+        temConteudo(pacote.dre)
+      const auxB =
+        temConteudo(pacote.objetivos_estrategicos) ||
+        temConteudo(pacote.projetos) ||
+        temConteudo(pacote.planos_acao) ||
+        temConteudo(pacote.okrs)
+      if (auxA && !auxB) {
+        out.parte = 'A'
+        out.metodo = 'chaves_auxiliares'
+        return out
+      }
+      if (auxB && !auxA) {
+        out.parte = 'B'
+        out.metodo = 'chaves_auxiliares'
+        return out
+      }
+      if (auxA && auxB) {
+        out.parte = 'AB'
+        out.metodo = 'chaves_auxiliares'
+        return out
+      }
+      return out
+    }
+
+    const casos = [
+      {
+        id: 'T1',
+        descricao: 'conteudo_fases presente, sem campo "parte" → detectar A',
+        entrada: { schema_versao: '2.0', conteudo_fases: { P1: { status: 'concluida' } } },
+        esperado: 'A',
+      },
+      {
+        id: 'T2',
+        descricao: 'campo "parte"="B" com projetos_e_planos → detectar B',
+        entrada: {
+          schema_versao: '2.0',
+          parte: 'B',
+          projetos_e_planos: { projetos: [{ projeto_id: 'PRJ-01', projeto_nome: 'Mock' }] },
+        },
+        esperado: 'B',
+      },
+      {
+        id: 'T3',
+        descricao: 'conteudo_fases presente com projetos_e_planos null → detectar A (caso Aurora)',
+        entrada: {
+          schema_versao: '2.0',
+          conteudo_fases: { P1: { status: 'concluida' }, P7: { status: 'parcial' } },
+          projetos_e_planos: null,
+        },
+        esperado: 'A',
+      },
+      {
+        id: 'T4',
+        descricao: 'nenhum bloco reconhecível → 415',
+        entrada: { schema_versao: '2.0' },
+        esperado: '415',
+      },
+    ]
+
+    const resultados = []
+    let passaram = 0
+    for (let i = 0; i < casos.length; i++) {
+      const c = casos[i]
+      const det = analisarDeteccao(c.entrada)
+      const detectado = det.parte ? det.parte : '415'
+      const passou = detectado === c.esperado
+      if (passou) passaram++
+      resultados.push({
+        caso: c.id,
+        descricao: c.descricao,
+        esperado: c.esperado,
+        detectado: detectado,
+        metodo: det.parte ? det.metodo : null,
+        resultado: passou ? 'SIM' : 'NÃO',
+      })
+    }
+
+    return e.json(200, {
+      ok: true,
+      total: casos.length,
+      passaram: passaram,
+      falharam: casos.length - passaram,
+      resumo: passaram + '/' + casos.length,
+      casos: resultados,
+      persistiu_dados: false,
+    })
+  } catch (err) {
+    const mensagem = err && err.message ? String(err.message) : String(err)
+    try {
+      console.error('[pacote_v2/selftest] ' + mensagem)
+      if (err && err.stack) console.error('[pacote_v2/selftest] stack: ' + String(err.stack))
+    } catch (_) {}
+    return e.json(500, {
+      ok: false,
+      codigo: 'PACOTE_V2_ERRO_INTERNO_500',
+      mensagem: mensagem,
+    })
+  }
+})
+
 routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
   // --------------------- Constantes locais do callback ---------------------
   const CODIGOS = {
@@ -582,6 +874,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     FASES: 'PACOTE_V2_FASES_INVALIDAS_403',
     DRE: 'PACOTE_V2_DRE_INVALIDA_404',
     PARTE_INDETERMINADA: 'PACOTE_V2_PARTE_INDETERMINADA_415',
+    PARTE_INCOERENTE: 'PACOTE_V2_PARTE_INCOERENTE_416',
   }
   const CODIGO_INTERNO = 'PACOTE_V2_ERRO_INTERNO_500'
 
@@ -813,12 +1106,106 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     return { ok: erros.length === 0, erros: erros, avisos: avisos }
   }
 
-  function detectarParte(pacote) {
-    const temA = !!pacote && (!!pacote.dre || !!pacote.fases)
-    const temB = !!pacote && (!!pacote.projetos || !!pacote.planos_acao || !!pacote.okrs)
-    if (temA && !temB) return 'A'
-    if (temB && !temA) return 'B'
-    if (temA && temB) return 'AB'
+  // ---------- ETAPA E2-E: DETECÇÃO DE PARTE EM 4 NÍVEIS (cópia inline) ----------
+  function statusBlocoObjeto(v) {
+    if (v === null) return 'null'
+    if (v === undefined) return 'ausente'
+    if (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0)
+      return 'presente_não_vazio'
+    if (typeof v === 'object') return 'presente_vazio'
+    return 'presente'
+  }
+
+  function statusBlocoSimples(v) {
+    if (v === null) return 'null'
+    if (v === undefined) return 'ausente'
+    return 'presente'
+  }
+
+  function temConteudo(v) {
+    return !!v && typeof v === 'object' && Object.keys(v).length > 0
+  }
+
+  function analisarDeteccao(pacote) {
+    const out = {
+      parte: null,
+      metodo: null,
+      campo_parte: null,
+      tem_fases: false,
+      tem_planos: false,
+    }
+    if (!ehObjeto(pacote)) return out
+    out.campo_parte =
+      typeof pacote.parte === 'string' && pacote.parte.trim() ? pacote.parte.trim() : null
+    out.tem_fases = temConteudo(pacote.conteudo_fases)
+    out.tem_planos = temConteudo(pacote.projetos_e_planos)
+
+    // NÍVEL 1 — campo "parte" explícito (prioridade sobre blocos)
+    if (out.campo_parte) {
+      if (out.campo_parte === 'A' || out.campo_parte === 'B' || out.campo_parte === 'AB') {
+        out.parte = out.campo_parte
+        out.metodo = 'campo_parte'
+      } else {
+        out.parte = null
+        out.metodo = null
+      }
+      return out
+    }
+
+    // NÍVEL 2 — blocos de conteúdo (null de projetos_e_planos = ausente)
+    if (out.tem_fases && !out.tem_planos) {
+      out.parte = 'A'
+      out.metodo = 'blocos_conteudo'
+      return out
+    }
+    if (!out.tem_fases && out.tem_planos) {
+      out.parte = 'B'
+      out.metodo = 'blocos_conteudo'
+      return out
+    }
+    if (out.tem_fases && out.tem_planos) {
+      out.parte = 'AB'
+      out.metodo = 'blocos_conteudo'
+      return out
+    }
+
+    // NÍVEL 3 — chaves auxiliares
+    const auxA =
+      temConteudo(pacote.artefatos_financeiros) ||
+      temConteudo(pacote.fases) ||
+      temConteudo(pacote.dre)
+    const auxB =
+      temConteudo(pacote.objetivos_estrategicos) ||
+      temConteudo(pacote.projetos) ||
+      temConteudo(pacote.planos_acao) ||
+      temConteudo(pacote.okrs)
+    if (auxA && !auxB) {
+      out.parte = 'A'
+      out.metodo = 'chaves_auxiliares'
+      return out
+    }
+    if (auxB && !auxA) {
+      out.parte = 'B'
+      out.metodo = 'chaves_auxiliares'
+      return out
+    }
+    if (auxA && auxB) {
+      out.parte = 'AB'
+      out.metodo = 'chaves_auxiliares'
+      return out
+    }
+
+    // NÍVEL 4 — nada determinável → 415
+    return out
+  }
+
+  // BLOCO 2 — parte declarada mas bloco correspondente ausente → 416
+  function mensagemIncoerencia(parte, deteccao) {
+    if (deteccao.metodo !== 'campo_parte') return null
+    if (parte === 'A' && !deteccao.tem_fases)
+      return "Campo 'parte' indica A, mas 'conteudo_fases' não foi encontrado."
+    if (parte === 'B' && !deteccao.tem_planos)
+      return "Campo 'parte' indica B, mas 'projetos_e_planos' não está presente."
     return null
   }
 
@@ -860,12 +1247,39 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       })
     }
 
-    const parte = typeof body.parte === 'string' && body.parte ? body.parte : detectarParte(pacote)
+    const parteSolicitada =
+      typeof body.parte === 'string' && body.parte.trim() ? body.parte.trim() : null
+    const deteccao = analisarDeteccao(pacote)
+    let parte = deteccao.parte
+    if (parteSolicitada) {
+      if (parteSolicitada === 'A' || parteSolicitada === 'B' || parteSolicitada === 'AB') {
+        parte = parteSolicitada
+      } else {
+        parte = null
+        deteccao.valor_parte_invalido = parteSolicitada
+      }
+    }
     if (!parte) {
-      return e.json(400, {
+      return e.json(415, {
         ok: false,
         codigo: CODIGOS.PARTE_INDETERMINADA,
-        mensagem: 'Não foi possível determinar se o pacote é Parte A, B ou AB.',
+        mensagem: 'Não foi possível determinar a parte do pacote',
+        chaves_encontradas: Object.keys(pacote),
+        campo_parte: deteccao.valor_parte_invalido || deteccao.campo_parte || null,
+        conteudo_fases: statusBlocoObjeto(pacote.conteudo_fases),
+        projetos_e_planos: statusBlocoObjeto(pacote.projetos_e_planos),
+        artefatos_financeiros: statusBlocoSimples(pacote.artefatos_financeiros),
+      })
+    }
+    const msgIncoerente = mensagemIncoerencia(parte, deteccao)
+    if (msgIncoerente) {
+      return e.json(416, {
+        ok: false,
+        codigo: CODIGOS.PARTE_INCOERENTE,
+        mensagem: msgIncoerente,
+        chaves_encontradas: Object.keys(pacote),
+        campo_parte: deteccao.campo_parte || parteSolicitada || null,
+        parte_detectada: parte,
       })
     }
 
