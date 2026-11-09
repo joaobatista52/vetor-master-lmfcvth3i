@@ -48,16 +48,17 @@ interface LeadOpcao {
 }
 
 interface ErroValidacao {
-  codigo: number
+  codigo: string
   mensagem: string
-  detalhe?: string
+  detalhe?: unknown
 }
 
 interface BlocoValidacao {
   bloco: string
   status: 'ok' | 'erro'
-  resumo: string
+  resumo?: string
   erros?: ErroValidacao[]
+  avisos?: ErroValidacao[]
 }
 
 interface ResultadoValidacao {
@@ -113,6 +114,62 @@ const LABEL_PARTE: Record<string, string> = {
   A: 'Parte A',
   B: 'Parte B',
   AB: 'Parte AB (completo)',
+}
+
+interface ErroHttp {
+  status?: number
+  message?: string
+  response?: unknown
+}
+
+/** Formata o detalhe de auditoria (encontrado vs esperado) de uma regra */
+function formatarDetalhe(detalhe: unknown): string {
+  if (detalhe === undefined || detalhe === null) return ''
+  if (typeof detalhe === 'string') return detalhe
+  if (typeof detalhe === 'object' && !Array.isArray(detalhe)) {
+    const d = detalhe as Record<string, unknown>
+    const partes: string[] = []
+    if ('encontrado' in d) partes.push(`encontrado: ${String(d.encontrado)}`)
+    if ('esperado' in d) partes.push(`esperado: ${String(d.esperado)}`)
+    if ('ignorado' in d) partes.push(`ignorados: ${String(d.ignorados)}`)
+    const resto = Object.keys(d).filter(
+      (k) => k !== 'encontrado' && k !== 'esperado' && k !== 'ignorados',
+    )
+    for (const k of resto) partes.push(`${k}: ${String(d[k])}`)
+    return partes.join(' · ')
+  }
+  return String(detalhe)
+}
+
+/**
+ * Extrai o código + mensagem reais do backend (PACOTE_V2_*).
+ * Se a resposta não vier como JSON válido, devolve
+ * "Erro inesperado (HTTP <status>)" — nunca o genérico cru.
+ */
+function extrairErroBackend(err: unknown): string {
+  const e = err as ErroHttp
+  const status = e?.status ?? 0
+  const body = e?.response
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const b = body as {
+      codigo?: string
+      mensagem?: string
+      message?: string
+      erros?: ErroValidacao[]
+    }
+    if (Array.isArray(b.erros) && b.erros.length > 0) {
+      return b.erros
+        .map((r) => {
+          const det = formatarDetalhe(r.detalhe)
+          return `[${r.codigo}] ${r.mensagem}${det ? ` (${det})` : ''}`
+        })
+        .join('\n')
+    }
+    if (b.codigo && b.mensagem) return `[${b.codigo}] ${b.mensagem}`
+    if (b.mensagem) return b.mensagem
+    if (b.message) return b.message
+  }
+  return `Erro inesperado (HTTP ${status})`
 }
 
 export default function AdminIngestao() {
@@ -263,15 +320,11 @@ export default function AdminIngestao() {
         toast.error('Pacote com erros de validação')
       }
     } catch (err: unknown) {
-      const e = err as { status?: number; message?: string; response?: { message?: string } }
+      const e = err as ErroHttp
       if (e?.status === 401 || e?.status === 403) {
         setErroValidar('Sem permissão: apenas admin e consultor podem validar pacotes.')
-      } else if (e?.status === 400 && (e?.response as { code?: number })?.code) {
-        setErroValidar(
-          `Erro ${(e.response as { code?: number }).code}: ${e?.response?.message || e?.message || 'Requisição inválida.'}`,
-        )
       } else {
-        setErroValidar(e?.message || 'Falha na validação.')
+        setErroValidar(extrairErroBackend(err))
       }
     } finally {
       setValidando(false)
@@ -309,11 +362,11 @@ export default function AdminIngestao() {
       setValidacao(null)
       carregarHistorico()
     } catch (err: unknown) {
-      const e = err as { status?: number; message?: string; response?: { message?: string } }
+      const e = err as ErroHttp
       if (e?.status === 401 || e?.status === 403) {
         setErroImportar('Sem permissão: apenas admin e consultor podem importar pacotes.')
       } else {
-        setErroImportar(e?.message || 'Falha na importação.')
+        setErroImportar(extrairErroBackend(err))
       }
     } finally {
       setImportando(false)
@@ -472,15 +525,37 @@ export default function AdminIngestao() {
               </div>
               <div className="space-y-2">
                 {validacao.blocos?.map((b) => (
-                  <div key={b.bloco} className="flex items-start gap-2 text-sm">
-                    <span>{b.status === 'ok' ? '✅' : '❌'}</span>
-                    <span className="font-medium">{b.bloco}</span>
-                    <span className="text-muted-foreground">— {b.resumo}</span>
-                    {b.erros?.map((err) => (
-                      <span key={err.codigo} className="text-destructive">
-                        [{err.codigo}] {err.mensagem}
-                      </span>
-                    ))}
+                  <div key={b.bloco} className="space-y-1">
+                    <div className="flex items-start gap-2 text-sm">
+                      <span>{b.status === 'ok' ? '✅' : '❌'}</span>
+                      <span className="font-medium">{b.bloco}</span>
+                      {b.resumo && <span className="text-muted-foreground">— {b.resumo}</span>}
+                    </div>
+                    {b.erros?.map((err, idx) => {
+                      const det = formatarDetalhe(err.detalhe)
+                      return (
+                        <div
+                          key={err.codigo + '-' + idx}
+                          className="ml-6 rounded border border-destructive/40 bg-destructive/5 p-2 text-xs"
+                        >
+                          <span className="font-medium text-destructive">[{err.codigo}]</span>{' '}
+                          {err.mensagem}
+                          {det && <div className="text-muted-foreground">{det}</div>}
+                        </div>
+                      )
+                    })}
+                    {b.avisos?.map((av, idx) => {
+                      const det = formatarDetalhe(av.detalhe)
+                      return (
+                        <div
+                          key={av.codigo + '-' + idx}
+                          className="ml-6 rounded border border-yellow-500/40 bg-yellow-50 p-2 text-xs text-yellow-800"
+                        >
+                          <span className="font-medium">⚠ [{av.codigo}]</span> {av.mensagem}
+                          {det && <div className="text-yellow-700">{det}</div>}
+                        </div>
+                      )
+                    })}
                   </div>
                 ))}
               </div>
@@ -625,7 +700,9 @@ export default function AdminIngestao() {
                     <span className="font-medium text-destructive">[{err.codigo}]</span>{' '}
                     {err.mensagem}
                     {err.detalhe && (
-                      <div className="text-xs text-muted-foreground">{err.detalhe}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatarDetalhe(err.detalhe)}
+                      </div>
                     )}
                   </li>
                 ))}

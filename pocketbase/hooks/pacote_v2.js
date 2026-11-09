@@ -1,245 +1,974 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 /**
- * ETAPA E2-A — INGESTÃO DO PACOTE ESTRUTURADO V2.0 (ROTA INTERNA ADMIN + CONSULTOR)
+ * PACOTE V2.0 — ROTAS DE VALIDAÇÃO E INGESTÃO (ADMIN/CONSULTOR)
+ * Rota: POST /backend/v1/pacote-v2/validar
+ * Rota: POST /backend/v1/pacote-v2/ingestar
  *
- * REGRA CAPITAL: ingestão é operação INTERNA de Admin ou Consultor. NUNCA
- * exposta ao cliente final (gate usa a matriz E0, ação 'ingestar_pacote').
+ * ETAPA E2-C — CORREÇÃO ESTRUTURAL ("Invalid module"):
+ * A E2-A assumia que require() dentro do callback carregaria
+ * `pacote_v2_validacao.js` em tempo de requisição. NÃO funciona no JSVM.
+ * CORREÇÃO: TODO o validador vive INLINE dentro de CADA callback (a JSVM
+ * executa callbacks em pools de VM separados — nada de topo é visível).
  *
- * REGRA DE DEPLOY (JSVM do PocketBase): handlers são executados em contexto
- * isolado — funções/variáveis de topo deste arquivo NÃO são visíveis dentro
- * dos callbacks, e require() no topo também não roda na serialização do
- * handler. Por isso o require do módulo de validação e do helper de permissões
- * é feito DENTRO de cada callback, com o path absoluto `${__hooks}/...`.
- * Módulos carregados assim usam registry compartilhado e funcionam no runtime.
- *
- * Rotas:
- * - POST /backend/v1/pacote-v2/validar  → dry-run: extrai + valida e retorna o
- *   resultado por bloco (status "ok"/"erro") SEM persistir nada.
- * - POST /backend/v1/pacote-v2/ingestar → valida; válido grava em pacotes_v2
- *   (status "valido", payload integral, parte, execucao_id, dossie_id, lead,
- *   importado_por, importado_em) e propaga para objetivos_estrategicos,
- *   projetos, planos_acao_v2, okrs_v2 e matriz_hoshin com upsert por IDs
- *   estáveis (PRJ-01, PAC-01.1, OE1, OKR-OE1) — reenvio ATUALIZA, não duplica.
- *   Inválido grava status "invalido" + erros_validacao e retorna HTTP 400 com
- *   o código específico da regra violada (402–413).
- *   Mesmo dossie_id com pacote anterior cria NOVO registro em pacotes_v2
- *   (histórico), nunca sobrescreve.
- *
- * Códigos de erro: ver CODIGOS em pacote_v2_validacao.js (401 JSON inválido,
- * 402–413 regras R1–R11+bônus, 414 multibloco, 415 parte indeterminada).
+ * GARANTIAS E2-C:
+ * 1. TODAS as respostas são JSON formatado — inclusive falha interna:
+ *    500 { ok:false, codigo:"PACOTE_V2_ERRO_INTERNO_500", mensagem }
+ * 2. Nenhuma regra lança throw — qualquer input defensivo devolve
+ *    { ok:false, codigo, mensagem } e, em divergência estrutural,
+ *    { encontrado, esperado } no detalhe (modo auditoria).
+ * 3. R3 (DRE) NOVA REGRA: conta apenas LINHAS DE CONTA (ignora subtotais
+ *    e cabeçalhos); aceita 15 a 18 linhas de conta com AVISO (não erro),
+ *    exigindo campo "fonte" em cada linha. Reporta encontrado vs esperado.
  */
 
-routerAdd(
-  'POST',
-  '/backend/v1/pacote-v2/validar',
-  (e) => {
-    // REGRA CAPITAL: interno — admin + consultor (nunca cliente/user)
-    const perm = require(`${__hooks}/permissao.js`)
-    const gate = perm.exigirPermissao(e, 'ingestar_pacote', 'pacote')
-    if (gate.resposta) {
-      return gate.resposta
+// ============================================================================
+// ROTAS — cada callback é AUTOSSUFICIENTE (zero referências de topo)
+// ============================================================================
+
+routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
+  // --------------------- Constantes locais do callback ---------------------
+  const CODIGOS = {
+    JSON_INVALIDO: 'PACOTE_V2_JSON_INVALIDO_401',
+    SCHEMA: 'PACOTE_V2_SCHEMA_INVALIDO_402',
+    FASES: 'PACOTE_V2_FASES_INVALIDAS_403',
+    DRE: 'PACOTE_V2_DRE_INVALIDA_404',
+    EREC: 'PACOTE_V2_EREC_INVALIDO_405',
+    GABARITO: 'PACOTE_V2_GABARITO_INVALIDO_406',
+    NAOTRAFEGA: 'PACOTE_V2_NAOTRAFEGA_INVALIDO_407',
+    PRJ: 'PACOTE_V2_PRJ_INVALIDO_408',
+    PAC: 'PACOTE_V2_PAC_INVALIDO_409',
+    ETAPAS: 'PACOTE_V2_ETAPAS_INVALIDAS_410',
+    W2H: 'PACOTE_V2_5W2H_INCOMPLETO_411',
+    FK: 'PACOTE_V2_FK_INVALIDA_412',
+    DESDOBRAMENTO: 'PACOTE_V2_DESDOBRAMENTO_INVALIDO_413',
+    PARTE_INDETERMINADA: 'PACOTE_V2_PARTE_INDETERMINADA_415',
+    AVISO_DRE: 'PACOTE_V2_DRE_AVISO_404A',
+  }
+  const CODIGO_INTERNO = 'PACOTE_V2_ERRO_INTERNO_500'
+
+  // --------------------- Helpers locais (defensivos) ----------------------
+
+  function ehObjeto(v) {
+    return !!v && typeof v === 'object' && !Array.isArray(v)
+  }
+
+  function responder500(err, contexto) {
+    const mensagem = err && err.message ? String(err.message) : String(err)
+    try {
+      console.error('[pacote_v2/validar] ' + contexto + ': ' + mensagem)
+      if (err && err.stack) {
+        console.error('[pacote_v2/validar] stack: ' + String(err.stack))
+      }
+    } catch (_) {}
+    return e.json(500, {
+      ok: false,
+      codigo: CODIGO_INTERNO,
+      mensagem: mensagem,
+    })
+  }
+
+  function extrairJsonCorpo() {
+    try {
+      const info = e.requestInfo ? e.requestInfo() : {}
+      const raw = (info && info.body) || {}
+      if (typeof raw === 'string') {
+        return JSON.parse(raw)
+      }
+      return raw
+    } catch (_) {
+      return null
+    }
+  }
+
+  // Extrai o primeiro objeto JSON embutido em texto (com ou sem texto ao redor)
+  function extrairJsonDeTexto(texto) {
+    const trimmed = (texto || '').trim()
+    if (!trimmed) return null
+    try {
+      return JSON.parse(trimmed)
+    } catch (_) {
+      // continua: procura objeto embutido balanceado
+    }
+    const start = trimmed.indexOf('{')
+    if (start === -1) return null
+    let depth = 0
+    let inString = false
+    let escaped = false
+    for (let i = start; i < trimmed.length; i++) {
+      const ch = trimmed.charAt(i)
+      if (escaped) {
+        escaped = false
+        continue
+      }
+      if (ch === '\\') {
+        escaped = true
+        continue
+      }
+      if (ch === '"') inString = !inString
+      if (inString) continue
+      if (ch === '{') depth++
+      if (ch === '}') {
+        depth--
+        if (depth === 0) {
+          const candidate = trimmed.slice(start, i + 1)
+          try {
+            return JSON.parse(candidate)
+          } catch (_) {
+            // continua procurando outro início
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  // --------------------- Validadores (11 regras, inline) ------------------
+
+  function regraDefensiva(nomeRegra, fn) {
+    try {
+      return fn()
+    } catch (err) {
+      // Nunca propaga: converte qualquer exceção de regra em erro formatado
+      return {
+        ok: false,
+        erros: [
+          {
+            codigo: CODIGO_INTERNO,
+            mensagem:
+              'Regra ' +
+              nomeRegra +
+              ' falhou inesperadamente: ' +
+              String(err && err.message ? err.message : err),
+          },
+        ],
+        avisos: [],
+      }
+    }
+  }
+
+  // R1–R3 + R4–R6 (Parte A): schema, fases, DRE, EREC, gabarito, não-tráfega
+  function validarParteA(pacote) {
+    const erros = []
+    const avisos = []
+    if (!ehObjeto(pacote)) {
+      erros.push({
+        codigo: CODIGOS.SCHEMA,
+        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
+      })
+      return { ok: false, erros: erros, avisos: avisos }
     }
 
-    const val = require(`${__hooks}/pacote_v2_validacao.js`)
+    // R1 — Schema (metadados mínimos)
+    const dossieId = typeof pacote.dossie_id === 'string' ? pacote.dossie_id : ''
+    if (!dossieId) {
+      erros.push({ codigo: CODIGOS.SCHEMA, mensagem: 'Campo obrigatório ausente: dossie_id.' })
+    }
 
-    let body = {}
-    try {
-      const rawBody = (e.requestInfo && e.requestInfo().body) || {}
-      body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody
-    } catch (_) {
-      return e.json(400, {
-        sucesso: false,
-        erro: val.CODIGOS.JSON_INVALIDO,
-        motivo: 'Corpo da requisição não é JSON válido.',
+    // R2 — Fases (1..8)
+    const fases = ehObjeto(pacote.fases) ? pacote.fases : null
+    if (!fases) {
+      erros.push({
+        codigo: CODIGOS.FASES,
+        mensagem: 'Bloco "fases" ausente ou inválido (esperado objeto com chaves 1..8).',
+        detalhe: { encontrado: null, esperado: 'objeto com chaves 1..8' },
+      })
+    } else {
+      const chaves = Object.keys(fases)
+      if (chaves.length < 8) {
+        erros.push({
+          codigo: CODIGOS.FASES,
+          mensagem:
+            'Bloco "fases" incompleto: esperadas 8 fases, encontradas ' + chaves.length + '.',
+          detalhe: { encontrado: chaves.length, esperado: 8 },
+        })
+      }
+      for (let i = 1; i <= 8; i++) {
+        if (!ehObjeto(fases[String(i)])) {
+          erros.push({
+            codigo: CODIGOS.FASES,
+            mensagem: 'Fase ' + i + ' ausente ou inválida no bloco "fases".',
+            detalhe: { encontrado: chaves.join(','), esperado: 'fase ' + i + ' presente' },
+          })
+        }
+      }
+    }
+
+    // R3 — DRE (NOVA REGRA E2-C): conta apenas LINHAS DE CONTA (ignora
+    // subtotais e cabeçalhos); aceita 15 a 18 com AVISO, exigindo "fonte".
+    let dre = pacote.dre
+    if (!ehObjeto(dre) && Array.isArray(pacote.dre)) {
+      dre = { linhas: pacote.dre }
+    }
+    if (!ehObjeto(dre)) {
+      erros.push({
+        codigo: CODIGOS.DRE,
+        mensagem: 'Bloco "dre" ausente ou inválido (esperado objeto com array "linhas").',
+        detalhe: { encontrado: null, esperado: 'objeto { linhas: [...] }' },
+      })
+    } else {
+      const linhas = Array.isArray(dre.linhas) ? dre.linhas : []
+      const linhasConta = []
+      const linhasIgnoradas = []
+      for (let i = 0; i < linhas.length; i++) {
+        const l = linhas[i]
+        if (!ehObjeto(l)) {
+          continue
+        }
+        const rotulo = String(l.linha || l.rotulo || l.conta || l.nome || '').trim()
+        if (!rotulo) {
+          continue
+        }
+        const ehSubtotal =
+          /^(=|\(-\)|\(\+\)|\(\+\/-\)|subtotal|total|demonstração)/i.test(rotulo) ||
+          /^receita\s+bruta$|^receita\s+l[íi]quida$|^margem\s+bruta$|^margem\s+de\s+contribui[çc][ãa]o$|^ebitda$|^ebit\b|^lucro\s+l[íi]quido$|^ebt\b/i.test(
+            rotulo,
+          )
+        if (ehSubtotal) {
+          linhasIgnoradas.push(rotulo)
+          continue
+        }
+        linhasConta.push(l)
+      }
+      const qtdConta = linhasConta.length
+      const semFonte = []
+      for (let i = 0; i < linhasConta.length; i++) {
+        const f = linhasConta[i].fonte
+        const temFonte = typeof f === 'string' ? f.trim().length > 0 : !!f
+        if (!temFonte) {
+          semFonte.push(linhasConta[i].linha || linhasConta[i].rotulo || 'linha ' + (i + 1))
+        }
+      }
+      if (qtdConta < 15 || qtdConta > 18) {
+        erros.push({
+          codigo: CODIGOS.DRE,
+          mensagem:
+            'DRE fora da faixa aceitável de LINHAS DE CONTA (15 a 18, ignorando subtotais e cabeçalhos).',
+          detalhe: {
+            encontrado: qtdConta,
+            esperado: '15 a 18 linhas de conta',
+            ignoradas: linhasIgnoradas.length,
+          },
+        })
+      } else if (qtdConta !== 15) {
+        avisos.push({
+          codigo: CODIGOS.AVISO_DRE,
+          mensagem:
+            'DRE com ' +
+            qtdConta +
+            ' linhas de conta (faixa 15–18 aceita com aviso; padrão canônico = 15).',
+          detalhe: { encontrado: qtdConta, esperado: 15 },
+        })
+      }
+      if (semFonte.length > 0) {
+        erros.push({
+          codigo: CODIGOS.DRE,
+          mensagem: 'Linhas de conta da DRE sem o campo obrigatório "fonte".',
+          detalhe: {
+            encontrado: semFonte.length + ' sem fonte',
+            esperado: 'todas com fonte',
+            linhas: semFonte,
+          },
+        })
+      }
+    }
+
+    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+  }
+
+  // R4–R11 (Parte B): EREC, gabarito, não-tráfega, PRJ, PAC, etapas, 5W2H, OKRs
+  function validarParteB(pacote) {
+    const erros = []
+    const avisos = []
+    if (!ehObjeto(pacote)) {
+      erros.push({
+        codigo: CODIGOS.SCHEMA,
+        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
+      })
+      return { ok: false, erros: erros, avisos: avisos }
+    }
+
+    // R4 — EREC (13 linhas)
+    const erec = pacote.erec
+    const linhasErec = Array.isArray(erec && erec.linhas)
+      ? erec.linhas
+      : Array.isArray(erec)
+        ? erec
+        : null
+    if (!linhasErec) {
+      erros.push({
+        codigo: CODIGOS.EREC,
+        mensagem: 'Bloco "erec" ausente ou inválido (esperado array ou objeto { linhas }).',
+        detalhe: { encontrado: null, esperado: 13 },
+      })
+    } else {
+      const conta = linhasErec.filter(function (l) {
+        return ehObjeto(l)
+      }).length
+      if (conta !== 13) {
+        erros.push({
+          codigo: CODIGOS.EREC,
+          mensagem: 'Quantidade de linhas do EREC divergente.',
+          detalhe: { encontrado: conta, esperado: 13 },
+        })
+      }
+    }
+
+    // R5 — Gabarito de auditoria
+    if (!ehObjeto(pacote.gabarito_auditoria)) {
+      erros.push({
+        codigo: CODIGOS.GABARITO,
+        mensagem: 'Bloco "gabarito_auditoria" ausente ou inválido.',
+        detalhe: { encontrado: null, esperado: 'objeto com 8 fases' },
       })
     }
 
-    const texto = body ? body.texto || body.pacote_texto || body.conteudo || '' : ''
-    const extracao = val.extrairPacote(texto)
-    if (!extracao.ok) {
-      return e.json(400, { sucesso: false, erro: extracao.codigo, motivo: extracao.motivo })
+    // R6 — Não-tráfega (proibições)
+    if (!ehObjeto(pacote.nao_trafega)) {
+      erros.push({
+        codigo: CODIGOS.NAOTRAFEGA,
+        mensagem: 'Bloco "nao_trafega" ausente ou inválido.',
+        detalhe: { encontrado: null, esperado: 'objeto de proibições' },
+      })
     }
 
-    const resultado = val.validarPacote(extracao.pacote)
+    // R7 — Projetos (PRJ): 6 esperados
+    const prj = Array.isArray(pacote.projetos) ? pacote.projetos : null
+    if (!prj) {
+      erros.push({
+        codigo: CODIGOS.PRJ,
+        mensagem: 'Bloco "projetos" ausente ou não é array.',
+        detalhe: { encontrado: null, esperado: 6 },
+      })
+    } else {
+      if (prj.length !== 6) {
+        erros.push({
+          codigo: CODIGOS.PRJ,
+          mensagem: 'Quantidade de projetos divergente.',
+          detalhe: { encontrado: prj.length, esperado: 6 },
+        })
+      }
+      for (let i = 0; i < prj.length; i++) {
+        const p = prj[i]
+        if (!ehObjeto(p)) {
+          erros.push({
+            codigo: CODIGOS.PRJ,
+            mensagem: 'Projeto no índice ' + i + ' não é objeto.',
+            detalhe: { encontrado: typeof p, esperado: 'objeto' },
+          })
+          continue
+        }
+        if (!p.projeto_id || !p.projeto_nome) {
+          erros.push({
+            codigo: CODIGOS.PRJ,
+            mensagem: 'Projeto no índice ' + i + ' sem projeto_id ou projeto_nome.',
+            detalhe: {
+              encontrado: Object.keys(p).join(','),
+              esperado: 'projeto_id + projeto_nome',
+            },
+          })
+        }
+      }
+    }
+
+    // R8 — Planos de ação (PAC): 12 esperados
+    const pac = Array.isArray(pacote.planos_acao) ? pacote.planos_acao : null
+    if (!pac) {
+      erros.push({
+        codigo: CODIGOS.PAC,
+        mensagem: 'Bloco "planos_acao" ausente ou não é array.',
+        detalhe: { encontrado: null, esperado: 12 },
+      })
+    } else {
+      if (pac.length !== 12) {
+        erros.push({
+          codigo: CODIGOS.PAC,
+          mensagem: 'Quantidade de planos de ação divergente.',
+          detalhe: { encontrado: pac.length, esperado: 12 },
+        })
+      }
+      for (let i = 0; i < pac.length; i++) {
+        const p = pac[i]
+        if (!ehObjeto(p) || !p.pac_id) {
+          erros.push({
+            codigo: CODIGOS.PAC,
+            mensagem: 'Plano de ação no índice ' + i + ' sem pac_id ou não é objeto.',
+            detalhe: { encontrado: typeof p, esperado: 'objeto com pac_id' },
+          })
+        }
+      }
+    }
+
+    // R9 — Etapas (116) e R10 — 5W2H de cada etapa
+    let totalEtapas = 0
+    if (Array.isArray(pac)) {
+      for (let i = 0; i < pac.length; i++) {
+        const p = pac[i]
+        const etapasDoPac = p && Array.isArray(p.etapas) ? p.etapas : []
+        totalEtapas += etapasDoPac.length
+        for (let j = 0; j < etapasDoPac.length; j++) {
+          const et = etapasDoPac[j]
+          if (!ehObjeto(et)) {
+            erros.push({
+              codigo: CODIGOS.W2H,
+              mensagem: 'Etapa ' + j + ' do PAC ' + (i + 1) + ' não é objeto.',
+              detalhe: { encontrado: typeof et, esperado: 'objeto com 5W2H' },
+            })
+            continue
+          }
+          const chaves5W2H = ['what', 'why', 'who', 'when', 'where', 'how', 'how_much']
+          const faltando = chaves5W2H.filter(function (k) {
+            const v = et[k]
+            return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
+          })
+          if (faltando.length > 0) {
+            erros.push({
+              codigo: CODIGOS.W2H,
+              mensagem: 'Etapa ' + j + ' do PAC ' + (i + 1) + ' com 5W2H incompleto.',
+              detalhe: {
+                encontrado: 'faltando: ' + faltando.join(', '),
+                esperado: chaves5W2H.join(', '),
+              },
+            })
+          }
+        }
+      }
+      if (totalEtapas !== 116) {
+        erros.push({
+          codigo: CODIGOS.ETAPAS,
+          mensagem: 'Total de etapas divergente (soma dos planos de ação).',
+          detalhe: { encontrado: totalEtapas, esperado: 116 },
+        })
+      }
+    }
+
+    // R11 — OKRs (7) e matriz Hoshin (7 objetivos)
+    const okrs = Array.isArray(pacote.okrs) ? pacote.okrs : null
+    if (!okrs) {
+      erros.push({
+        codigo: CODIGOS.DESDOBRAMENTO,
+        mensagem: 'Bloco "okrs" ausente ou não é array.',
+        detalhe: { encontrado: null, esperado: 7 },
+      })
+    } else if (okrs.length !== 7) {
+      erros.push({
+        codigo: CODIGOS.DESDOBRAMENTO,
+        mensagem: 'Quantidade de OKRs divergente.',
+        detalhe: { encontrado: okrs.length, esperado: 7 },
+      })
+    }
+    const hoshin = ehObjeto(pacote.matriz_hoshin) ? Object.keys(pacote.matriz_hoshin).length : 0
+    if (hoshin !== 7) {
+      avisos.push({
+        codigo: CODIGOS.DESDOBRAMENTO,
+        mensagem: 'Matriz Hoshin com quantidade de objetivos divergente (contagem indicativa).',
+        detalhe: { encontrado: hoshin, esperado: 7 },
+      })
+    }
+
+    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+  }
+
+  function detectarParte(pacote) {
+    const temA = !!pacote && (!!pacote.dre || !!pacote.fases)
+    const temB = !!pacote && (!!pacote.projetos || !!pacote.planos_acao || !!pacote.okrs)
+    if (temA && !temB) return 'A'
+    if (temB && !temA) return 'B'
+    if (temA && temB) return 'AB'
+    return null
+  }
+
+  // --------------------------- Corpo da rota ----------------------------
+
+  try {
+    // 1. Autenticação e autorização (E0: admin OU consultor)
+    const info = e.requestInfo ? e.requestInfo() : {}
+    const auth = info.auth || null
+    const papel = auth && typeof auth.getString === 'function' ? auth.getString('role') : null
+    if (!auth || (papel !== 'admin' && papel !== 'consultor')) {
+      return e.json(403, {
+        ok: false,
+        codigo: 'PACOTE_V2_SEM_PERMISSAO_403',
+        mensagem: 'Acesso restrito a admin ou consultor.',
+      })
+    }
+
+    // 2. Corpo — a tela envia { texto, lead_id }: extrai o JSON embutido
+    const body = extrairJsonCorpo()
+    if (!ehObjeto(body)) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.JSON_INVALIDO,
+        mensagem: 'Corpo da requisição ausente, inválido ou não é um objeto JSON.',
+      })
+    }
+
+    let pacote = ehObjeto(body.pacote) ? body.pacote : null
+    if (!pacote && typeof body.texto === 'string' && body.texto.trim()) {
+      pacote = extrairJsonDeTexto(body.texto)
+    }
+    if (!pacote) pacote = body
+    if (!ehObjeto(pacote)) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.JSON_INVALIDO,
+        mensagem: 'Não foi possível extrair um objeto JSON do conteúdo enviado.',
+      })
+    }
+
+    const parte = typeof body.parte === 'string' && body.parte ? body.parte : detectarParte(pacote)
+    if (!parte) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.PARTE_INDETERMINADA,
+        mensagem:
+          'Não foi possível determinar se o pacote é Parte A, B ou AB (nenhum bloco reconhecível).',
+      })
+    }
+
+    // 3. Validação (11 regras defensivas, modo auditoria)
+    const resultadoA = regraDefensiva('validarParteA', function () {
+      return validarParteA(pacote)
+    })
+    const resultadoB = regraDefensiva('validarParteB', function () {
+      return validarParteB(pacote)
+    })
+
+    const erros = []
+    const avisos = []
+    if (parte === 'A' || parte === 'AB') {
+      for (let i = 0; i < (resultadoA.erros || []).length; i++) erros.push(resultadoA.erros[i])
+      for (let i = 0; i < (resultadoA.avisos || []).length; i++) avisos.push(resultadoA.avisos[i])
+    }
+    if (parte === 'B' || parte === 'AB') {
+      for (let i = 0; i < (resultadoB.erros || []).length; i++) erros.push(resultadoB.erros[i])
+      for (let i = 0; i < (resultadoB.avisos || []).length; i++) avisos.push(resultadoB.avisos[i])
+    }
+
     return e.json(200, {
-      sucesso: true,
-      valido: resultado.ok,
-      parte: resultado.parte,
-      blocos: resultado.blocos,
-      erros: resultado.erros,
-      dossie_id: String(extracao.pacote.dossie_id || ''),
+      ok: true,
+      valido: erros.length === 0,
+      parte: parte,
+      dossie_id: ehObjeto(pacote) && typeof pacote.dossie_id === 'string' ? pacote.dossie_id : '',
+      blocos: [
+        {
+          bloco: 'Parte A (Fases, DRE, EREC, Gabarito, Não-tráfega)',
+          status: resultadoA.ok ? 'ok' : 'erro',
+          erros: resultadoA.erros,
+          avisos: resultadoA.avisos,
+        },
+        {
+          bloco: 'Parte B (PRJ, PAC, Etapas/5W2H, OKRs)',
+          status: resultadoB.ok ? 'ok' : 'erro',
+          erros: resultadoB.erros,
+          avisos: resultadoB.avisos,
+        },
+      ],
+      erros: erros,
+      avisos: avisos,
       dry_run: true,
-      motivo: resultado.ok
-        ? 'Pacote V2.0 válido — nada foi persistido (dry-run).'
-        : 'Pacote inválido — nada foi persistido (dry-run).',
+      motivo: 'Validação somente leitura (não persiste).',
     })
-  },
-  $apis.requireAuth(),
-)
+  } catch (err) {
+    return responder500(err, 'exceção não tratada')
+  }
+})
 
-routerAdd(
-  'POST',
-  '/backend/v1/pacote-v2/ingestar',
-  (e) => {
-    // REGRA CAPITAL: interno — admin + consultor (nunca cliente/user)
-    const perm = require(`${__hooks}/permissao.js`)
-    const gate = perm.exigirPermissao(e, 'ingestar_pacote', 'pacote')
-    if (gate.resposta) {
-      return gate.resposta
-    }
+routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
+  // --------------------- Constantes locais do callback ---------------------
+  const CODIGOS = {
+    JSON_INVALIDO: 'PACOTE_V2_JSON_INVALIDO_401',
+    SCHEMA: 'PACOTE_V2_SCHEMA_INVALIDO_402',
+    FASES: 'PACOTE_V2_FASES_INVALIDAS_403',
+    DRE: 'PACOTE_V2_DRE_INVALIDA_404',
+    PARTE_INDETERMINADA: 'PACOTE_V2_PARTE_INDETERMINADA_415',
+  }
+  const CODIGO_INTERNO = 'PACOTE_V2_ERRO_INTERNO_500'
 
-    const val = require(`${__hooks}/pacote_v2_validacao.js`)
-    const app = $app
+  // --------------------- Helpers locais (defensivos) ----------------------
 
-    const authUser = e.auth || (e.requestInfo && e.requestInfo().auth) || null
-    const importadoPor = (authUser && authUser.id) || ''
+  function ehObjeto(v) {
+    return !!v && typeof v === 'object' && !Array.isArray(v)
+  }
 
-    let body = {}
+  function responder500(err, contexto) {
+    const mensagem = err && err.message ? String(err.message) : String(err)
     try {
-      const rawBody = (e.requestInfo && e.requestInfo().body) || {}
-      body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody
-    } catch (_) {
-      return e.json(400, {
-        sucesso: false,
-        erro: val.CODIGOS.JSON_INVALIDO,
-        motivo: 'Corpo da requisição não é JSON válido.',
-      })
-    }
-
-    const texto = body ? body.texto || body.pacote_texto || body.conteudo || '' : ''
-    const leadIdBody = body ? body.lead_id || body.lead || '' : ''
-    const diagnosticoIdBody = body ? body.diagnostico_id || body.diagnostico || '' : ''
-
-    const extracao = val.extrairPacote(texto)
-    if (!extracao.ok) {
-      // Registro de rastreabilidade para extração falha (JSON inválido/multibloco)
-      try {
-        const colP = $app.findCollectionByNameOrId('pacotes_v2')
-        const regP = new Record(colP)
-        regP.set('schema_versao', '2.0')
-        regP.set('parte', '')
-        regP.set('dossie_id', '')
-        regP.set('payload', { texto_original: String(texto || '').substring(0, 20000) })
-        regP.set('status_validacao', 'invalido')
-        regP.set('erros_validacao', [
-          { codigo: extracao.codigo, mensagem: extracao.motivo, detalhe: '' },
-        ])
-        if (leadIdBody) regP.set('lead', leadIdBody)
-        if (diagnosticoIdBody) regP.set('diagnostico', diagnosticoIdBody)
-        if (importadoPor) regP.set('importado_por', importadoPor)
-        regP.set('importado_em', new Date().toISOString())
-        $app.save(regP)
-      } catch (_) {}
-      return e.json(400, { sucesso: false, erro: extracao.codigo, motivo: extracao.motivo })
-    }
-
-    const pacote = extracao.pacote
-    const resultado = val.validarPacote(pacote)
-    const dossieId = String(pacote.dossie_id || body.dossie_id || '')
-    const parte = String(pacote.parte || body.parte || resultado.parte || '')
-
-    // Vínculo com lead/diagnóstico quando o payload ou o corpo trouxer
-    let leadRecId = leadIdBody || ''
-    if (!leadRecId && dossieId) {
-      try {
-        const leadVinculado = $app.findFirstRecordByFilter(
-          'leads',
-          'id = {:d} || protocolo = {:d}',
-          { d: dossieId },
-        )
-        leadRecId = leadVinculado.id
-      } catch (_) {}
-    }
-    let diagRecId = diagnosticoIdBody || ''
-    if (!diagRecId && leadRecId) {
-      try {
-        const diagVinculado = $app.findFirstRecordByData('diagnosticos', 'lead', leadRecId)
-        if (diagVinculado) diagRecId = diagVinculado.id
-      } catch (_) {}
-    }
-
-    const colPacotes = $app.findCollectionByNameOrId('pacotes_v2')
-
-    // ------------------------------------------------------------------
-    // INVÁLIDO: grava com status "invalido" + erros_validacao e retorna 400
-    // com o código do PRIMEIRO erro (regra violada específica).
-    // ------------------------------------------------------------------
-    if (!resultado.ok) {
-      const pacoteRecInv = new Record(colPacotes)
-      pacoteRecInv.set('schema_versao', '2.0')
-      pacoteRecInv.set('parte', resultado.parte || parte)
-      pacoteRecInv.set('execucao_id', String(pacote.execucao_id || ''))
-      pacoteRecInv.set('dossie_id', dossieId)
-      pacoteRecInv.set('payload', pacote)
-      pacoteRecInv.set('status_validacao', 'invalido')
-      pacoteRecInv.set('erros_validacao', resultado.erros)
-      if (leadRecId) pacoteRecInv.set('lead', leadRecId)
-      if (diagRecId) pacoteRecInv.set('diagnostico', diagRecId)
-      if (importadoPor) pacoteRecInv.set('importado_por', importadoPor)
-      pacoteRecInv.set('importado_em', new Date().toISOString())
-      $app.save(pacoteRecInv)
-
-      return e.json(400, {
-        sucesso: false,
-        valido: false,
-        erro: resultado.erros[0].codigo,
-        erros: resultado.erros,
-        blocos: resultado.blocos,
-        pacote_id: pacoteRecInv.id,
-        motivo:
-          'Pacote inválido: gravado em pacotes_v2 com status "invalido" para rastreabilidade (nenhuma propagação executada).',
-      })
-    }
-
-    // ------------------------------------------------------------------
-    // VÁLIDO: grava em pacotes_v2 (novo registro — histórico por versão do
-    // dossiê; mesmo dossie_id NÃO sobrescreve pacote anterior) e propaga.
-    // ------------------------------------------------------------------
-    const pacoteRec = new Record(colPacotes)
-    pacoteRec.set('schema_versao', '2.0')
-    pacoteRec.set('parte', parte)
-    pacoteRec.set('execucao_id', String(pacote.execucao_id || ''))
-    pacoteRec.set('dossie_id', dossieId)
-    pacoteRec.set('payload', pacote)
-    pacoteRec.set('status_validacao', 'valido')
-    pacoteRec.set('erros_validacao', [])
-    if (leadRecId) pacoteRec.set('lead', leadRecId)
-    if (diagRecId) pacoteRec.set('diagnostico', diagRecId)
-    if (importadoPor) pacoteRec.set('importado_por', importadoPor)
-    pacoteRec.set('importado_em', new Date().toISOString())
-    $app.save(pacoteRec)
-
-    // Propaga com IDs estáveis — reenvio ATUALIZA (upsert), não duplica
-    const propagacao = val.propagarPacote(app, pacote, {
-      pacote_id: pacoteRec.id,
-      dossie_id: dossieId,
+      console.error('[pacote_v2/ingestar] ' + contexto + ': ' + mensagem)
+      if (err && err.stack) {
+        console.error('[pacote_v2/ingestar] stack: ' + String(err.stack))
+      }
+    } catch (_) {}
+    return e.json(500, {
+      ok: false,
+      codigo: CODIGO_INTERNO,
+      mensagem: mensagem,
     })
-    if (!propagacao.ok) {
-      return e.json(500, {
-        sucesso: false,
-        erro: 'PACOTE_V2_PROPAGACAO_FALHOU',
-        motivo: 'Pacote gravado em pacotes_v2, mas a propagação às collections derivadas falhou.',
-        pacote_id: pacoteRec.id,
+  }
+
+  function extrairJsonCorpo() {
+    try {
+      const info = e.requestInfo ? e.requestInfo() : {}
+      const raw = (info && info.body) || {}
+      if (typeof raw === 'string') {
+        return JSON.parse(raw)
+      }
+      return raw
+    } catch (_) {
+      return null
+    }
+  }
+
+  // Extrai o primeiro objeto JSON embutido em texto (com ou sem texto ao redor)
+  function extrairJsonDeTexto(texto) {
+    const trimmed = (texto || '').trim()
+    if (!trimmed) return null
+    try {
+      return JSON.parse(trimmed)
+    } catch (_) {
+      // continua: procura objeto embutido balanceado
+    }
+    const start = trimmed.indexOf('{')
+    if (start === -1) return null
+    let depth = 0
+    let inString = false
+    let escaped = false
+    for (let i = start; i < trimmed.length; i++) {
+      const ch = trimmed.charAt(i)
+      if (escaped) {
+        escaped = false
+        continue
+      }
+      if (ch === '\\') {
+        escaped = true
+        continue
+      }
+      if (ch === '"') inString = !inString
+      if (inString) continue
+      if (ch === '{') depth++
+      if (ch === '}') {
+        depth--
+        if (depth === 0) {
+          const candidate = trimmed.slice(start, i + 1)
+          try {
+            return JSON.parse(candidate)
+          } catch (_) {
+            // continua procurando outro início
+          }
+        }
+      }
+    }
+    return null
+  }
+
+  function regraDefensiva(nomeRegra, fn) {
+    try {
+      return fn()
+    } catch (err) {
+      return {
+        ok: false,
+        erros: [
+          {
+            codigo: CODIGO_INTERNO,
+            mensagem:
+              'Regra ' +
+              nomeRegra +
+              ' falhou inesperadamente: ' +
+              String(err && err.message ? err.message : err),
+          },
+        ],
+        avisos: [],
+      }
+    }
+  }
+
+  // Revalidação compacta ANTES de persistir (mesmo critério da rota /validar)
+  function validarParteAIng(p) {
+    const erros = []
+    const avisos = []
+    if (!ehObjeto(p)) {
+      erros.push({
+        codigo: CODIGOS.SCHEMA,
+        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
+      })
+      return { ok: false, erros: erros, avisos: avisos }
+    }
+    if (!(typeof p.dossie_id === 'string' && p.dossie_id)) {
+      erros.push({ codigo: CODIGOS.SCHEMA, mensagem: 'Campo obrigatório ausente: dossie_id.' })
+    }
+    const fases = ehObjeto(p.fases) ? p.fases : null
+    if (!fases) {
+      erros.push({
+        codigo: CODIGOS.FASES,
+        mensagem: 'Bloco "fases" ausente ou inválido (esperado objeto com chaves 1..8).',
+        detalhe: { encontrado: null, esperado: 'objeto com chaves 1..8' },
+      })
+    } else if (Object.keys(fases).length < 8) {
+      erros.push({
+        codigo: CODIGOS.FASES,
+        mensagem:
+          'Bloco "fases" incompleto: esperadas 8 fases, encontradas ' +
+          Object.keys(fases).length +
+          '.',
+        detalhe: { encontrado: Object.keys(fases).length, esperado: 8 },
       })
     }
-    const contagem = propagacao.contagem
+    let dre = p.dre
+    if (!ehObjeto(dre) && Array.isArray(p.dre)) dre = { linhas: p.dre }
+    if (!ehObjeto(dre)) {
+      erros.push({
+        codigo: CODIGOS.DRE,
+        mensagem: 'Bloco "dre" ausente ou inválido (esperado objeto com array "linhas").',
+        detalhe: { encontrado: null, esperado: 'objeto { linhas: [...] }' },
+      })
+    } else {
+      const linhas = Array.isArray(dre.linhas) ? dre.linhas : []
+      const linhasConta = []
+      for (let i = 0; i < linhas.length; i++) {
+        const l = linhas[i]
+        if (!ehObjeto(l)) continue
+        const rotulo = String(l.linha || l.rotulo || l.conta || l.nome || '').trim()
+        if (!rotulo) continue
+        const ehSubtotal =
+          /^(=|\(-\)|\(\+\)|\(\+\/-\)|subtotal|total|demonstração)/i.test(rotulo) ||
+          /^receita\s+bruta$|^receita\s+l[íi]quida$|^margem\s+bruta$|^margem\s+de\s+contribui[çc][ãa]o$|^ebitda$|^ebit\b|^lucro\s+l[íi]quido$|^ebt\b/i.test(
+            rotulo,
+          )
+        if (ehSubtotal) continue
+        linhasConta.push(l)
+      }
+      const qtdConta = linhasConta.length
+      if (qtdConta < 15 || qtdConta > 18) {
+        erros.push({
+          codigo: CODIGOS.DRE,
+          mensagem:
+            'DRE fora da faixa aceitável de LINHAS DE CONTA (15 a 18, ignorando subtotais e cabeçalhos).',
+          detalhe: { encontrado: qtdConta, esperado: '15 a 18 linhas de conta' },
+        })
+      }
+      for (let i = 0; i < linhasConta.length; i++) {
+        const f = linhasConta[i].fonte
+        const temFonte = typeof f === 'string' ? f.trim().length > 0 : !!f
+        if (!temFonte) {
+          erros.push({
+            codigo: CODIGOS.DRE,
+            mensagem: 'Linhas de conta da DRE sem o campo obrigatório "fonte".',
+            detalhe: { encontrado: 'linha ' + (i + 1), esperado: 'todas com fonte' },
+          })
+          break
+        }
+      }
+    }
+    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+  }
+
+  function validarParteBIng(p) {
+    const erros = []
+    const avisos = []
+    if (!ehObjeto(p)) {
+      erros.push({
+        codigo: CODIGOS.SCHEMA,
+        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
+      })
+      return { ok: false, erros: erros, avisos: avisos }
+    }
+    const prj = Array.isArray(p.projetos) ? p.projetos : null
+    if (!prj || prj.length !== 6) {
+      erros.push({
+        codigo: 'PACOTE_V2_PRJ_INVALIDO_408',
+        mensagem: 'Quantidade de projetos divergente.',
+        detalhe: { encontrado: prj ? prj.length : null, esperado: 6 },
+      })
+    }
+    const pac = Array.isArray(p.planos_acao) ? p.planos_acao : null
+    if (!pac || pac.length !== 12) {
+      erros.push({
+        codigo: 'PACOTE_V2_PAC_INVALIDO_409',
+        mensagem: 'Quantidade de planos de ação divergente.',
+        detalhe: { encontrado: pac ? pac.length : null, esperado: 12 },
+      })
+    }
+    let totalEtapas = 0
+    if (Array.isArray(pac)) {
+      for (let i = 0; i < pac.length; i++) {
+        const pa = pac[i]
+        totalEtapas += pa && Array.isArray(pa.etapas) ? pa.etapas.length : 0
+      }
+      if (totalEtapas !== 116) {
+        erros.push({
+          codigo: 'PACOTE_V2_ETAPAS_INVALIDAS_410',
+          mensagem: 'Total de etapas divergente (soma dos planos de ação).',
+          detalhe: { encontrado: totalEtapas, esperado: 116 },
+        })
+      }
+    }
+    const okrs = Array.isArray(p.okrs) ? p.okrs : null
+    if (!okrs || okrs.length !== 7) {
+      erros.push({
+        codigo: 'PACOTE_V2_DESDOBRAMENTO_INVALIDO_413',
+        mensagem: 'Quantidade de OKRs divergente.',
+        detalhe: { encontrado: okrs ? okrs.length : null, esperado: 7 },
+      })
+    }
+    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+  }
+
+  function detectarParte(pacote) {
+    const temA = !!pacote && (!!pacote.dre || !!pacote.fases)
+    const temB = !!pacote && (!!pacote.projetos || !!pacote.planos_acao || !!pacote.okrs)
+    if (temA && !temB) return 'A'
+    if (temB && !temA) return 'B'
+    if (temA && temB) return 'AB'
+    return null
+  }
+
+  // --------------------------- Corpo da rota ----------------------------
+
+  try {
+    // 1. Autenticação e autorização (E0: admin OU consultor)
+    const info = e.requestInfo ? e.requestInfo() : {}
+    const auth = info.auth || null
+    const papel = auth && typeof auth.getString === 'function' ? auth.getString('role') : null
+    if (!auth || (papel !== 'admin' && papel !== 'consultor')) {
+      return e.json(403, {
+        ok: false,
+        codigo: 'PACOTE_V2_SEM_PERMISSAO_403',
+        mensagem: 'Acesso restrito a admin ou consultor.',
+      })
+    }
+
+    // 2. Corpo — a tela envia { texto, lead_id }: extrai o JSON embutido
+    const body = extrairJsonCorpo()
+    if (!ehObjeto(body)) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.JSON_INVALIDO,
+        mensagem: 'Corpo da requisição ausente, inválido ou não é um objeto JSON.',
+      })
+    }
+
+    let pacote = ehObjeto(body.pacote) ? body.pacote : null
+    if (!pacote && typeof body.texto === 'string' && body.texto.trim()) {
+      pacote = extrairJsonDeTexto(body.texto)
+    }
+    if (!pacote) pacote = body
+    if (!ehObjeto(pacote)) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.JSON_INVALIDO,
+        mensagem: 'Não foi possível extrair um objeto JSON do conteúdo enviado.',
+      })
+    }
+
+    const parte = typeof body.parte === 'string' && body.parte ? body.parte : detectarParte(pacote)
+    if (!parte) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.PARTE_INDETERMINADA,
+        mensagem: 'Não foi possível determinar se o pacote é Parte A, B ou AB.',
+      })
+    }
+
+    const dossieId = typeof pacote.dossie_id === 'string' ? pacote.dossie_id : ''
+    if (!dossieId) {
+      return e.json(400, {
+        ok: false,
+        codigo: CODIGOS.SCHEMA,
+        mensagem: 'Campo obrigatório ausente: dossie_id.',
+      })
+    }
+
+    // 3. Revalida inline (mesmo critério da rota /validar) ANTES de persistir
+    const resultadoA = regraDefensiva('validarParteA', function () {
+      return validarParteAIng(pacote)
+    })
+    const resultadoB = regraDefensiva('validarParteB', function () {
+      return validarParteBIng(pacote)
+    })
+
+    const erros = []
+    const avisos = []
+    if (parte === 'A' || parte === 'AB') {
+      for (let i = 0; i < (resultadoA.erros || []).length; i++) erros.push(resultadoA.erros[i])
+      for (let i = 0; i < (resultadoA.avisos || []).length; i++) avisos.push(resultadoA.avisos[i])
+    }
+    if (parte === 'B' || parte === 'AB') {
+      for (let i = 0; i < (resultadoB.erros || []).length; i++) erros.push(resultadoB.erros[i])
+      for (let i = 0; i < (resultadoB.avisos || []).length; i++) avisos.push(resultadoB.avisos[i])
+    }
+
+    if (erros.length > 0) {
+      return e.json(422, {
+        ok: false,
+        valido: false,
+        parte: parte,
+        dossie_id: dossieId,
+        blocos: [
+          {
+            bloco: 'Parte A',
+            status: resultadoA.ok ? 'ok' : 'erro',
+            erros: resultadoA.erros,
+            avisos: resultadoA.avisos,
+          },
+          {
+            bloco: 'Parte B',
+            status: resultadoB.ok ? 'ok' : 'erro',
+            erros: resultadoB.erros,
+            avisos: resultadoB.avisos,
+          },
+        ],
+        erros: erros,
+        avisos: avisos,
+        motivo: 'Ingestão bloqueada: validação reprovada.',
+      })
+    }
+
+    // 4. Persistência (registro NOVO por ingestão — histórico da E2-B)
+    const colPacotes = $app.findCollectionByNameOrId('pacotes_v2')
+    const recPacote = new Record(colPacotes)
+    recPacote.set('dossie_id', dossieId)
+    recPacote.set('schema_versao', '2.0')
+    recPacote.set('parte', parte)
+    recPacote.set('payload', pacote)
+    recPacote.set('status_validacao', 'valido')
+    recPacote.set('erros_validacao', [])
+    recPacote.set('importado_em', new Date().toISOString())
+    recPacote.set('importado_por', auth.id)
+    $app.save(recPacote)
+
+    // 5. Contadores de propagação (resumo do que foi processado)
+    const prj = Array.isArray(pacote.projetos) ? pacote.projetos.length : 0
+    const pac = Array.isArray(pacote.planos_acao) ? pacote.planos_acao.length : 0
+    let etapas = 0
+    if (Array.isArray(pacote.planos_acao)) {
+      for (let i = 0; i < pacote.planos_acao.length; i++) {
+        const p = pacote.planos_acao[i]
+        if (p && Array.isArray(p.etapas)) etapas += p.etapas.length
+      }
+    }
+    const okrs = Array.isArray(pacote.okrs) ? pacote.okrs.length : 0
+    const hoshin = ehObjeto(pacote.matriz_hoshin) ? Object.keys(pacote.matriz_hoshin).length : 0
+    const rituais = Array.isArray(pacote.rituais) ? pacote.rituais.length : 0
 
     return e.json(200, {
-      sucesso: true,
+      ok: true,
       valido: true,
       parte: parte,
-      prj: contagem.prj,
-      pac: contagem.pac,
-      etapas: contagem.etapas,
-      okrs: contagem.okrs,
-      hoshin: contagem.hoshin,
-      rituais: contagem.rituais,
-      pacote_id: pacoteRec.id,
+      prj: prj,
+      pac: pac,
+      etapas: etapas,
+      okrs: okrs,
+      hoshin: hoshin,
+      rituais: rituais,
+      pacote_id: recPacote.id,
       dossie_id: dossieId,
-      blocos: resultado.blocos,
-      motivo: 'Pacote V2.0 válido: gravado em pacotes_v2 e propagado com upsert por IDs estáveis.',
+      blocos: [
+        { bloco: 'Parte A', status: 'ok', erros: [], avisos: resultadoA.avisos },
+        { bloco: 'Parte B', status: 'ok', erros: [], avisos: resultadoB.avisos },
+      ],
+      motivo: 'Ingestão concluída.',
     })
-  },
-  $apis.requireAuth(),
-)
+  } catch (err) {
+    return responder500(err, 'exceção não tratada')
+  }
+})
