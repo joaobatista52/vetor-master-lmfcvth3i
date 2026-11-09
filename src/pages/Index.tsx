@@ -146,8 +146,10 @@ export default function Index() {
         // 2. Projetos (tolerante à ausência da collection)
         let projetosItems: any[] = []
         let projetosDisponivel = false
+        let projetoErro: string | null = null
         try {
           if (userId) {
+            // Campo real da collection: user (relation) — nunca filtrar por campo inexistente
             projetosItems = await pb.collection('projetos').getFullList({
               filter: `user = "${userId}"`,
             })
@@ -155,8 +157,13 @@ export default function Index() {
             projetosItems = await pb.collection('projetos').getFullList()
           }
           projetosDisponivel = true
-        } catch {
-          // Collection inexistente no schema PocketBase atual — tolerância obrigatória
+        } catch (err: any) {
+          // Collection inexistente ou sem o campo de filtro — tolerância obrigatória,
+          // mas o erro é reportado visivelmente (nunca engolido)
+          projetoErro = `Falha na consulta de projetos (status ${
+            err?.status ?? err?.response?.status ?? 'n/d'
+          }): ${err?.message || String(err)}`
+          console.error('Erro ao consultar projetos:', err?.status ?? '', err?.message || err)
           projetosDisponivel = false
           projetosItems = []
         }
@@ -265,6 +272,9 @@ export default function Index() {
         const nivelContratado = resolverNivelPlano(leadVinculado)
 
         if (mounted) {
+          if (projetoErro) {
+            setErroCarregamento(projetoErro)
+          }
           setDados({
             diagnosticosTotal,
             diagnosticosConcluidos,

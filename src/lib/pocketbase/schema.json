@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T01:17:34.768Z",
+  "generatedAt": "2026-11-09T01:55:08.047Z",
   "collections": [
     {
       "name": "users",
@@ -1665,137 +1665,6 @@
       "indexes": []
     },
     {
-      "name": "projetos",
-      "type": "base",
-      "apiRules": {
-        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
-        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
-        "create": null,
-        "update": null,
-        "delete": "@request.auth.role = 'admin'"
-      },
-      "fields": [
-        {
-          "name": "schema_versao",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "projeto_id",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "objetivo_estrategico_id",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "projeto_nome",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "sponsor",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "escopo",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "objetivos",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "melhorias_esperadas",
-          "type": "json",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "aplicacao_abrangencia",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "planos_acao_ids",
-          "type": "json",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "fundamentacao",
-          "type": "json",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "benchmark_setorial",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "prazo",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "criterio_aceite",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "status",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "pacote",
-          "type": "relation",
-          "required": false,
-          "system": false,
-          "collectionRef": "pacotes_v2"
-        },
-        {
-          "name": "dossie_id",
-          "type": "text",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "created",
-          "type": "autodate",
-          "required": false,
-          "system": false,
-          "autodateTriggers": ["onCreate"]
-        },
-        {
-          "name": "updated",
-          "type": "autodate",
-          "required": false,
-          "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
-        }
-      ],
-      "indexes": []
-    },
-    {
       "name": "planos_acao_v2",
       "type": "base",
       "apiRules": {
@@ -2128,6 +1997,137 @@
       "indexes": [
         "CREATE UNIQUE INDEX idx_dossies_versoes_lead_versao ON dossies_versoes (lead, versao)"
       ]
+    },
+    {
+      "name": "projetos_v2",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'consultor'",
+        "create": null,
+        "update": null,
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "schema_versao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "projeto_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivo_estrategico_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "projeto_nome",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "sponsor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "escopo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "objetivos",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "melhorias_esperadas",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aplicacao_abrangencia",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "planos_acao_ids",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "fundamentacao",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "benchmark_setorial",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "prazo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "criterio_aceite",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pacote",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "pacotes_v2"
+        },
+        {
+          "name": "dossie_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
     }
   ]
 }
