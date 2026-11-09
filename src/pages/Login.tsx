@@ -81,8 +81,16 @@ export default function Login() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!email.trim() || !password.trim()) {
-      toast.error('Preencha email e senha.')
+    if (!email.trim()) {
+      toast.error('Preencha o e-mail.')
+      return
+    }
+    if (!password.trim()) {
+      toast.error('Preencha a senha.')
+      return
+    }
+    if (!isLogin && password.length < 8) {
+      toast.error('A senha deve ter no mínimo 8 caracteres.')
       return
     }
     setFieldErrors({})
@@ -139,7 +147,7 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -169,7 +177,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={8}
+                minLength={isLogin ? undefined : 8}
               />
               {fieldErrors.password && (
                 <p className="text-sm text-destructive flex items-center gap-1">
@@ -213,8 +221,16 @@ export default function Login() {
               {isLogin ? 'Acessar Plataforma' : 'Criar Conta e Iniciar'}
             </Button>
           </form>
+          <div className="mt-3 text-center">
+            <Link
+              to="/recuperar-senha"
+              className="text-xs font-medium text-[#0066CC] hover:text-[#22B14C] underline underline-offset-2 transition-colors"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
           <div className="text-center mt-4 text-xs text-[#808080]">
-            {isLogin ? 'Não tem conta? ' : 'Já tem conta? '}
+            {isLogin ? 'Ainda não tem conta? ' : 'Já tem conta? '}
             <button
               type="button"
               onClick={switchMode}

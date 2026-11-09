@@ -35,6 +35,8 @@ import AdminMetrics from '@/pages/AdminMetrics'
 import AdminDivergencias from '@/pages/AdminDivergencias'
 import AdminUsersPage from '@/pages/AdminUsersPage'
 import AdminIngestao from '@/pages/AdminIngestao'
+import RecuperarSenha from '@/pages/RecuperarSenha'
+import RedefinirSenha from '@/pages/RedefinirSenha'
 
 /**
  * ROTEADOR — FASE F5-BIS-A (7 seções da régua lateral, ordem canônica):
@@ -60,6 +62,8 @@ const App = () => (
           <Route path="/" element={<InstitucionalVendedora />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/recuperar-senha" element={<RecuperarSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/privacidade" element={<PrivacidadeLGPD />} />
 
           {/* Rotas Protegidas com Layout */}
