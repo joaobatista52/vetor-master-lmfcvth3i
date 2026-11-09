@@ -1,19 +1,24 @@
 //
-// E2-L — FASE 1 (SMTP Resend, remetente de teste)
+// E2-L / E2-O — SMTP Resend + appUrl de PRODUÇÃO
 //
 // Aplica, no boot do PocketBase, as mailer settings apontando para o SMTP da
-// Resend. A chave NUNCA vive em código: é lida do secret do backend
-// ($os.getenv / $secrets.get, nome: RESEND_API_KEY).
+// Resend e fixa settings.meta.appUrl na URL de PRODUÇÃO do app
+// (decisão do titular, rodada E2-O — sem barra final). O preview
+// (--preview.goskip.app) muda a cada rodada e NÃO serve de base para os
+// links dos e-mails. A chave NUNCA vive em código: é lida do secret do
+// backend ($os.getenv / $secrets.get, nome: RESEND_API_KEY).
 //
-// Método (reportado na rodada E2-L): configuração equivalente disponível
-// nesta plataforma — onBootstrap + $app.settings() + $app.save(settings).
-// O registro integracoes_site[chave=mailer_smtp] (migration 0106) guarda a
-// configuração para auditoria/idempotência (sem valor de chave).
+// Idempotência de appUrl: aplicado a cada boot (o valor real sobrescreve
+// qualquer placeholder vazio ou localhost). O registro
+// integracoes_site[chave=mailer_smtp] (migration 0106) guarda a configuração
+// para auditoria/idempotência (sem valor de chave).
 //
 // Vedação respeitada: nenhum arquivo de aplicação é tocado; hooks de
 // validação (pacote_v2.js) intocados; domínio vetormaster.com.br NÃO é
 // configurado aqui (Fase 2).
 //
+var E2O_APP_URL = 'https://saas-pme-estrategico-10019.goskip.app'
+
 onBootstrap((e) => {
   var appUrlAplicado = ''
   try {
@@ -46,16 +51,13 @@ onBootstrap((e) => {
     smtp.localName = ''
     settings.meta.senderAddress = RESEND_FROM
     settings.meta.senderName = RESEND_FROM_NAME
-    if (!settings.meta.appUrl) {
-      settings.meta.appUrl = 'http://localhost:5173'
-      console.log(
-        '[E2L_SMTP] meta.appUrl VAZIO — placeholder definido; ajustar na Fase 2 quando o host público existir',
-      )
-    }
+    // E2-O: appUrl real de produção, sempre aplicado (sem barra final).
+    // Substitui o placeholder localhost:5173 da Fase 1.
+    settings.meta.appUrl = E2O_APP_URL
     appUrlAplicado = settings.meta.appUrl
     $app.save(settings)
     console.log(
-      '[E2L_SMTP] mailer aplicado: host=' +
+      '[E2L_SMTP/E2O] mailer aplicado: host=' +
         RESEND_HOST +
         ' port=' +
         RESEND_PORT +
@@ -68,7 +70,7 @@ onBootstrap((e) => {
     )
   } catch (err) {
     console.log(
-      '[E2L_SMTP] falha ao aplicar settings de e-mail: ' +
+      '[E2L_SMTP/E2O] falha ao aplicar settings de e-mail: ' +
         (err && err.message ? err.message : String(err)),
     )
     try {
