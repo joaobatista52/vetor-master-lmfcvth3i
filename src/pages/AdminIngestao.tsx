@@ -121,6 +121,7 @@ export default function AdminIngestao() {
   const [leadSelecionado, setLeadSelecionado] = useState<string>('')
   const [dossieId, setDossieId] = useState<string>('')
   const [carregandoLeads, setCarregandoLeads] = useState(true)
+  const [erroLeads, setErroLeads] = useState<string | null>(null)
 
   // ---- colagem (1.2) ----
   const [texto, setTexto] = useState('')
@@ -145,14 +146,15 @@ export default function AdminIngestao() {
     [leads, leadSelecionado],
   )
 
-  // Carrega leads com dossiê (dropdown)
+  // Carrega TODOS os leads (dropdown) — dossie_id não existe no schema de leads
+  // e é opcional na tela (pré-preenchido apenas quando o lead tiver dossiê).
   useEffect(() => {
     let ativo = true
     setCarregandoLeads(true)
+    setErroLeads(null)
     pb.collection('leads')
       .getFullList({
         sort: '-created',
-        filter: 'dossie_id != ""',
         fields: 'id,nome_completo,razao_social,cnpj,dossie_id,nivel_assinatura,formato_interesse',
       })
       .then((items) => {
@@ -164,8 +166,19 @@ export default function AdminIngestao() {
           })),
         )
       })
-      .catch(() => {
-        if (ativo) toast.error('Falha ao carregar leads')
+      .catch((err: unknown) => {
+        // Diagnóstico em console (3.2): nunca engolir o erro em silêncio.
+        const e = err as { status?: number; message?: string; response?: { message?: string } }
+        const status = e?.status ?? 0
+        const mensagem = e?.response?.message || e?.message || 'erro desconhecido'
+        console.error(
+          `[AdminIngestao] Falha ao carregar leads (status ${status}): ${mensagem}`,
+          err,
+        )
+        if (ativo) {
+          setErroLeads(`Erro ao carregar leads — ${mensagem}`)
+          toast.error('Falha ao carregar leads')
+        }
       })
       .finally(() => {
         if (ativo) setCarregandoLeads(false)
@@ -356,13 +369,30 @@ export default function AdminIngestao() {
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.nome} · {l.razao_social || 's/ razão social'} · {l.cnpj || 's/ CNPJ'}
-                    </SelectItem>
-                  ))}
+                  {carregandoLeads ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      Carregando leads…
+                    </div>
+                  ) : erroLeads ? (
+                    <div className="px-2 py-1.5 text-sm text-destructive">{erroLeads}</div>
+                  ) : leads.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      Nenhum lead encontrado
+                    </div>
+                  ) : (
+                    leads.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.nome} · {l.razao_social || 's/ razão social'} · {l.cnpj || 's/ CNPJ'}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {erroLeads && (
+                <p className="text-xs text-destructive" role="alert">
+                  {erroLeads}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">dossie_id (opcional)</label>
