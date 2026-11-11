@@ -146,6 +146,13 @@ const LABEL_METODO_DETECCAO: Record<string, string> = {
   chaves_auxiliares: 'via chaves_auxiliares',
 }
 
+/** Formata qualquer valor de detalhe sem produzir "[object Object]" (E2-I) */
+function formatarValor(valor: unknown): string {
+  if (valor === undefined || valor === null) return ''
+  if (typeof valor === 'object') return JSON.stringify(valor)
+  return String(valor)
+}
+
 /** Formata o detalhe de auditoria (encontrado vs esperado) de uma regra */
 function formatarDetalhe(detalhe: unknown): string {
   if (detalhe === undefined || detalhe === null) return ''
@@ -159,7 +166,7 @@ function formatarDetalhe(detalhe: unknown): string {
     const resto = Object.keys(d).filter(
       (k) => k !== 'encontrado' && k !== 'esperado' && k !== 'ignorados',
     )
-    for (const k of resto) partes.push(`${k}: ${String(d[k])}`)
+    for (const k of resto) partes.push(`${k}: ${formatarValor(d[k])}`)
     return partes.join(' · ')
   }
   return String(detalhe)

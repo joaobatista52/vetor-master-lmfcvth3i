@@ -362,6 +362,12 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
         okrs: pegar(pep ? pep.okrs : undefined),
         matriz_hoshin: pegar(pep ? pep.matriz_hoshin : undefined),
         rituais: pegar(pep ? pep.rituais_desdobramento : undefined),
+        // E2-I: objetivos_estrategicos vive DENTRO de projetos_e_planos no
+        // JSON real da Aurora; fallback para a raiz (V1) por compatibilidade.
+        objetivos_estrategicos:
+          pegar(pep ? pep.objetivos_estrategicos : undefined) ||
+          pegar(raiz ? raiz.objetivos_estrategicos : undefined) ||
+          [],
       },
     }
   }
@@ -381,7 +387,11 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       planos_acao: Array.isArray(norm.planos_acao) ? norm.planos_acao.length : 0,
       etapas: etapas,
       okrs: Array.isArray(norm.okrs) ? norm.okrs.length : 0,
-      hoshin: ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : 0,
+      hoshin: Array.isArray(norm.matriz_hoshin)
+        ? norm.matriz_hoshin.length
+        : ehObjeto(norm.matriz_hoshin)
+          ? Object.keys(norm.matriz_hoshin).length
+          : 0,
       rituais: Array.isArray(norm.rituais) ? norm.rituais.length : 0,
     }
   }
@@ -602,7 +612,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
           'Bloco EREC sem as 4 seções canônicas.',
           {
             secoes_encontradas: meta.secoes_encontradas,
-            itens_por_secao: meta.itens_por_secao,
+            itens_por_secao: JSON.stringify(meta.itens_por_secao),
             total_itens: meta.total_itens,
           },
         ),
@@ -617,7 +627,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
           'Bloco EREC com as 4 seções canônicas todas vazias.',
           {
             secoes_encontradas: meta.secoes_encontradas,
-            itens_por_secao: meta.itens_por_secao,
+            itens_por_secao: JSON.stringify(meta.itens_por_secao),
             total_itens: meta.total_itens,
           },
         ),
@@ -632,7 +642,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
         meta.total_itens + ' itens (' + meta.secoes_encontradas.join(' · ') + ')',
         'contagem informativa (referência Aurora = 20 itens: 4+5+5+6)',
         'Contagem de itens do EREC (informativa, não bloqueia).',
-        { itens_por_secao: meta.itens_por_secao },
+        { itens_por_secao: JSON.stringify(meta.itens_por_secao) },
       ),
     )
   }
@@ -800,7 +810,8 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     }
   }
 
-  // R8 — planos_acao: array é ESTRUTURAL (bloqueante); contagem INFORMATIVA
+  // R8 — planos_acao: array é ESTRUTURAL (bloqueante); contagem INFORMATIVA.
+  // E2-I: aceita pac_id OU plano_id (JSON real da Aurora usa plano_id).
   function validarR8(norm, erros, avisos) {
     const pac = norm.planos_acao
     if (!Array.isArray(pac)) {
@@ -817,14 +828,16 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     }
     for (let i = 0; i < pac.length; i++) {
       const p = pac[i]
-      if (!ehObjeto(p) || !p.pac_id) {
+      const idPlano = ehObjeto(p) ? p.pac_id || p.plano_id || null : null
+      if (!idPlano) {
         erros.push(
           erro(
             CODIGOS.PAC,
             'projetos_e_planos.planos_acao[' + i + ']',
-            ehObjeto(p) ? 'faltando: pac_id' : typeof p,
-            'objeto com pac_id',
-            'Plano de ação no índice ' + i + ' sem pac_id ou não é objeto.',
+            ehObjeto(p) ? 'faltando: pac_id ou plano_id' : typeof p,
+            'objeto com pac_id ou plano_id',
+            'Plano de ação no índice ' + i + ' sem pac_id/plano_id ou não é objeto.',
+            { nome_campo_procurado: 'pac_id ou plano_id', encontrado: 'ausente' },
           ),
         )
       }
@@ -935,16 +948,17 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       const p = prj[i]
       if (ehObjeto(p) && p.projeto_id) idsProjetos[String(p.projeto_id)] = true
     }
-    // objetivos_estrategicos (quando presente no pacote) — para validar a FK
+    // E2-I: fonte = norm.objetivos_estrategicos (adaptador: pep ou raiz);
+    // o item pode trazer objetivo_estrategico_id ou objetivo_id.
     const idsObjetivos = {}
     let temListaObjetivos = false
-    const objetivos = pacote && pacote.objetivos_estrategicos
+    const objetivos = norm.objetivos_estrategicos
     if (Array.isArray(objetivos) && objetivos.length > 0) {
       temListaObjetivos = true
       for (let i = 0; i < objetivos.length; i++) {
         const o = objetivos[i]
-        if (ehObjeto(o) && o.objetivo_estrategico_id)
-          idsObjetivos[String(o.objetivo_estrategico_id)] = true
+        const idObj = ehObjeto(o) ? o.objetivo_estrategico_id || o.objetivo_id : null
+        if (idObj) idsObjetivos[String(idObj)] = true
       }
     }
 
@@ -1048,18 +1062,28 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
         ),
       )
     }
-    const hoshin = ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : null
-    if (hoshin !== REFERENCIA_CONTAGENS.hoshin) {
-      avisos.push(
-        aviso(
-          CODIGOS.DESDOBRAMENTO,
-          'projetos_e_planos.matriz_hoshin',
-          hoshin,
-          REFERENCIA_CONTAGENS.hoshin + ' objetivos (referência Aurora — informativo)',
-          'Objetivos da Matriz Hoshin (contagem informativa, não bloqueia).',
-        ),
-      )
-    }
+    // E2-I: matriz_hoshin pode vir como ARRAY (JSON real da Aurora, 7 itens)
+    // ou objeto; contagem + tipo sempre INFORMATIVOS (não bloqueia).
+    const hoshinTipo = Array.isArray(norm.matriz_hoshin)
+      ? 'array'
+      : ehObjeto(norm.matriz_hoshin)
+        ? 'objeto'
+        : 'ausente'
+    const hoshinValor = Array.isArray(norm.matriz_hoshin)
+      ? norm.matriz_hoshin.length
+      : ehObjeto(norm.matriz_hoshin)
+        ? Object.keys(norm.matriz_hoshin).length
+        : null
+    avisos.push(
+      aviso(
+        CODIGOS.DESDOBRAMENTO,
+        'projetos_e_planos.matriz_hoshin',
+        hoshinValor !== null ? hoshinValor + ' itens · tipo_detectado: ' + hoshinTipo : 'ausente',
+        REFERENCIA_CONTAGENS.hoshin + ' objetivos (referência Aurora — informativo)',
+        'Objetivos da Matriz Hoshin (contagem informativa, não bloqueia).',
+        { tipo_detectado: hoshinTipo, itens_encontrados: hoshinValor },
+      ),
+    )
     const rituais = Array.isArray(norm.rituais) ? norm.rituais.length : null
     if (rituais !== REFERENCIA_CONTAGENS.rituais) {
       avisos.push(
@@ -1791,6 +1815,12 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
         okrs: pegar(pep ? pep.okrs : undefined),
         matriz_hoshin: pegar(pep ? pep.matriz_hoshin : undefined),
         rituais: pegar(pep ? pep.rituais_desdobramento : undefined),
+        // E2-I: objetivos_estrategicos vive DENTRO de projetos_e_planos no
+        // JSON real da Aurora; fallback para a raiz (V1) por compatibilidade.
+        objetivos_estrategicos:
+          pegar(pep ? pep.objetivos_estrategicos : undefined) ||
+          pegar(raiz ? raiz.objetivos_estrategicos : undefined) ||
+          [],
       },
     }
   }
@@ -1809,7 +1839,11 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       planos_acao: Array.isArray(norm.planos_acao) ? norm.planos_acao.length : 0,
       etapas: etapas,
       okrs: Array.isArray(norm.okrs) ? norm.okrs.length : 0,
-      hoshin: ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : 0,
+      hoshin: Array.isArray(norm.matriz_hoshin)
+        ? norm.matriz_hoshin.length
+        : ehObjeto(norm.matriz_hoshin)
+          ? Object.keys(norm.matriz_hoshin).length
+          : 0,
       rituais: Array.isArray(norm.rituais) ? norm.rituais.length : 0,
     }
   }
@@ -1925,14 +1959,16 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
     for (let i = 0; i < pac.length; i++) {
       const p = pac[i]
-      if (!ehObjeto(p) || !p.pac_id) {
+      const idPlano = ehObjeto(p) ? p.pac_id || p.plano_id || null : null
+      if (!idPlano) {
         erros.push(
           erro(
             CODIGOS.PAC,
             'projetos_e_planos.planos_acao[' + i + ']',
-            ehObjeto(p) ? 'faltando: pac_id' : typeof p,
-            'objeto com pac_id',
-            'Plano de ação no índice ' + i + ' sem pac_id ou não é objeto.',
+            ehObjeto(p) ? 'faltando: pac_id ou plano_id' : typeof p,
+            'objeto com pac_id ou plano_id',
+            'Plano de ação no índice ' + i + ' sem pac_id/plano_id ou não é objeto.',
+            { nome_campo_procurado: 'pac_id ou plano_id', encontrado: 'ausente' },
           ),
         )
       }
@@ -2029,6 +2065,8 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
   }
 
+  // E2-I: fonte = norm.objetivos_estrategicos (adaptador: pep ou raiz);
+  // o item pode trazer objetivo_estrategico_id ou objetivo_id.
   function validarR11(norm, pacote, erros) {
     const prj = Array.isArray(norm.projetos) ? norm.projetos : []
     const pac = Array.isArray(norm.planos_acao) ? norm.planos_acao : []
@@ -2041,7 +2079,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
     const idsObjetivos = {}
     let temListaObjetivos = false
-    const objetivos = pacote && pacote.objetivos_estrategicos
+    const objetivos = norm.objetivos_estrategicos
     if (Array.isArray(objetivos) && objetivos.length > 0) {
       temListaObjetivos = true
       for (let i = 0; i < objetivos.length; i++) {
@@ -2137,6 +2175,8 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
   }
 
+  // E2-I: matriz_hoshin pode vir como ARRAY (JSON real da Aurora, 7 itens)
+  // ou objeto; contagem + tipo sempre INFORMATIVOS (não bloqueia).
   function validarBonus(norm, avisos) {
     const nOkrs = Array.isArray(norm.okrs) ? norm.okrs.length : null
     if (nOkrs !== REFERENCIA_CONTAGENS.okrs) {
@@ -2150,18 +2190,26 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
         ),
       )
     }
-    const hoshin = ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : null
-    if (hoshin !== REFERENCIA_CONTAGENS.hoshin) {
-      avisos.push(
-        aviso(
-          CODIGOS.DESDOBRAMENTO,
-          'projetos_e_planos.matriz_hoshin',
-          hoshin,
-          REFERENCIA_CONTAGENS.hoshin + ' objetivos (referência Aurora — informativo)',
-          'Objetivos da Matriz Hoshin (contagem informativa, não bloqueia).',
-        ),
-      )
-    }
+    const hoshinTipo = Array.isArray(norm.matriz_hoshin)
+      ? 'array'
+      : ehObjeto(norm.matriz_hoshin)
+        ? 'objeto'
+        : 'ausente'
+    const hoshinValor = Array.isArray(norm.matriz_hoshin)
+      ? norm.matriz_hoshin.length
+      : ehObjeto(norm.matriz_hoshin)
+        ? Object.keys(norm.matriz_hoshin).length
+        : null
+    avisos.push(
+      aviso(
+        CODIGOS.DESDOBRAMENTO,
+        'projetos_e_planos.matriz_hoshin',
+        hoshinValor !== null ? hoshinValor + ' itens · tipo_detectado: ' + hoshinTipo : 'ausente',
+        REFERENCIA_CONTAGENS.hoshin + ' objetivos (referência Aurora — informativo)',
+        'Objetivos da Matriz Hoshin (contagem informativa, não bloqueia).',
+        { tipo_detectado: hoshinTipo, itens_encontrados: hoshinValor },
+      ),
+    )
     const rituais = Array.isArray(norm.rituais) ? norm.rituais.length : null
     if (rituais !== REFERENCIA_CONTAGENS.rituais) {
       avisos.push(
@@ -2378,7 +2426,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
           'Bloco EREC sem as 4 seções canônicas.',
           {
             secoes_encontradas: meta.secoes_encontradas,
-            itens_por_secao: meta.itens_por_secao,
+            itens_por_secao: JSON.stringify(meta.itens_por_secao),
             total_itens: meta.total_itens,
           },
         ),
@@ -2393,7 +2441,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
           'Bloco EREC com as 4 seções canônicas todas vazias.',
           {
             secoes_encontradas: meta.secoes_encontradas,
-            itens_por_secao: meta.itens_por_secao,
+            itens_por_secao: JSON.stringify(meta.itens_por_secao),
             total_itens: meta.total_itens,
           },
         ),
@@ -2407,8 +2455,8 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
         'artefatos_financeiros.erec_a9',
         meta.total_itens + ' itens (' + meta.secoes_encontradas.join(' · ') + ')',
         'contagem informativa (referência Aurora = 20 itens: 4+5+5+6)',
-        'Contagem de itens do EREC (informativa, não bloqueia).',
-        { itens_por_secao: meta.itens_por_secao },
+        'Contagem de itens do EREC A9 (informativa, não bloqueia).',
+        { itens_por_secao: JSON.stringify(meta.itens_por_secao) },
       ),
     )
   }
@@ -2808,7 +2856,11 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       }
     }
     const okrs = Array.isArray(normInfo.okrs) ? normInfo.okrs.length : 0
-    const hoshin = ehObjeto(normInfo.matriz_hoshin) ? Object.keys(normInfo.matriz_hoshin).length : 0
+    const hoshin = Array.isArray(normInfo.matriz_hoshin)
+      ? normInfo.matriz_hoshin.length
+      : ehObjeto(normInfo.matriz_hoshin)
+        ? Object.keys(normInfo.matriz_hoshin).length
+        : 0
     const rituais = Array.isArray(normInfo.rituais) ? normInfo.rituais.length : 0
 
     return e.json(200, {
