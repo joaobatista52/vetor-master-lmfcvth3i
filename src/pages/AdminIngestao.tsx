@@ -50,6 +50,10 @@ interface LeadOpcao {
 interface ErroValidacao {
   codigo: string
   mensagem: string
+  /** E2-F: nome REAL do campo V2.0 validado pela regra (não o normalizado) */
+  componente_validado?: string
+  /** E2-F: bloqueante = impede a ingestão; informativa = apenas reporta */
+  status_regra?: 'bloqueante' | 'informativa'
   detalhe?: unknown
 }
 
@@ -614,6 +618,12 @@ export default function AdminIngestao() {
                         >
                           <span className="font-medium text-destructive">[{err.codigo}]</span>{' '}
                           {err.mensagem}
+                          {(err.componente_validado || err.status_regra) && (
+                            <div className="text-muted-foreground">
+                              Componente validado: {err.componente_validado || '—'}
+                              {err.status_regra ? ` · regra ${err.status_regra}` : ''}
+                            </div>
+                          )}
                           {det && <div className="text-muted-foreground">{det}</div>}
                         </div>
                       )
@@ -626,6 +636,12 @@ export default function AdminIngestao() {
                           className="ml-6 rounded border border-yellow-500/40 bg-yellow-50 p-2 text-xs text-yellow-800"
                         >
                           <span className="font-medium">⚠ [{av.codigo}]</span> {av.mensagem}
+                          {(av.componente_validado || av.status_regra) && (
+                            <div className="text-yellow-700">
+                              Componente validado: {av.componente_validado || '—'}
+                              {av.status_regra ? ` · regra ${av.status_regra}` : ''}
+                            </div>
+                          )}
                           {det && <div className="text-yellow-700">{det}</div>}
                         </div>
                       )

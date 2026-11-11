@@ -5,29 +5,73 @@
  * Rota: POST /backend/v1/pacote-v2/validar
  * Rota: POST /backend/v1/pacote-v2/ingestar
  *
- * ETAPA E2-C — CORREÇÃO ESTRUTURAL ("Invalid module"):
- * A E2-A assumia que require() dentro do callback carregaria
- * `pacote_v2_validacao.js` em tempo de requisição. NÃO funciona no JSVM.
- * CORREÇÃO: TODO o validador vive INLINE dentro de CADA callback (a JSVM
- * executa callbacks em pools de VM separados — nada de topo é visível).
+ * ETAPA E2-F — VALIDAÇÃO COM MAPEAMENTO CORRETO (esta rodada):
+ * O validador antigo procurava campos V1 na raiz (fases, dre, erec,
+ * gabarito_auditoria, projetos, planos_acao, okrs) que não existem no
+ * Pacote V2.0 real (que usa conteudo_fases, artefatos_financeiros.*,
+ * projetos_e_planos.*). Correções:
+ *   1. ADAPTADOR DE CAMPOS (criarPacoteNormalizado): função PURA, trabalha
+ *      sobre leitura (não clona nem muta o pacote original — as regras lêem
+ *      caminhos aninhados dele). Mapeia origem → destino:
+ *        conteudo_fases → fases
+ *        artefatos_financeiros.dre_15_linhas → dre {linhas:[...]}
+ *        artefatos_financeiros.erec_a9 → erec
+ *        artefatos_financeiros.gabarito_a8 → gabarito_auditoria
+ *        nao_trafega → nao_trafega (mantém)
+ *        projetos_e_planos.projetos → projetos
+ *        projetos_e_planos.planos_acao → planos_acao
+ *        projetos_e_planos.okrs → okrs
+ *        projetos_e_planos.matriz_hoshin → matriz_hoshin
+ *        projetos_e_planos.rituais_desdobramento → rituais
+ *      Campo de origem ausente → destino null; presente (mesmo vazio) →
+ *      valor real. Mesma entrada → mesma saída, sem efeito colateral.
+ *   2. PARTIÇÃO EXPLÍCITA DE REGRAS POR PARTE (tabela em código, abaixo):
+ *        PARTE A  → R1, R2, R3, R4, R5, R6
+ *        PARTE B  → R1, R7, R8, R9, R10, R11 + bônus
+ *        PARTE AB → R1..R11 + bônus
+ *      Parte não detectada (null) → validação NÃO roda (415 já existente).
+ *   3. REGRAS AJUSTADAS AO COMANDO 0 V2.0:
+ *      R2 = conteudo_fases com P1..P13 (status ∈ {completo,parcial,bloqueado});
+ *      R3 = DRE 15–18 linhas de conta com "fonte" (mantém E2-C);
+ *      R4 = EREC A9 com 4 seções canônicas (contagem informativa);
+ *      R5 = gabarito A8 aceita 7 OU 8 indicadores (total_indicadores);
+ *      R6 = nao_trafega com 4 booleanos true;
+ *      R7/R8/R9/bônus (okrs/hoshin/rituais) = contagens INFORMATIVAS.
+ *   4. MENSAGENS: cada erro/aviso carrega componente_validado (nome REAL
+ *      V2.0 do campo), encontrado, esperado e status_regra
+ *      (bloqueante | informativa). Códigos PACOTE_V2_* mantidos.
  *
- * GARANTIAS E2-C:
- * 1. TODAS as respostas são JSON formatado — inclusive falha interna:
- *    500 { ok:false, codigo:"PACOTE_V2_ERRO_INTERNO_500", mensagem }
- * 2. Nenhuma regra lança throw — qualquer input defensivo devolve
- *    { ok:false, codigo, mensagem } e, em divergência estrutural,
- *    { encontrado, esperado } no detalhe (modo auditoria).
- * 3. R3 (DRE) NOVA REGRA: conta apenas LINHAS DE CONTA (ignora subtotais
- *    e cabeçalhos); aceita 15 a 18 linhas de conta com AVISO (não erro),
- *    exigindo campo "fonte" em cada linha. Reporta encontrado vs esperado.
+ * CORREÇÃO DE SINTAXE (esta rodada): a tentativa anterior da E2-F (não
+ * commitada) tinha o token solto "migrations" dentro de validarR9 da rota
+ * /validar (linha ~698) — sintaxe inválida que impedia o hook inteiro de
+ * carregar; por isso o validador antigo V1 continuava respondendo em
+ * produção com 403/404/405/406/407/408/409/413. Corrigido.
+ *
+ * GARANTIAS E2-C/E2-E MANTIDAS (E2-E intacta — detecção em 4 níveis, 415/416):
+ * 1. TODAS as respostas são JSON formatado — inclusive falha interna (500).
+ * 2. Nenhuma regra lança throw (regraDefensiva converte exceção em erro).
+ * 3. Detecção de parte em 4 níveis (E2-E) INTACTA — validada e não alterada.
+ * 4. TODO o validador vive INLINE dentro de CADA callback: a JSVM executa
+ *    callbacks em pools de VM separados e require() de módulo local falha
+ *    ("Invalid module") — por isso nada é importado de pacote_v2_validacao.js.
  */
 
 // ============================================================================
-// ROTAS — cada callback é AUTOSSUFICIENTE (zero referências de topo)
+// ROTAS — cada callback é AUTOSSUFICIENTE (zero referências de topo).
+// A TABELA DE PARTIÇÃO (E2-F 2.2) é declarada DENTRO de cada callback:
+//   PARTE A  → ['R1','R2','R3','R4','R5','R6']
+//   PARTE B  → ['R1','R7','R8','R9','R10','R11','BONUS']
+//   PARTE AB → ['R1'..'R11','BONUS']
 // ============================================================================
 
 routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
   // --------------------- Constantes locais do callback ---------------------
+  // TABELA DE PARTIÇÃO DE REGRAS POR PARTE (E2-F 2.2 — declarada em código)
+  const PARTITION_TABLE = {
+    A: ['R1', 'R2', 'R3', 'R4', 'R5', 'R6'],
+    B: ['R1', 'R7', 'R8', 'R9', 'R10', 'R11', 'BONUS'],
+    AB: ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'BONUS'],
+  }
   const CODIGOS = {
     JSON_INVALIDO: 'PACOTE_V2_JSON_INVALIDO_401',
     SCHEMA: 'PACOTE_V2_SCHEMA_INVALIDO_402',
@@ -47,6 +91,16 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     AVISO_DRE: 'PACOTE_V2_DRE_AVISO_404A',
   }
   const CODIGO_INTERNO = 'PACOTE_V2_ERRO_INTERNO_500'
+
+  // Referências de contagem (Aurora) — INFORMATIVAS, não bloqueiam (E2-F 2.3)
+  const REFERENCIA_CONTAGENS = {
+    projetos: 6,
+    planos_acao: 12,
+    etapas: 116,
+    okrs: 7,
+    hoshin: 7,
+    rituais: 5,
+  }
 
   // --------------------- Helpers locais (defensivos) ----------------------
 
@@ -124,7 +178,35 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     return null
   }
 
-  // --------------------- Validadores (11 regras, inline) ------------------
+  // ---------------- E2-F — formatadores de erro/aviso (modo auditoria) ----
+
+  // Descritor compacto do valor encontrado (nunca vaza o objeto inteiro)
+  function descriptorDe(v) {
+    if (v === undefined || v === null) return null
+    if (Array.isArray(v)) return 'array (' + v.length + ' itens)'
+    if (typeof v === 'object') return 'objeto (' + Object.keys(v).length + ' chaves)'
+    return String(v)
+  }
+
+  function erro(codigo, componente, encontrado, esperado, mensagem, extra) {
+    const item = {
+      codigo: codigo,
+      mensagem: mensagem,
+      componente_validado: componente,
+      status_regra: 'bloqueante',
+    }
+    item.detalhe = { encontrado: encontrado === undefined ? null : encontrado, esperado: esperado }
+    if (extra) {
+      for (const k in extra) item.detalhe[k] = extra[k]
+    }
+    return item
+  }
+
+  function aviso(codigo, componente, encontrado, esperado, mensagem, extra) {
+    const item = erro(codigo, componente, encontrado, esperado, mensagem, extra)
+    item.status_regra = 'informativa'
+    return item
+  }
 
   function regraDefensiva(nomeRegra, fn) {
     try {
@@ -141,341 +223,771 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
               nomeRegra +
               ' falhou inesperadamente: ' +
               String(err && err.message ? err.message : err),
+            componente_validado: nomeRegra,
+            status_regra: 'bloqueante',
+            detalhe: { encontrado: null, esperado: null },
           },
         ],
         avisos: [],
+        contagens: null,
       }
     }
   }
 
-  // R1–R3 + R4–R6 (Parte A): schema, fases, DRE, EREC, gabarito, não-tráfega
-  function validarParteA(pacote) {
-    const erros = []
-    const avisos = []
-    if (!ehObjeto(pacote)) {
-      erros.push({
-        codigo: CODIGOS.SCHEMA,
-        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
-      })
-      return { ok: false, erros: erros, avisos: avisos }
+  // ---------------- E2-F — ADAPTADOR DE CAMPOS (V2.0 → normalizado) -------
+  /**
+   * Função PURA: recebe o objeto raiz do pacote e devolve um leitor com os
+   * nomes que as 11 regras conhecem. NÃO muta nem clona o pacote original —
+   * apenas lê caminhos aninhados dele. Mesma entrada → mesma saída.
+   * Origem ausente → destino null; origem presente (mesmo vazia) → valor real.
+   */
+  function criarPacoteNormalizado(pacote) {
+    const raiz = ehObjeto(pacote) ? pacote : null
+    const af = raiz && ehObjeto(raiz.artefatos_financeiros) ? raiz.artefatos_financeiros : null
+    const pep = raiz && ehObjeto(raiz.projetos_e_planos) ? raiz.projetos_e_planos : null
+
+    function pegar(v) {
+      return v === undefined ? null : v
     }
 
-    // R1 — Schema (metadados mínimos)
-    const dossieId = typeof pacote.dossie_id === 'string' ? pacote.dossie_id : ''
-    if (!dossieId) {
-      erros.push({ codigo: CODIGOS.SCHEMA, mensagem: 'Campo obrigatório ausente: dossie_id.' })
-    }
-
-    // R2 — Fases (1..8)
-    const fases = ehObjeto(pacote.fases) ? pacote.fases : null
-    if (!fases) {
-      erros.push({
-        codigo: CODIGOS.FASES,
-        mensagem: 'Bloco "fases" ausente ou inválido (esperado objeto com chaves 1..8).',
-        detalhe: { encontrado: null, esperado: 'objeto com chaves 1..8' },
-      })
-    } else {
-      const chaves = Object.keys(fases)
-      if (chaves.length < 8) {
-        erros.push({
-          codigo: CODIGOS.FASES,
-          mensagem:
-            'Bloco "fases" incompleto: esperadas 8 fases, encontradas ' + chaves.length + '.',
-          detalhe: { encontrado: chaves.length, esperado: 8 },
-        })
+    // DRE: array cru → { linhas: [...] }; objeto com .linhas → mantém;
+    // objeto sem .linhas → { linhas: [] } (presente mas sem linhas).
+    function wrapDre(v) {
+      if (v === undefined) return null
+      if (Array.isArray(v)) return { linhas: v }
+      if (ehObjeto(v)) {
+        if (Array.isArray(v.linhas)) return v
+        return { linhas: [] }
       }
-      for (let i = 1; i <= 8; i++) {
-        if (!ehObjeto(fases[String(i)])) {
-          erros.push({
-            codigo: CODIGOS.FASES,
-            mensagem: 'Fase ' + i + ' ausente ou inválida no bloco "fases".',
-            detalhe: { encontrado: chaves.join(','), esperado: 'fase ' + i + ' presente' },
-          })
-        }
-      }
+      return v
     }
 
-    // R3 — DRE (NOVA REGRA E2-C): conta apenas LINHAS DE CONTA (ignora
-    // subtotais e cabeçalhos); aceita 15 a 18 com AVISO, exigindo "fonte".
-    let dre = pacote.dre
-    if (!ehObjeto(dre) && Array.isArray(pacote.dre)) {
-      dre = { linhas: pacote.dre }
+    return {
+      original: pacote,
+      norm: {
+        fases: pegar(raiz ? raiz.conteudo_fases : undefined),
+        dre: wrapDre(af ? af.dre_15_linhas : undefined),
+        erec: pegar(af ? af.erec_a9 : undefined),
+        gabarito_auditoria: pegar(af ? af.gabarito_a8 : undefined),
+        nao_trafega: pegar(raiz ? raiz.nao_trafega : undefined),
+        projetos: pegar(pep ? pep.projetos : undefined),
+        planos_acao: pegar(pep ? pep.planos_acao : undefined),
+        okrs: pegar(pep ? pep.okrs : undefined),
+        matriz_hoshin: pegar(pep ? pep.matriz_hoshin : undefined),
+        rituais: pegar(pep ? pep.rituais_desdobramento : undefined),
+      },
     }
+  }
+
+  // Contagens encontradas (informativas) para o resumo da resposta
+  function contagensNorm(norm) {
+    let etapas = 0
+    if (Array.isArray(norm.planos_acao)) {
+      for (let i = 0; i < norm.planos_acao.length; i++) {
+        const p = norm.planos_acao[i]
+        if (p && Array.isArray(p.etapas)) etapas += p.etapas.length
+      }
+    }
+    return {
+      fases: ehObjeto(norm.fases) ? Object.keys(norm.fases).length : 0,
+      projetos: Array.isArray(norm.projetos) ? norm.projetos.length : 0,
+      planos_acao: Array.isArray(norm.planos_acao) ? norm.planos_acao.length : 0,
+      etapas: etapas,
+      okrs: Array.isArray(norm.okrs) ? norm.okrs.length : 0,
+      hoshin: ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : 0,
+      rituais: Array.isArray(norm.rituais) ? norm.rituais.length : 0,
+    }
+  }
+
+  // ------------------- Regras (E2-F — leitura do pacote NORMALIZADO) ------
+
+  // R1 — schema_versao + dossie_id (estrutural, bloqueante; roda em A, B e AB)
+  function validarR1(pacote, erros) {
+    const sv = typeof pacote.schema_versao === 'string' ? pacote.schema_versao.trim() : ''
+    if (!sv) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'schema_versao',
+          null,
+          'string iniciada por "2." (ex.: 2.0)',
+          'Campo obrigatório ausente: schema_versao.',
+        ),
+      )
+    } else if (!/^2\./.test(sv)) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'schema_versao',
+          sv,
+          'string iniciada por "2." (ex.: 2.0)',
+          'schema_versao fora do padrão do Pacote V2.0.',
+        ),
+      )
+    }
+    const did = typeof pacote.dossie_id === 'string' ? pacote.dossie_id.trim() : ''
+    if (!did) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'dossie_id',
+          null,
+          'string não vazia',
+          'Campo obrigatório ausente: dossie_id.',
+        ),
+      )
+    }
+  }
+
+  // R2 — conteudo_fases: objeto com P1..P13, status ∈ {completo,parcial,bloqueado}
+  function validarR2(norm, erros) {
+    const fases = norm.fases
+    if (!ehObjeto(fases)) {
+      erros.push(
+        erro(
+          CODIGOS.FASES,
+          'conteudo_fases',
+          descriptorDe(fases),
+          'objeto com fases P1..P13',
+          'Bloco "conteudo_fases" ausente ou inválido (esperado objeto com P1..P13).',
+        ),
+      )
+      return
+    }
+    const faltando = []
+    for (let i = 1; i <= 13; i++) {
+      if (!ehObjeto(fases['P' + i])) faltando.push('P' + i)
+    }
+    if (faltando.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.FASES,
+          'conteudo_fases',
+          'faltando: ' + faltando.join(', '),
+          '13 fases P1..P13, cada uma objeto',
+          'Bloco "conteudo_fases" incompleto: fases ausentes ou não-objeto.',
+        ),
+      )
+    }
+    const statusInvalidos = []
+    const chaves = Object.keys(fases)
+    for (let i = 0; i < chaves.length; i++) {
+      const f = fases[chaves[i]]
+      if (!ehObjeto(f)) continue
+      const st = typeof f.status === 'string' ? f.status.trim().toLowerCase() : ''
+      if (st !== 'completo' && st !== 'parcial' && st !== 'bloqueado') {
+        statusInvalidos.push(chaves[i] + '="' + st + '"')
+      }
+    }
+    if (statusInvalidos.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.FASES,
+          'conteudo_fases',
+          statusInvalidos.join(', '),
+          'status de cada fase ∈ {completo, parcial, bloqueado}',
+          'Fases com status ausente ou fora dos valores canônicos.',
+        ),
+      )
+    }
+  }
+
+  // R3 — DRE (mantém E2-C): 15–18 linhas de conta com "fonte" em cada
+  function validarR3(norm, erros, avisos) {
+    const dre = norm.dre
     if (!ehObjeto(dre)) {
-      erros.push({
-        codigo: CODIGOS.DRE,
-        mensagem: 'Bloco "dre" ausente ou inválido (esperado objeto com array "linhas").',
-        detalhe: { encontrado: null, esperado: 'objeto { linhas: [...] }' },
-      })
-    } else {
-      const linhas = Array.isArray(dre.linhas) ? dre.linhas : []
-      const linhasConta = []
-      const linhasIgnoradas = []
-      for (let i = 0; i < linhas.length; i++) {
-        const l = linhas[i]
-        if (!ehObjeto(l)) {
-          continue
-        }
-        const rotulo = String(l.linha || l.rotulo || l.conta || l.nome || '').trim()
-        if (!rotulo) {
-          continue
-        }
-        const ehSubtotal =
-          /^(=|\(-\)|\(\+\)|\(\+\/-\)|subtotal|total|demonstração)/i.test(rotulo) ||
-          /^receita\s+bruta$|^receita\s+l[íi]quida$|^margem\s+bruta$|^margem\s+de\s+contribui[çc][ãa]o$|^ebitda$|^ebit\b|^lucro\s+l[íi]quido$|^ebt\b/i.test(
-            rotulo,
-          )
-        if (ehSubtotal) {
-          linhasIgnoradas.push(rotulo)
-          continue
-        }
-        linhasConta.push(l)
+      erros.push(
+        erro(
+          CODIGOS.DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          descriptorDe(dre),
+          'objeto com array "linhas" (15 a 18 linhas de conta)',
+          'Bloco DRE (dre_15_linhas) ausente ou inválido.',
+        ),
+      )
+      return
+    }
+    const linhas = Array.isArray(dre.linhas) ? dre.linhas : []
+    const linhasConta = []
+    const linhasIgnoradas = []
+    for (let i = 0; i < linhas.length; i++) {
+      const l = linhas[i]
+      if (!ehObjeto(l)) continue
+      const rotulo = String(l.linha || l.rotulo || l.conta || l.nome || '').trim()
+      if (!rotulo) continue
+      const ehSubtotal =
+        /^(=|\(-\)|\(\+\)|\(\+\/-\)|subtotal|total|demonstração)/i.test(rotulo) ||
+        /^receita\s+bruta$|^receita\s+l[íi]quida$|^margem\s+bruta$|^margem\s+de\s+contribui[çc][ãa]o$|^ebitda$|^ebit\b|^lucro\s+l[íi]quido$|^ebt\b/i.test(
+          rotulo,
+        )
+      if (ehSubtotal) {
+        linhasIgnoradas.push(rotulo)
+        continue
       }
-      const qtdConta = linhasConta.length
-      const semFonte = []
-      for (let i = 0; i < linhasConta.length; i++) {
-        const f = linhasConta[i].fonte
-        const temFonte = typeof f === 'string' ? f.trim().length > 0 : !!f
-        if (!temFonte) {
-          semFonte.push(linhasConta[i].linha || linhasConta[i].rotulo || 'linha ' + (i + 1))
-        }
-      }
-      if (qtdConta < 15 || qtdConta > 18) {
-        erros.push({
-          codigo: CODIGOS.DRE,
-          mensagem:
-            'DRE fora da faixa aceitável de LINHAS DE CONTA (15 a 18, ignorando subtotais e cabeçalhos).',
-          detalhe: {
-            encontrado: qtdConta,
-            esperado: '15 a 18 linhas de conta',
-            ignoradas: linhasIgnoradas.length,
-          },
-        })
-      } else if (qtdConta !== 15) {
-        avisos.push({
-          codigo: CODIGOS.AVISO_DRE,
-          mensagem:
-            'DRE com ' +
+      linhasConta.push(l)
+    }
+    const qtdConta = linhasConta.length
+    if (qtdConta < 15 || qtdConta > 18) {
+      erros.push(
+        erro(
+          CODIGOS.DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          qtdConta,
+          '15 a 18 linhas de conta (ignorando subtotais e cabeçalhos)',
+          'DRE fora da faixa aceitável de LINHAS DE CONTA.',
+          { ignoradas: linhasIgnoradas.length },
+        ),
+      )
+    } else if (qtdConta !== 15) {
+      avisos.push(
+        aviso(
+          CODIGOS.AVISO_DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          qtdConta,
+          15,
+          'DRE com ' +
             qtdConta +
             ' linhas de conta (faixa 15–18 aceita com aviso; padrão canônico = 15).',
-          detalhe: { encontrado: qtdConta, esperado: 15 },
-        })
-      }
-      if (semFonte.length > 0) {
-        erros.push({
-          codigo: CODIGOS.DRE,
-          mensagem: 'Linhas de conta da DRE sem o campo obrigatório "fonte".',
-          detalhe: {
-            encontrado: semFonte.length + ' sem fonte',
-            esperado: 'todas com fonte',
-            linhas: semFonte,
-          },
-        })
+        ),
+      )
+    }
+    const semFonte = []
+    for (let i = 0; i < linhasConta.length; i++) {
+      const f = linhasConta[i].fonte
+      const temFonte = typeof f === 'string' ? f.trim().length > 0 : !!f
+      if (!temFonte) {
+        semFonte.push(linhasConta[i].linha || linhasConta[i].rotulo || 'linha ' + (i + 1))
       }
     }
-
-    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+    if (semFonte.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          semFonte.length + ' linha(s) sem fonte',
+          'todas as linhas de conta com "fonte"',
+          'Linhas de conta da DRE sem o campo obrigatório "fonte".',
+          { linhas: semFonte },
+        ),
+      )
+    }
   }
 
-  // R4–R11 (Parte B): EREC, gabarito, não-tráfega, PRJ, PAC, etapas, 5W2H, OKRs
-  function validarParteB(pacote) {
-    const erros = []
-    const avisos = []
-    if (!ehObjeto(pacote)) {
-      erros.push({
-        codigo: CODIGOS.SCHEMA,
-        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
-      })
-      return { ok: false, erros: erros, avisos: avisos }
+  // R4 — EREC A9: objeto com 4 seções canônicas; contagem INFORMATIVA
+  function validarR4(norm, erros, avisos) {
+    const erec = norm.erec
+    if (!ehObjeto(erec)) {
+      erros.push(
+        erro(
+          CODIGOS.EREC,
+          'artefatos_financeiros.erec_a9',
+          descriptorDe(erec),
+          'objeto com 4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'Bloco EREC (erec_a9) ausente ou inválido.',
+        ),
+      )
+      return
     }
+    const mapaSecoes = {}
+    const chaves = Object.keys(erec)
+    for (let i = 0; i < chaves.length; i++) {
+      mapaSecoes[String(chaves[i]).trim().toLowerCase()] = erec[chaves[i]]
+    }
+    const secoes = ['eliminar', 'reduzir', 'elevar', 'criar']
+    const faltando = []
+    const porSecao = []
+    let totalItens = 0
+    for (let i = 0; i < secoes.length; i++) {
+      const s = secoes[i]
+      const v = mapaSecoes[s]
+      if (v === undefined) {
+        faltando.push(s)
+        porSecao.push(s + ': ausente')
+        continue
+      }
+      const n = Array.isArray(v) ? v.length : ehObjeto(v) ? Object.keys(v).length : 0
+      totalItens += n
+      porSecao.push(s + ': ' + n)
+    }
+    if (faltando.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.EREC,
+          'artefatos_financeiros.erec_a9',
+          'faltando seções: ' + faltando.join(', '),
+          '4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'Bloco EREC sem as 4 seções canônicas.',
+        ),
+      )
+    }
+    // Contagem de itens é INFORMATIVA (Aurora = 20: 4+5+5+6)
+    avisos.push(
+      aviso(
+        CODIGOS.EREC,
+        'artefatos_financeiros.erec_a9',
+        totalItens + ' itens (' + porSecao.join(' · ') + ')',
+        'contagem informativa (referência Aurora = 20 itens: 4+5+5+6)',
+        'Contagem de itens do EREC (informativa, não bloqueia).',
+      ),
+    )
+  }
 
-    // R4 — EREC (13 linhas)
-    const erec = pacote.erec
-    const linhasErec = Array.isArray(erec && erec.linhas)
-      ? erec.linhas
-      : Array.isArray(erec)
-        ? erec
-        : null
-    if (!linhasErec) {
-      erros.push({
-        codigo: CODIGOS.EREC,
-        mensagem: 'Bloco "erec" ausente ou inválido (esperado array ou objeto { linhas }).',
-        detalhe: { encontrado: null, esperado: 13 },
-      })
-    } else {
-      const conta = linhasErec.filter(function (l) {
-        return ehObjeto(l)
-      }).length
-      if (conta !== 13) {
-        erros.push({
-          codigo: CODIGOS.EREC,
-          mensagem: 'Quantidade de linhas do EREC divergente.',
-          detalhe: { encontrado: conta, esperado: 13 },
-        })
+  // R5 — gabarito A8: aceita 7 OU 8 indicadores (declara total_indicadores)
+  function validarR5(norm, erros) {
+    const g = norm.gabarito_auditoria
+    if (!ehObjeto(g) && !Array.isArray(g)) {
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          descriptorDe(g),
+          'objeto (ou array) com 7 ou 8 indicadores',
+          'Bloco gabarito_a8 (gabarito de auditoria) ausente ou inválido.',
+          { total_indicadores: 0 },
+        ),
+      )
+      return
+    }
+    const total = Array.isArray(g) ? g.length : Object.keys(g).length
+    if (total !== 7 && total !== 8) {
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          total,
+          '7 ou 8 indicadores',
+          'Gabarito de auditoria (gabarito_a8) com quantidade de indicadores inválida.',
+          { total_indicadores: total },
+        ),
+      )
+    }
+  }
+
+  // R6 — nao_trafega: 4 booleanos = true (só Parte A)
+  function validarR6(norm, erros) {
+    const nt = norm.nao_trafega
+    if (!ehObjeto(nt)) {
+      erros.push(
+        erro(
+          CODIGOS.NAOTRAFEGA,
+          'nao_trafega',
+          descriptorDe(nt),
+          'objeto com 4 booleanos true (prompts_sintese, regras_orquestracao, curadoria_base, raciocinio_interno)',
+          'Bloco "nao_trafega" ausente ou inválido.',
+        ),
+      )
+      return
+    }
+    const chaves = [
+      'prompts_sintese',
+      'regras_orquestracao',
+      'curadoria_base',
+      'raciocinio_interno',
+    ]
+    const falsos = []
+    for (let i = 0; i < chaves.length; i++) {
+      const v = nt[chaves[i]]
+      if (v !== true) falsos.push(chaves[i] + '=' + (v === undefined ? 'ausente' : String(v)))
+    }
+    if (falsos.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.NAOTRAFEGA,
+          'nao_trafega',
+          falsos.join(', '),
+          'os 4 booleanos = true',
+          'Bloco "nao_trafega" com sinalizações falsas ou ausentes.',
+        ),
+      )
+    }
+  }
+
+  // R7 — projetos: array é ESTRUTURAL (bloqueante); contagem INFORMATIVA
+  function validarR7(norm, erros, avisos) {
+    const prj = norm.projetos
+    if (!Array.isArray(prj)) {
+      erros.push(
+        erro(
+          CODIGOS.PRJ,
+          'projetos_e_planos.projetos',
+          descriptorDe(prj),
+          'array de projetos',
+          'Bloco "projetos" ausente ou não é array.',
+        ),
+      )
+      return
+    }
+    for (let i = 0; i < prj.length; i++) {
+      const p = prj[i]
+      if (!ehObjeto(p)) {
+        erros.push(
+          erro(
+            CODIGOS.PRJ,
+            'projetos_e_planos.projetos[' + i + ']',
+            typeof p,
+            'objeto com projeto_id e projeto_nome',
+            'Projeto no índice ' + i + ' não é objeto.',
+          ),
+        )
+        continue
+      }
+      const faltandoCampos = []
+      if (!p.projeto_id) faltandoCampos.push('projeto_id')
+      if (!p.projeto_nome) faltandoCampos.push('projeto_nome')
+      if (faltandoCampos.length > 0) {
+        erros.push(
+          erro(
+            CODIGOS.PRJ,
+            'projetos_e_planos.projetos[' + i + ']',
+            'faltando: ' + faltandoCampos.join(', '),
+            'projeto_id + projeto_nome',
+            'Projeto no índice ' + i + ' sem campos obrigatórios.',
+          ),
+        )
       }
     }
-
-    // R5 — Gabarito de auditoria
-    if (!ehObjeto(pacote.gabarito_auditoria)) {
-      erros.push({
-        codigo: CODIGOS.GABARITO,
-        mensagem: 'Bloco "gabarito_auditoria" ausente ou inválido.',
-        detalhe: { encontrado: null, esperado: 'objeto com 8 fases' },
-      })
+    if (prj.length !== REFERENCIA_CONTAGENS.projetos) {
+      avisos.push(
+        aviso(
+          CODIGOS.PRJ,
+          'projetos_e_planos.projetos',
+          prj.length,
+          REFERENCIA_CONTAGENS.projetos + ' (referência Aurora — informativo)',
+          'Quantidade de projetos (contagem informativa, não bloqueia).',
+        ),
+      )
     }
+  }
 
-    // R6 — Não-tráfega (proibições)
-    if (!ehObjeto(pacote.nao_trafega)) {
-      erros.push({
-        codigo: CODIGOS.NAOTRAFEGA,
-        mensagem: 'Bloco "nao_trafega" ausente ou inválido.',
-        detalhe: { encontrado: null, esperado: 'objeto de proibições' },
-      })
+  // R8 — planos_acao: array é ESTRUTURAL (bloqueante); contagem INFORMATIVA
+  function validarR8(norm, erros, avisos) {
+    const pac = norm.planos_acao
+    if (!Array.isArray(pac)) {
+      erros.push(
+        erro(
+          CODIGOS.PAC,
+          'projetos_e_planos.planos_acao',
+          descriptorDe(pac),
+          'array de planos de ação',
+          'Bloco "planos_acao" ausente ou não é array.',
+        ),
+      )
+      return
     }
-
-    // R7 — Projetos (PRJ): 6 esperados
-    const prj = Array.isArray(pacote.projetos) ? pacote.projetos : null
-    if (!prj) {
-      erros.push({
-        codigo: CODIGOS.PRJ,
-        mensagem: 'Bloco "projetos" ausente ou não é array.',
-        detalhe: { encontrado: null, esperado: 6 },
-      })
-    } else {
-      if (prj.length !== 6) {
-        erros.push({
-          codigo: CODIGOS.PRJ,
-          mensagem: 'Quantidade de projetos divergente.',
-          detalhe: { encontrado: prj.length, esperado: 6 },
-        })
-      }
-      for (let i = 0; i < prj.length; i++) {
-        const p = prj[i]
-        if (!ehObjeto(p)) {
-          erros.push({
-            codigo: CODIGOS.PRJ,
-            mensagem: 'Projeto no índice ' + i + ' não é objeto.',
-            detalhe: { encontrado: typeof p, esperado: 'objeto' },
-          })
-          continue
-        }
-        if (!p.projeto_id || !p.projeto_nome) {
-          erros.push({
-            codigo: CODIGOS.PRJ,
-            mensagem: 'Projeto no índice ' + i + ' sem projeto_id ou projeto_nome.',
-            detalhe: {
-              encontrado: Object.keys(p).join(','),
-              esperado: 'projeto_id + projeto_nome',
-            },
-          })
-        }
+    for (let i = 0; i < pac.length; i++) {
+      const p = pac[i]
+      if (!ehObjeto(p) || !p.pac_id) {
+        erros.push(
+          erro(
+            CODIGOS.PAC,
+            'projetos_e_planos.planos_acao[' + i + ']',
+            ehObjeto(p) ? 'faltando: pac_id' : typeof p,
+            'objeto com pac_id',
+            'Plano de ação no índice ' + i + ' sem pac_id ou não é objeto.',
+          ),
+        )
       }
     }
-
-    // R8 — Planos de ação (PAC): 12 esperados
-    const pac = Array.isArray(pacote.planos_acao) ? pacote.planos_acao : null
-    if (!pac) {
-      erros.push({
-        codigo: CODIGOS.PAC,
-        mensagem: 'Bloco "planos_acao" ausente ou não é array.',
-        detalhe: { encontrado: null, esperado: 12 },
-      })
-    } else {
-      if (pac.length !== 12) {
-        erros.push({
-          codigo: CODIGOS.PAC,
-          mensagem: 'Quantidade de planos de ação divergente.',
-          detalhe: { encontrado: pac.length, esperado: 12 },
-        })
-      }
-      for (let i = 0; i < pac.length; i++) {
-        const p = pac[i]
-        if (!ehObjeto(p) || !p.pac_id) {
-          erros.push({
-            codigo: CODIGOS.PAC,
-            mensagem: 'Plano de ação no índice ' + i + ' sem pac_id ou não é objeto.',
-            detalhe: { encontrado: typeof p, esperado: 'objeto com pac_id' },
-          })
-        }
-      }
+    if (pac.length !== REFERENCIA_CONTAGENS.planos_acao) {
+      avisos.push(
+        aviso(
+          CODIGOS.PAC,
+          'projetos_e_planos.planos_acao',
+          pac.length,
+          REFERENCIA_CONTAGENS.planos_acao + ' (referência Aurora — informativo)',
+          'Quantidade de planos de ação (contagem informativa, não bloqueia).',
+        ),
+      )
     }
+  }
 
-    // R9 — Etapas (116) e R10 — 5W2H de cada etapa
+  // R9 — soma de etapas: INFORMATIVA (reporta o total, não bloqueia)
+  function validarR9(norm, avisos) {
+    const pac = norm.planos_acao
     let totalEtapas = 0
     if (Array.isArray(pac)) {
       for (let i = 0; i < pac.length; i++) {
         const p = pac[i]
-        const etapasDoPac = p && Array.isArray(p.etapas) ? p.etapas : []
-        totalEtapas += etapasDoPac.length
-        for (let j = 0; j < etapasDoPac.length; j++) {
-          const et = etapasDoPac[j]
-          if (!ehObjeto(et)) {
-            erros.push({
-              codigo: CODIGOS.W2H,
-              mensagem: 'Etapa ' + j + ' do PAC ' + (i + 1) + ' não é objeto.',
-              detalhe: { encontrado: typeof et, esperado: 'objeto com 5W2H' },
-            })
-            continue
-          }
-          const chaves5W2H = ['what', 'why', 'who', 'when', 'where', 'how', 'how_much']
-          const faltando = chaves5W2H.filter(function (k) {
-            const v = et[k]
-            return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
-          })
-          if (faltando.length > 0) {
-            erros.push({
-              codigo: CODIGOS.W2H,
-              mensagem: 'Etapa ' + j + ' do PAC ' + (i + 1) + ' com 5W2H incompleto.',
-              detalhe: {
-                encontrado: 'faltando: ' + faltando.join(', '),
-                esperado: chaves5W2H.join(', '),
-              },
-            })
-          }
-        }
-      }
-      if (totalEtapas !== 116) {
-        erros.push({
-          codigo: CODIGOS.ETAPAS,
-          mensagem: 'Total de etapas divergente (soma dos planos de ação).',
-          detalhe: { encontrado: totalEtapas, esperado: 116 },
-        })
+        if (p && Array.isArray(p.etapas)) totalEtapas += p.etapas.length
       }
     }
-
-    // R11 — OKRs (7) e matriz Hoshin (7 objetivos)
-    const okrs = Array.isArray(pacote.okrs) ? pacote.okrs : null
-    if (!okrs) {
-      erros.push({
-        codigo: CODIGOS.DESDOBRAMENTO,
-        mensagem: 'Bloco "okrs" ausente ou não é array.',
-        detalhe: { encontrado: null, esperado: 7 },
-      })
-    } else if (okrs.length !== 7) {
-      erros.push({
-        codigo: CODIGOS.DESDOBRAMENTO,
-        mensagem: 'Quantidade de OKRs divergente.',
-        detalhe: { encontrado: okrs.length, esperado: 7 },
-      })
+    if (totalEtapas !== REFERENCIA_CONTAGENS.etapas) {
+      avisos.push(
+        aviso(
+          CODIGOS.ETAPAS,
+          'projetos_e_planos.planos_acao[].etapas',
+          totalEtapas,
+          REFERENCIA_CONTAGENS.etapas + ' (referência Aurora — informativo)',
+          'Total de etapas (soma dos planos de ação) — contagem informativa, não bloqueia.',
+        ),
+      )
     }
-    const hoshin = ehObjeto(pacote.matriz_hoshin) ? Object.keys(pacote.matriz_hoshin).length : 0
-    if (hoshin !== 7) {
-      avisos.push({
-        codigo: CODIGOS.DESDOBRAMENTO,
-        mensagem: 'Matriz Hoshin com quantidade de objetivos divergente (contagem indicativa).',
-        detalhe: { encontrado: hoshin, esperado: 7 },
-      })
-    }
-
-    return { ok: erros.length === 0, erros: erros, avisos: avisos }
   }
 
-  // ---------- ETAPA E2-E: DETECÇÃO DE PARTE EM 4 NÍVEIS ----------
-  // Causa-raiz E2-E: Pacote V2.0 usa "conteudo_fases" e "projetos_e_planos"
-  // (com valor null na Parte A). O detectarParte antigo olhava chaves
-  // inexistentes (dre/fases/projetos/planos_acao/okrs) → 415 na Parte A real.
+  // R10 — 5W2H de cada etapa: ESTRUTURAL (bloqueante). Aceita chaves em PT
+  // (o_que, por_que, onde, quem, quando, como, quanto) e o placeholder
+  // "[REQUER VERIFICAÇÃO..." no campo quanto.
+  function validarR10(norm, erros) {
+    const pac = norm.planos_acao
+    if (!Array.isArray(pac)) return
+    const dimensoesPT = {
+      o_que: 'what',
+      por_que: 'why',
+      onde: 'where',
+      quem: 'who',
+      quando: 'when',
+      como: 'how',
+      quanto: 'how_much',
+    }
+    const nomes = Object.keys(dimensoesPT)
+    for (let i = 0; i < pac.length; i++) {
+      const p = pac[i]
+      const etapas = p && Array.isArray(p.etapas) ? p.etapas : []
+      for (let j = 0; j < etapas.length; j++) {
+        const et = etapas[j]
+        if (!ehObjeto(et)) {
+          erros.push(
+            erro(
+              CODIGOS.W2H,
+              'projetos_e_planos.planos_acao[' + i + '].etapas[' + j + ']',
+              typeof et,
+              'objeto com 5W2H',
+              'Etapa ' + j + ' do plano ' + i + ' não é objeto (5W2H inexistente).',
+            ),
+          )
+          continue
+        }
+        const faltando = []
+        for (let k = 0; k < nomes.length; k++) {
+          const pt = nomes[k]
+          let v = et[pt]
+          if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
+            v = et[dimensoesPT[pt]]
+          }
+          if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
+            faltando.push(pt)
+          }
+        }
+        if (faltando.length > 0) {
+          erros.push(
+            erro(
+              CODIGOS.W2H,
+              'projetos_e_planos.planos_acao[' + i + '].etapas[' + j + ']',
+              'faltando: ' + faltando.join(', '),
+              '7 dimensões 5W2H (o_que, por_que, onde, quem, quando, como, quanto)',
+              'Etapa ' + j + ' do plano ' + i + ' com 5W2H incompleto.',
+            ),
+          )
+        }
+      }
+    }
+  }
 
-  // "presente_não_vazio" | "null" | "ausente" (para objetos)
+  // R11 — FKs: objetivo_estrategico_id (projetos), projeto_id (planos, okrs)
+  function validarR11(norm, pacote, erros) {
+    const prj = Array.isArray(norm.projetos) ? norm.projetos : []
+    const pac = Array.isArray(norm.planos_acao) ? norm.planos_acao : []
+    const okrs = Array.isArray(norm.okrs) ? norm.okrs : []
+
+    const idsProjetos = {}
+    for (let i = 0; i < prj.length; i++) {
+      const p = prj[i]
+      if (ehObjeto(p) && p.projeto_id) idsProjetos[String(p.projeto_id)] = true
+    }
+    // objetivos_estrategicos (quando presente no pacote) — para validar a FK
+    const idsObjetivos = {}
+    let temListaObjetivos = false
+    const objetivos = pacote && pacote.objetivos_estrategicos
+    if (Array.isArray(objetivos) && objetivos.length > 0) {
+      temListaObjetivos = true
+      for (let i = 0; i < objetivos.length; i++) {
+        const o = objetivos[i]
+        if (ehObjeto(o) && o.objetivo_estrategico_id)
+          idsObjetivos[String(o.objetivo_estrategico_id)] = true
+      }
+    }
+
+    for (let i = 0; i < prj.length; i++) {
+      const p = prj[i]
+      if (!ehObjeto(p)) continue
+      const fk = p.objetivo_estrategico_id
+      if (fk === undefined || fk === null || String(fk).trim() === '') {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.projetos[' + i + '].objetivo_estrategico_id',
+            null,
+            'id de objetivo estratégico',
+            'Projeto ' + i + ' sem objetivo_estrategico_id (FK).',
+          ),
+        )
+        continue
+      }
+      if (temListaObjetivos && !idsObjetivos[String(fk)]) {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.projetos[' + i + '].objetivo_estrategico_id',
+            String(fk),
+            'id presente em objetivos_estrategicos',
+            'FK objetivo_estrategico_id não encontrada na lista de objetivos.',
+          ),
+        )
+      }
+    }
+    for (let i = 0; i < pac.length; i++) {
+      const p = pac[i]
+      if (!ehObjeto(p)) continue
+      const fk = p.projeto_id
+      if (fk === undefined || fk === null || String(fk).trim() === '') {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.planos_acao[' + i + '].projeto_id',
+            null,
+            'projeto_id existente',
+            'Plano de ação ' + i + ' sem projeto_id (FK).',
+          ),
+        )
+        continue
+      }
+      if (!idsProjetos[String(fk)]) {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.planos_acao[' + i + '].projeto_id',
+            String(fk),
+            'projeto_id existente em projetos_e_planos.projetos',
+            'FK projeto_id do plano de ação não encontrada na lista de projetos.',
+          ),
+        )
+      }
+    }
+    for (let i = 0; i < okrs.length; i++) {
+      const o = okrs[i]
+      if (!ehObjeto(o)) continue
+      const fk = o.projeto_id
+      if (fk === undefined || fk === null || String(fk).trim() === '') {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.okrs[' + i + '].projeto_id',
+            null,
+            'projeto_id existente',
+            'OKR ' + i + ' sem projeto_id (FK).',
+          ),
+        )
+        continue
+      }
+      if (!idsProjetos[String(fk)]) {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.okrs[' + i + '].projeto_id',
+            String(fk),
+            'projeto_id existente em projetos_e_planos.projetos',
+            'FK projeto_id do OKR não encontrada na lista de projetos.',
+          ),
+        )
+      }
+    }
+  }
+
+  // Bônus — okrs/hoshin/rituais: contagens INFORMATIVAS (não bloqueiam)
+  function validarBonus(norm, avisos) {
+    const nOkrs = Array.isArray(norm.okrs) ? norm.okrs.length : null
+    if (nOkrs !== REFERENCIA_CONTAGENS.okrs) {
+      avisos.push(
+        aviso(
+          CODIGOS.DESDOBRAMENTO,
+          'projetos_e_planos.okrs',
+          nOkrs,
+          REFERENCIA_CONTAGENS.okrs + ' (referência Aurora — informativo)',
+          'Quantidade de OKRs (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+    const hoshin = ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : null
+    if (hoshin !== REFERENCIA_CONTAGENS.hoshin) {
+      avisos.push(
+        aviso(
+          CODIGOS.DESDOBRAMENTO,
+          'projetos_e_planos.matriz_hoshin',
+          hoshin,
+          REFERENCIA_CONTAGENS.hoshin + ' objetivos (referência Aurora — informativo)',
+          'Objetivos da Matriz Hoshin (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+    const rituais = Array.isArray(norm.rituais) ? norm.rituais.length : null
+    if (rituais !== REFERENCIA_CONTAGENS.rituais) {
+      avisos.push(
+        aviso(
+          CODIGOS.DESDOBRAMENTO,
+          'projetos_e_planos.rituais_desdobramento',
+          rituais,
+          REFERENCIA_CONTAGENS.rituais + ' (referência Aurora — informativo)',
+          'Quantidade de rituais de desdobramento (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+  }
+
+  // ---------- Composições por partição (tabela PARTITION_TABLE, topo) -----
+
+  function validarParteA(pacote) {
+    const erros = []
+    const avisos = []
+    if (!ehObjeto(pacote)) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'pacote',
+          null,
+          'objeto JSON',
+          'Pacote ausente ou não é um objeto JSON válido.',
+        ),
+      )
+      return { ok: false, erros: erros, avisos: avisos, contagens: null }
+    }
+    const norm = criarPacoteNormalizado(pacote).norm
+    validarR1(pacote, erros) // PARTE A valida: R1
+    validarR2(norm, erros) // R2 (conteudo_fases P1..P13)
+    validarR3(norm, erros, avisos) // R3 (DRE 15 linhas)
+    validarR4(norm, erros, avisos) // R4 (EREC A9, 4 seções)
+    validarR5(norm, erros) // R5 (gabarito A8, 7 ou 8)
+    validarR6(norm, erros) // R6 (nao_trafega, 4 true)
+    return { ok: erros.length === 0, erros: erros, avisos: avisos, contagens: contagensNorm(norm) }
+  }
+
+  function validarParteB(pacote) {
+    const erros = []
+    const avisos = []
+    if (!ehObjeto(pacote)) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'pacote',
+          null,
+          'objeto JSON',
+          'Pacote ausente ou não é um objeto JSON válido.',
+        ),
+      )
+      return { ok: false, erros: erros, avisos: avisos, contagens: null }
+    }
+    const norm = criarPacoteNormalizado(pacote).norm
+    validarR1(pacote, erros) // PARTE B valida: R1
+    validarR7(norm, erros, avisos) // R7 (projetos — estrutura bloqueante, contagem informativa)
+    validarR8(norm, erros, avisos) // R8 (planos_acao — idem)
+    validarR9(norm, avisos) // R9 (etapas — informativo)
+    validarR10(norm, erros) // R10 (5W2H — bloqueante)
+    validarR11(norm, pacote, erros) // R11 (FKs — bloqueante)
+    validarBonus(norm, avisos) // bônus (okrs/hoshin/rituais — informativos)
+    return { ok: erros.length === 0, erros: erros, avisos: avisos, contagens: contagensNorm(norm) }
+  }
+
+  // ---------- ETAPA E2-E: DETECÇÃO DE PARTE EM 4 NÍVEIS (INTACTA) ----------
+
   function statusBlocoObjeto(v) {
     if (v === null) return 'null'
     if (v === undefined) return 'ausente'
@@ -485,14 +997,12 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     return 'presente'
   }
 
-  // "presente" | "null" | "ausente" (para chaves auxiliares)
   function statusBlocoSimples(v) {
     if (v === null) return 'null'
     if (v === undefined) return 'ausente'
     return 'presente'
   }
 
-  // Bloco de conteúdo presente = objeto NÃO-nulo com pelo menos 1 chave
   function temConteudo(v) {
     return !!v && typeof v === 'object' && Object.keys(v).length > 0
   }
@@ -517,7 +1027,6 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
         out.parte = out.campo_parte
         out.metodo = 'campo_parte'
       } else {
-        // valor existe mas não é A/B/AB → indeterminado (415 com campo_parte preenchido)
         out.parte = null
         out.metodo = null
       }
@@ -619,7 +1128,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       })
     }
 
-    // ETAPA E2-E — detecção em 4 níveis (analisarDeteccao acima)
+    // ETAPA E2-E — detecção em 4 níveis (INTACTA); null → 415, validação não roda
     const parteSolicitada =
       typeof body.parte === 'string' && body.parte.trim() ? body.parte.trim() : null
     const deteccao = analisarDeteccao(pacote)
@@ -660,7 +1169,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       })
     }
 
-    // 3. Validação (11 regras defensivas, modo auditoria)
+    // 3. Validação COM PARTIÇÃO (E2-F): só as regras da parte detectada
     const resultadoA = regraDefensiva('validarParteA', function () {
       return validarParteA(pacote)
     })
@@ -670,13 +1179,30 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
 
     const erros = []
     const avisos = []
+    const blocos = []
+    let contagens = null
     if (parte === 'A' || parte === 'AB') {
       for (let i = 0; i < (resultadoA.erros || []).length; i++) erros.push(resultadoA.erros[i])
       for (let i = 0; i < (resultadoA.avisos || []).length; i++) avisos.push(resultadoA.avisos[i])
+      blocos.push({
+        bloco: 'Parte A (R1–R6: fases P1..P13, DRE, EREC A9, gabarito A8, não-tráfega)',
+        status: resultadoA.ok ? 'ok' : 'erro',
+        erros: resultadoA.erros,
+        avisos: resultadoA.avisos,
+      })
+      if (resultadoA.contagens) contagens = resultadoA.contagens
     }
     if (parte === 'B' || parte === 'AB') {
       for (let i = 0; i < (resultadoB.erros || []).length; i++) erros.push(resultadoB.erros[i])
       for (let i = 0; i < (resultadoB.avisos || []).length; i++) avisos.push(resultadoB.avisos[i])
+      blocos.push({
+        bloco:
+          'Parte B (R1, R7–R11 + bônus: projetos, planos de ação, etapas/5W2H, FKs, okrs/hoshin/rituais)',
+        status: resultadoB.ok ? 'ok' : 'erro',
+        erros: resultadoB.erros,
+        avisos: resultadoB.avisos,
+      })
+      if (resultadoB.contagens) contagens = resultadoB.contagens
     }
 
     return e.json(200, {
@@ -685,21 +1211,10 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       parte: parte,
       parte_detectada: parte,
       metodo_deteccao: metodo || null,
-      dossie_id: ehObjeto(pacote) && typeof pacote.dossie_id === 'string' ? pacote.dossie_id : '',
-      blocos: [
-        {
-          bloco: 'Parte A (Fases, DRE, EREC, Gabarito, Não-tráfega)',
-          status: resultadoA.ok ? 'ok' : 'erro',
-          erros: resultadoA.erros,
-          avisos: resultadoA.avisos,
-        },
-        {
-          bloco: 'Parte B (PRJ, PAC, Etapas/5W2H, OKRs)',
-          status: resultadoB.ok ? 'ok' : 'erro',
-          erros: resultadoB.erros,
-          avisos: resultadoB.avisos,
-        },
-      ],
+      regras_aplicadas: PARTITION_TABLE[parte] || [],
+      dossie_id: typeof pacote.dossie_id === 'string' ? pacote.dossie_id : '',
+      contagens: contagens,
+      blocos: blocos,
       erros: erros,
       avisos: avisos,
       dry_run: true,
@@ -727,7 +1242,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/selftest', (e) => {
       })
     }
 
-    // Detecção em 4 níveis — cópia inline idêntica às rotas acima
+    // Detecção em 4 níveis — cópia inline idêntica às rotas acima (INTACTA)
     function ehObjeto(v) {
       return !!v && typeof v === 'object' && !Array.isArray(v)
     }
@@ -794,7 +1309,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/selftest', (e) => {
       {
         id: 'T1',
         descricao: 'conteudo_fases presente, sem campo "parte" → detectar A',
-        entrada: { schema_versao: '2.0', conteudo_fases: { P1: { status: 'concluida' } } },
+        entrada: { schema_versao: '2.0', conteudo_fases: { P1: { status: 'completo' } } },
         esperado: 'A',
       },
       {
@@ -812,7 +1327,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/selftest', (e) => {
         descricao: 'conteudo_fases presente com projetos_e_planos null → detectar A (caso Aurora)',
         entrada: {
           schema_versao: '2.0',
-          conteudo_fases: { P1: { status: 'concluida' }, P7: { status: 'parcial' } },
+          conteudo_fases: { P1: { status: 'completo' }, P7: { status: 'parcial' } },
           projetos_e_planos: null,
         },
         esperado: 'A',
@@ -868,15 +1383,39 @@ routerAdd('POST', '/backend/v1/pacote-v2/selftest', (e) => {
 
 routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
   // --------------------- Constantes locais do callback ---------------------
+  // TABELA DE PARTIÇÃO DE REGRAS POR PARTE (E2-F 2.2 — declarada em código)
+  const PARTITION_TABLE = {
+    A: ['R1', 'R2', 'R3', 'R4', 'R5', 'R6'],
+    B: ['R1', 'R7', 'R8', 'R9', 'R10', 'R11', 'BONUS'],
+    AB: ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'BONUS'],
+  }
   const CODIGOS = {
     JSON_INVALIDO: 'PACOTE_V2_JSON_INVALIDO_401',
     SCHEMA: 'PACOTE_V2_SCHEMA_INVALIDO_402',
     FASES: 'PACOTE_V2_FASES_INVALIDAS_403',
     DRE: 'PACOTE_V2_DRE_INVALIDA_404',
+    EREC: 'PACOTE_V2_EREC_INVALIDO_405',
+    GABARITO: 'PACOTE_V2_GABARITO_INVALIDO_406',
+    NAOTRAFEGA: 'PACOTE_V2_NAOTRAFEGA_INVALIDO_407',
+    PRJ: 'PACOTE_V2_PRJ_INVALIDO_408',
+    PAC: 'PACOTE_V2_PAC_INVALIDO_409',
+    ETAPAS: 'PACOTE_V2_ETAPAS_INVALIDAS_410',
+    W2H: 'PACOTE_V2_5W2H_INCOMPLETO_411',
+    FK: 'PACOTE_V2_FK_INVALIDA_412',
+    DESDOBRAMENTO: 'PACOTE_V2_DESDOBRAMENTO_INVALIDO_413',
     PARTE_INDETERMINADA: 'PACOTE_V2_PARTE_INDETERMINADA_415',
     PARTE_INCOERENTE: 'PACOTE_V2_PARTE_INCOERENTE_416',
+    AVISO_DRE: 'PACOTE_V2_DRE_AVISO_404A',
   }
   const CODIGO_INTERNO = 'PACOTE_V2_ERRO_INTERNO_500'
+  const REFERENCIA_CONTAGENS = {
+    projetos: 6,
+    planos_acao: 12,
+    etapas: 116,
+    okrs: 7,
+    hoshin: 7,
+    rituais: 5,
+  }
 
   // --------------------- Helpers locais (defensivos) ----------------------
 
@@ -954,6 +1493,35 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     return null
   }
 
+  // ---------------- E2-F — formatadores de erro/aviso (modo auditoria) ----
+
+  function descriptorDe(v) {
+    if (v === undefined || v === null) return null
+    if (Array.isArray(v)) return 'array (' + v.length + ' itens)'
+    if (typeof v === 'object') return 'objeto (' + Object.keys(v).length + ' chaves)'
+    return String(v)
+  }
+
+  function erro(codigo, componente, encontrado, esperado, mensagem, extra) {
+    const item = {
+      codigo: codigo,
+      mensagem: mensagem,
+      componente_validado: componente,
+      status_regra: 'bloqueante',
+    }
+    item.detalhe = { encontrado: encontrado === undefined ? null : encontrado, esperado: esperado }
+    if (extra) {
+      for (const k in extra) item.detalhe[k] = extra[k]
+    }
+    return item
+  }
+
+  function aviso(codigo, componente, encontrado, esperado, mensagem, extra) {
+    const item = erro(codigo, componente, encontrado, esperado, mensagem, extra)
+    item.status_regra = 'informativa'
+    return item
+  }
+
   function regraDefensiva(nomeRegra, fn) {
     try {
       return fn()
@@ -968,145 +1536,751 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
               nomeRegra +
               ' falhou inesperadamente: ' +
               String(err && err.message ? err.message : err),
+            componente_validado: nomeRegra,
+            status_regra: 'bloqueante',
+            detalhe: { encontrado: null, esperado: null },
           },
         ],
         avisos: [],
+        contagens: null,
       }
     }
   }
 
-  // Revalidação compacta ANTES de persistir (mesmo critério da rota /validar)
+  // ---------------- E2-F — ADAPTADOR DE CAMPOS (V2.0 → normalizado) -------
+  // Função PURA: não muta nem clona o pacote original (só lê caminhos).
+  function criarPacoteNormalizado(pacote) {
+    const raiz = ehObjeto(pacote) ? pacote : null
+    const af = raiz && ehObjeto(raiz.artefatos_financeiros) ? raiz.artefatos_financeiros : null
+    const pep = raiz && ehObjeto(raiz.projetos_e_planos) ? raiz.projetos_e_planos : null
+
+    function pegar(v) {
+      return v === undefined ? null : v
+    }
+
+    function wrapDre(v) {
+      if (v === undefined) return null
+      if (Array.isArray(v)) return { linhas: v }
+      if (ehObjeto(v)) {
+        if (Array.isArray(v.linhas)) return v
+        return { linhas: [] }
+      }
+      return v
+    }
+
+    return {
+      original: pacote,
+      norm: {
+        fases: pegar(raiz ? raiz.conteudo_fases : undefined),
+        dre: wrapDre(af ? af.dre_15_linhas : undefined),
+        erec: pegar(af ? af.erec_a9 : undefined),
+        gabarito_auditoria: pegar(af ? af.gabarito_a8 : undefined),
+        nao_trafega: pegar(raiz ? raiz.nao_trafega : undefined),
+        projetos: pegar(pep ? pep.projetos : undefined),
+        planos_acao: pegar(pep ? pep.planos_acao : undefined),
+        okrs: pegar(pep ? pep.okrs : undefined),
+        matriz_hoshin: pegar(pep ? pep.matriz_hoshin : undefined),
+        rituais: pegar(pep ? pep.rituais_desdobramento : undefined),
+      },
+    }
+  }
+
+  function contagensNorm(norm) {
+    let etapas = 0
+    if (Array.isArray(norm.planos_acao)) {
+      for (let i = 0; i < norm.planos_acao.length; i++) {
+        const p = norm.planos_acao[i]
+        if (p && Array.isArray(p.etapas)) etapas += p.etapas.length
+      }
+    }
+    return {
+      fases: ehObjeto(norm.fases) ? Object.keys(norm.fases).length : 0,
+      projetos: Array.isArray(norm.projetos) ? norm.projetos.length : 0,
+      planos_acao: Array.isArray(norm.planos_acao) ? norm.planos_acao.length : 0,
+      etapas: etapas,
+      okrs: Array.isArray(norm.okrs) ? norm.okrs.length : 0,
+      hoshin: ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : 0,
+      rituais: Array.isArray(norm.rituais) ? norm.rituais.length : 0,
+    }
+  }
+
+  // ------------------- Regras (E2-F — leitura do pacote NORMALIZADO) ------
+
+  function validarR1(pacote, erros) {
+    const sv = typeof pacote.schema_versao === 'string' ? pacote.schema_versao.trim() : ''
+    if (!sv) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'schema_versao',
+          null,
+          'string iniciada por "2." (ex.: 2.0)',
+          'Campo obrigatório ausente: schema_versao.',
+        ),
+      )
+    } else if (!/^2\./.test(sv)) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'schema_versao',
+          sv,
+          'string iniciada por "2." (ex.: 2.0)',
+          'schema_versao fora do padrão do Pacote V2.0.',
+        ),
+      )
+    }
+    const did = typeof pacote.dossie_id === 'string' ? pacote.dossie_id.trim() : ''
+    if (!did) {
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'dossie_id',
+          null,
+          'string não vazia',
+          'Campo obrigatório ausente: dossie_id.',
+        ),
+      )
+    }
+  }
+
+  function validarR7(norm, erros, avisos) {
+    const prj = norm.projetos
+    if (!Array.isArray(prj)) {
+      erros.push(
+        erro(
+          CODIGOS.PRJ,
+          'projetos_e_planos.projetos',
+          descriptorDe(prj),
+          'array de projetos',
+          'Bloco "projetos" ausente ou não é array.',
+        ),
+      )
+      return
+    }
+    for (let i = 0; i < prj.length; i++) {
+      const p = prj[i]
+      if (!ehObjeto(p)) {
+        erros.push(
+          erro(
+            CODIGOS.PRJ,
+            'projetos_e_planos.projetos[' + i + ']',
+            typeof p,
+            'objeto com projeto_id e projeto_nome',
+            'Projeto no índice ' + i + ' não é objeto.',
+          ),
+        )
+        continue
+      }
+      const faltandoCampos = []
+      if (!p.projeto_id) faltandoCampos.push('projeto_id')
+      if (!p.projeto_nome) faltandoCampos.push('projeto_nome')
+      if (faltandoCampos.length > 0) {
+        erros.push(
+          erro(
+            CODIGOS.PRJ,
+            'projetos_e_planos.projetos[' + i + ']',
+            'faltando: ' + faltandoCampos.join(', '),
+            'projeto_id + projeto_nome',
+            'Projeto no índice ' + i + ' sem campos obrigatórios.',
+          ),
+        )
+      }
+    }
+    if (prj.length !== REFERENCIA_CONTAGENS.projetos) {
+      avisos.push(
+        aviso(
+          CODIGOS.PRJ,
+          'projetos_e_planos.projetos',
+          prj.length,
+          REFERENCIA_CONTAGENS.projetos + ' (referência Aurora — informativo)',
+          'Quantidade de projetos (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+  }
+
+  function validarR8(norm, erros, avisos) {
+    const pac = norm.planos_acao
+    if (!Array.isArray(pac)) {
+      erros.push(
+        erro(
+          CODIGOS.PAC,
+          'projetos_e_planos.planos_acao',
+          descriptorDe(pac),
+          'array de planos de ação',
+          'Bloco "planos_acao" ausente ou não é array.',
+        ),
+      )
+      return
+    }
+    for (let i = 0; i < pac.length; i++) {
+      const p = pac[i]
+      if (!ehObjeto(p) || !p.pac_id) {
+        erros.push(
+          erro(
+            CODIGOS.PAC,
+            'projetos_e_planos.planos_acao[' + i + ']',
+            ehObjeto(p) ? 'faltando: pac_id' : typeof p,
+            'objeto com pac_id',
+            'Plano de ação no índice ' + i + ' sem pac_id ou não é objeto.',
+          ),
+        )
+      }
+    }
+    if (pac.length !== REFERENCIA_CONTAGENS.planos_acao) {
+      avisos.push(
+        aviso(
+          CODIGOS.PAC,
+          'projetos_e_planos.planos_acao',
+          pac.length,
+          REFERENCIA_CONTAGENS.planos_acao + ' (referência Aurora — informativo)',
+          'Quantidade de planos de ação (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+  }
+
+  function validarR9(norm, avisos) {
+    const pac = norm.planos_acao
+    let totalEtapas = 0
+    if (Array.isArray(pac)) {
+      for (let i = 0; i < pac.length; i++) {
+        const p = pac[i]
+        if (p && Array.isArray(p.etapas)) totalEtapas += p.etapas.length
+      }
+    }
+    if (totalEtapas !== REFERENCIA_CONTAGENS.etapas) {
+      avisos.push(
+        aviso(
+          CODIGOS.ETAPAS,
+          'projetos_e_planos.planos_acao[].etapas',
+          totalEtapas,
+          REFERENCIA_CONTAGENS.etapas + ' (referência Aurora — informativo)',
+          'Total de etapas (soma dos planos de ação) — contagem informativa, não bloqueia.',
+        ),
+      )
+    }
+    return totalEtapas
+  }
+
+  function validarR10(norm, erros) {
+    const pac = norm.planos_acao
+    if (!Array.isArray(pac)) return
+    const dimensoesPT = {
+      o_que: 'what',
+      por_que: 'why',
+      onde: 'where',
+      quem: 'who',
+      quando: 'when',
+      como: 'how',
+      quanto: 'how_much',
+    }
+    const nomes = Object.keys(dimensoesPT)
+    for (let i = 0; i < pac.length; i++) {
+      const p = pac[i]
+      const etapas = p && Array.isArray(p.etapas) ? p.etapas : []
+      for (let j = 0; j < etapas.length; j++) {
+        const et = etapas[j]
+        if (!ehObjeto(et)) {
+          erros.push(
+            erro(
+              CODIGOS.W2H,
+              'projetos_e_planos.planos_acao[' + i + '].etapas[' + j + ']',
+              typeof et,
+              'objeto com 5W2H',
+              'Etapa ' + j + ' do plano ' + i + ' não é objeto (5W2H inexistente).',
+            ),
+          )
+          continue
+        }
+        const faltando = []
+        for (let k = 0; k < nomes.length; k++) {
+          const pt = nomes[k]
+          let v = et[pt]
+          if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
+            v = et[dimensoesPT[pt]]
+          }
+          if (v === undefined || v === null || (typeof v === 'string' && v.trim() === '')) {
+            faltando.push(pt)
+          }
+        }
+        if (faltando.length > 0) {
+          erros.push(
+            erro(
+              CODIGOS.W2H,
+              'projetos_e_planos.planos_acao[' + i + '].etapas[' + j + ']',
+              'faltando: ' + faltando.join(', '),
+              '7 dimensões 5W2H (o_que, por_que, onde, quem, quando, como, quanto)',
+              'Etapa ' + j + ' do plano ' + i + ' com 5W2H incompleto.',
+            ),
+          )
+        }
+      }
+    }
+  }
+
+  function validarR11(norm, pacote, erros) {
+    const prj = Array.isArray(norm.projetos) ? norm.projetos : []
+    const pac = Array.isArray(norm.planos_acao) ? norm.planos_acao : []
+    const okrs = Array.isArray(norm.okrs) ? norm.okrs : []
+
+    const idsProjetos = {}
+    for (let i = 0; i < prj.length; i++) {
+      const p = prj[i]
+      if (ehObjeto(p) && p.projeto_id) idsProjetos[String(p.projeto_id)] = true
+    }
+    const idsObjetivos = {}
+    let temListaObjetivos = false
+    const objetivos = pacote && pacote.objetivos_estrategicos
+    if (Array.isArray(objetivos) && objetivos.length > 0) {
+      temListaObjetivos = true
+      for (let i = 0; i < objetivos.length; i++) {
+        const o = objetivos[i]
+        if (ehObjeto(o) && o.objetivo_estrategico_id)
+          idsObjetivos[String(o.objetivo_estrategico_id)] = true
+      }
+    }
+
+    for (let i = 0; i < prj.length; i++) {
+      const p = prj[i]
+      if (!ehObjeto(p)) continue
+      const fk = p.objetivo_estrategico_id
+      if (fk === undefined || fk === null || String(fk).trim() === '') {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.projetos[' + i + '].objetivo_estrategico_id',
+            null,
+            'id de objetivo estratégico',
+            'Projeto ' + i + ' sem objetivo_estrategico_id (FK).',
+          ),
+        )
+        continue
+      }
+      if (temListaObjetivos && !idsObjetivos[String(fk)]) {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.projetos[' + i + '].objetivo_estrategico_id',
+            String(fk),
+            'id presente em objetivos_estrategicos',
+            'FK objetivo_estrategico_id não encontrada na lista de objetivos.',
+          ),
+        )
+      }
+    }
+    for (let i = 0; i < pac.length; i++) {
+      const p = pac[i]
+      if (!ehObjeto(p)) continue
+      const fk = p.projeto_id
+      if (fk === undefined || fk === null || String(fk).trim() === '') {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.planos_acao[' + i + '].projeto_id',
+            null,
+            'projeto_id existente',
+            'Plano de ação ' + i + ' sem projeto_id (FK).',
+          ),
+        )
+        continue
+      }
+      if (!idsProjetos[String(fk)]) {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.planos_acao[' + i + '].projeto_id',
+            String(fk),
+            'projeto_id existente em projetos_e_planos.projetos',
+            'FK projeto_id do plano de ação não encontrada na lista de projetos.',
+          ),
+        )
+      }
+    }
+    for (let i = 0; i < okrs.length; i++) {
+      const o = okrs[i]
+      if (!ehObjeto(o)) continue
+      const fk = o.projeto_id
+      if (fk === undefined || fk === null || String(fk).trim() === '') {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.okrs[' + i + '].projeto_id',
+            null,
+            'projeto_id existente',
+            'OKR ' + i + ' sem projeto_id (FK).',
+          ),
+        )
+        continue
+      }
+      if (!idsProjetos[String(fk)]) {
+        erros.push(
+          erro(
+            CODIGOS.FK,
+            'projetos_e_planos.okrs[' + i + '].projeto_id',
+            String(fk),
+            'projeto_id existente em projetos_e_planos.projetos',
+            'FK projeto_id do OKR não encontrada na lista de projetos.',
+          ),
+        )
+      }
+    }
+  }
+
+  function validarBonus(norm, avisos) {
+    const nOkrs = Array.isArray(norm.okrs) ? norm.okrs.length : null
+    if (nOkrs !== REFERENCIA_CONTAGENS.okrs) {
+      avisos.push(
+        aviso(
+          CODIGOS.DESDOBRAMENTO,
+          'projetos_e_planos.okrs',
+          nOkrs,
+          REFERENCIA_CONTAGENS.okrs + ' (referência Aurora — informativo)',
+          'Quantidade de OKRs (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+    const hoshin = ehObjeto(norm.matriz_hoshin) ? Object.keys(norm.matriz_hoshin).length : null
+    if (hoshin !== REFERENCIA_CONTAGENS.hoshin) {
+      avisos.push(
+        aviso(
+          CODIGOS.DESDOBRAMENTO,
+          'projetos_e_planos.matriz_hoshin',
+          hoshin,
+          REFERENCIA_CONTAGENS.hoshin + ' objetivos (referência Aurora — informativo)',
+          'Objetivos da Matriz Hoshin (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+    const rituais = Array.isArray(norm.rituais) ? norm.rituais.length : null
+    if (rituais !== REFERENCIA_CONTAGENS.rituais) {
+      avisos.push(
+        aviso(
+          CODIGOS.DESDOBRAMENTO,
+          'projetos_e_planos.rituais_desdobramento',
+          rituais,
+          REFERENCIA_CONTAGENS.rituais + ' (referência Aurora — informativo)',
+          'Quantidade de rituais de desdobramento (contagem informativa, não bloqueia).',
+        ),
+      )
+    }
+  }
+
+  // Revalidação compacta ANTES de persistir (mesma partição da rota /validar)
   function validarParteAIng(p) {
     const erros = []
     const avisos = []
     if (!ehObjeto(p)) {
-      erros.push({
-        codigo: CODIGOS.SCHEMA,
-        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
-      })
-      return { ok: false, erros: erros, avisos: avisos }
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'pacote',
+          null,
+          'objeto JSON',
+          'Pacote ausente ou não é um objeto JSON válido.',
+        ),
+      )
+      return { ok: false, erros: erros, avisos: avisos, contagens: null }
     }
-    if (!(typeof p.dossie_id === 'string' && p.dossie_id)) {
-      erros.push({ codigo: CODIGOS.SCHEMA, mensagem: 'Campo obrigatório ausente: dossie_id.' })
+    const norm = criarPacoteNormalizado(p).norm
+    validarR1(p, erros)
+    validarR2AIng(norm, erros)
+    validarR3(norm, erros, avisos)
+    validarR4(norm, erros, avisos)
+    validarR5(norm, erros)
+    validarR6(norm, erros)
+    return { ok: erros.length === 0, erros: erros, avisos: avisos, contagens: contagensNorm(norm) }
+  }
+
+  // R2 (ingestar) — conteudo_fases P1..P13
+  function validarR2AIng(norm, erros) {
+    const fases = norm.fases
+    if (!ehObjeto(fases)) {
+      erros.push(
+        erro(
+          CODIGOS.FASES,
+          'conteudo_fases',
+          descriptorDe(fases),
+          'objeto com fases P1..P13',
+          'Bloco "conteudo_fases" ausente ou inválido (esperado objeto com P1..P13).',
+        ),
+      )
+      return
     }
-    const fases = ehObjeto(p.fases) ? p.fases : null
-    if (!fases) {
-      erros.push({
-        codigo: CODIGOS.FASES,
-        mensagem: 'Bloco "fases" ausente ou inválido (esperado objeto com chaves 1..8).',
-        detalhe: { encontrado: null, esperado: 'objeto com chaves 1..8' },
-      })
-    } else if (Object.keys(fases).length < 8) {
-      erros.push({
-        codigo: CODIGOS.FASES,
-        mensagem:
-          'Bloco "fases" incompleto: esperadas 8 fases, encontradas ' +
-          Object.keys(fases).length +
-          '.',
-        detalhe: { encontrado: Object.keys(fases).length, esperado: 8 },
-      })
+    const faltando = []
+    for (let i = 1; i <= 13; i++) {
+      if (!ehObjeto(fases['P' + i])) faltando.push('P' + i)
     }
-    let dre = p.dre
-    if (!ehObjeto(dre) && Array.isArray(p.dre)) dre = { linhas: p.dre }
+    if (faltando.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.FASES,
+          'conteudo_fases',
+          'faltando: ' + faltando.join(', '),
+          '13 fases P1..P13, cada uma objeto',
+          'Bloco "conteudo_fases" incompleto: fases ausentes ou não-objeto.',
+        ),
+      )
+    }
+    const statusInvalidos = []
+    const chaves = Object.keys(fases)
+    for (let i = 0; i < chaves.length; i++) {
+      const f = fases[chaves[i]]
+      if (!ehObjeto(f)) continue
+      const st = typeof f.status === 'string' ? f.status.trim().toLowerCase() : ''
+      if (st !== 'completo' && st !== 'parcial' && st !== 'bloqueado') {
+        statusInvalidos.push(chaves[i] + '="' + st + '"')
+      }
+    }
+    if (statusInvalidos.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.FASES,
+          'conteudo_fases',
+          statusInvalidos.join(', '),
+          'status de cada fase ∈ {completo, parcial, bloqueado}',
+          'Fases com status ausente ou fora dos valores canônicos.',
+        ),
+      )
+    }
+  }
+
+  // R3 — DRE (mantém E2-C): 15–18 linhas de conta com "fonte" em cada
+  function validarR3(norm, erros, avisos) {
+    const dre = norm.dre
     if (!ehObjeto(dre)) {
-      erros.push({
-        codigo: CODIGOS.DRE,
-        mensagem: 'Bloco "dre" ausente ou inválido (esperado objeto com array "linhas").',
-        detalhe: { encontrado: null, esperado: 'objeto { linhas: [...] }' },
-      })
-    } else {
-      const linhas = Array.isArray(dre.linhas) ? dre.linhas : []
-      const linhasConta = []
-      for (let i = 0; i < linhas.length; i++) {
-        const l = linhas[i]
-        if (!ehObjeto(l)) continue
-        const rotulo = String(l.linha || l.rotulo || l.conta || l.nome || '').trim()
-        if (!rotulo) continue
-        const ehSubtotal =
-          /^(=|\(-\)|\(\+\)|\(\+\/-\)|subtotal|total|demonstração)/i.test(rotulo) ||
-          /^receita\s+bruta$|^receita\s+l[íi]quida$|^margem\s+bruta$|^margem\s+de\s+contribui[çc][ãa]o$|^ebitda$|^ebit\b|^lucro\s+l[íi]quido$|^ebt\b/i.test(
-            rotulo,
-          )
-        if (ehSubtotal) continue
-        linhasConta.push(l)
+      erros.push(
+        erro(
+          CODIGOS.DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          descriptorDe(dre),
+          'objeto com array "linhas" (15 a 18 linhas de conta)',
+          'Bloco DRE (dre_15_linhas) ausente ou inválido.',
+        ),
+      )
+      return
+    }
+    const linhas = Array.isArray(dre.linhas) ? dre.linhas : []
+    const linhasConta = []
+    const linhasIgnoradas = []
+    for (let i = 0; i < linhas.length; i++) {
+      const l = linhas[i]
+      if (!ehObjeto(l)) continue
+      const rotulo = String(l.linha || l.rotulo || l.conta || l.nome || '').trim()
+      if (!rotulo) continue
+      const ehSubtotal =
+        /^(=|\(-\)|\(\+\)|\(\+\/-\)|subtotal|total|demonstração)/i.test(rotulo) ||
+        /^receita\s+bruta$|^receita\s+l[íi]quida$|^margem\s+bruta$|^margem\s+de\s+contribui[çc][ãa]o$|^ebitda$|^ebit\b|^lucro\s+l[íi]quido$|^ebt\b/i.test(
+          rotulo,
+        )
+      if (ehSubtotal) {
+        linhasIgnoradas.push(rotulo)
+        continue
       }
-      const qtdConta = linhasConta.length
-      if (qtdConta < 15 || qtdConta > 18) {
-        erros.push({
-          codigo: CODIGOS.DRE,
-          mensagem:
-            'DRE fora da faixa aceitável de LINHAS DE CONTA (15 a 18, ignorando subtotais e cabeçalhos).',
-          detalhe: { encontrado: qtdConta, esperado: '15 a 18 linhas de conta' },
-        })
-      }
-      for (let i = 0; i < linhasConta.length; i++) {
-        const f = linhasConta[i].fonte
-        const temFonte = typeof f === 'string' ? f.trim().length > 0 : !!f
-        if (!temFonte) {
-          erros.push({
-            codigo: CODIGOS.DRE,
-            mensagem: 'Linhas de conta da DRE sem o campo obrigatório "fonte".',
-            detalhe: { encontrado: 'linha ' + (i + 1), esperado: 'todas com fonte' },
-          })
-          break
-        }
+      linhasConta.push(l)
+    }
+    const qtdConta = linhasConta.length
+    if (qtdConta < 15 || qtdConta > 18) {
+      erros.push(
+        erro(
+          CODIGOS.DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          qtdConta,
+          '15 a 18 linhas de conta (ignorando subtotais e cabeçalhos)',
+          'DRE fora da faixa aceitável de LINHAS DE CONTA.',
+          { ignoradas: linhasIgnoradas.length },
+        ),
+      )
+    } else if (qtdConta !== 15) {
+      avisos.push(
+        aviso(
+          CODIGOS.AVISO_DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          qtdConta,
+          15,
+          'DRE com ' +
+            qtdConta +
+            ' linhas de conta (faixa 15–18 aceita com aviso; padrão canônico = 15).',
+        ),
+      )
+    }
+    const semFonte = []
+    for (let i = 0; i < linhasConta.length; i++) {
+      const f = linhasConta[i].fonte
+      const temFonte = typeof f === 'string' ? f.trim().length > 0 : !!f
+      if (!temFonte) {
+        semFonte.push(linhasConta[i].linha || linhasConta[i].rotulo || 'linha ' + (i + 1))
       }
     }
-    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+    if (semFonte.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.DRE,
+          'artefatos_financeiros.dre_15_linhas',
+          semFonte.length + ' linha(s) sem fonte',
+          'todas as linhas de conta com "fonte"',
+          'Linhas de conta da DRE sem o campo obrigatório "fonte".',
+          { linhas: semFonte },
+        ),
+      )
+    }
+  }
+
+  // R4 — EREC A9: objeto com 4 seções canônicas; contagem INFORMATIVA
+  function validarR4(norm, erros, avisos) {
+    const erec = norm.erec
+    if (!ehObjeto(erec)) {
+      erros.push(
+        erro(
+          CODIGOS.EREC,
+          'artefatos_financeiros.erec_a9',
+          descriptorDe(erec),
+          'objeto com 4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'Bloco EREC (erec_a9) ausente ou inválido.',
+        ),
+      )
+      return
+    }
+    const mapaSecoes = {}
+    const chaves = Object.keys(erec)
+    for (let i = 0; i < chaves.length; i++) {
+      mapaSecoes[String(chaves[i]).trim().toLowerCase()] = erec[chaves[i]]
+    }
+    const secoes = ['eliminar', 'reduzir', 'elevar', 'criar']
+    const faltando = []
+    const porSecao = []
+    let totalItens = 0
+    for (let i = 0; i < secoes.length; i++) {
+      const s = secoes[i]
+      const v = mapaSecoes[s]
+      if (v === undefined) {
+        faltando.push(s)
+        porSecao.push(s + ': ausente')
+        continue
+      }
+      const n = Array.isArray(v) ? v.length : ehObjeto(v) ? Object.keys(v).length : 0
+      totalItens += n
+      porSecao.push(s + ': ' + n)
+    }
+    if (faltando.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.EREC,
+          'artefatos_financeiros.erec_a9',
+          'faltando seções: ' + faltando.join(', '),
+          '4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'Bloco EREC sem as 4 seções canônicas.',
+        ),
+      )
+    }
+    avisos.push(
+      aviso(
+        CODIGOS.EREC,
+        'artefatos_financeiros.erec_a9',
+        totalItens + ' itens (' + porSecao.join(' · ') + ')',
+        'contagem informativa (referência Aurora = 20 itens: 4+5+5+6)',
+        'Contagem de itens do EREC (informativa, não bloqueia).',
+      ),
+    )
+  }
+
+  // R5 — gabarito A8: aceita 7 OU 8 indicadores (declara total_indicadores)
+  function validarR5(norm, erros) {
+    const g = norm.gabarito_auditoria
+    if (!ehObjeto(g) && !Array.isArray(g)) {
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          descriptorDe(g),
+          'objeto (ou array) com 7 ou 8 indicadores',
+          'Bloco gabarito_a8 (gabarito de auditoria) ausente ou inválido.',
+          { total_indicadores: 0 },
+        ),
+      )
+      return
+    }
+    const total = Array.isArray(g) ? g.length : Object.keys(g).length
+    if (total !== 7 && total !== 8) {
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          total,
+          '7 ou 8 indicadores',
+          'Gabarito de auditoria (gabarito_a8) com quantidade de indicadores inválida.',
+          { total_indicadores: total },
+        ),
+      )
+    }
+  }
+
+  // R6 — nao_trafega: 4 booleanos = true (só Parte A)
+  function validarR6(norm, erros) {
+    const nt = norm.nao_trafega
+    if (!ehObjeto(nt)) {
+      erros.push(
+        erro(
+          CODIGOS.NAOTRAFEGA,
+          'nao_trafega',
+          descriptorDe(nt),
+          'objeto com 4 booleanos true (prompts_sintese, regras_orquestracao, curadoria_base, raciocinio_interno)',
+          'Bloco "nao_trafega" ausente ou inválido.',
+        ),
+      )
+      return
+    }
+    const chaves = [
+      'prompts_sintese',
+      'regras_orquestracao',
+      'curadoria_base',
+      'raciocinio_interno',
+    ]
+    const falsos = []
+    for (let i = 0; i < chaves.length; i++) {
+      const v = nt[chaves[i]]
+      if (v !== true) falsos.push(chaves[i] + '=' + (v === undefined ? 'ausente' : String(v)))
+    }
+    if (falsos.length > 0) {
+      erros.push(
+        erro(
+          CODIGOS.NAOTRAFEGA,
+          'nao_trafega',
+          falsos.join(', '),
+          'os 4 booleanos = true',
+          'Bloco "nao_trafega" com sinalizações falsas ou ausentes.',
+        ),
+      )
+    }
   }
 
   function validarParteBIng(p) {
     const erros = []
     const avisos = []
     if (!ehObjeto(p)) {
-      erros.push({
-        codigo: CODIGOS.SCHEMA,
-        mensagem: 'Pacote ausente ou não é um objeto JSON válido.',
-      })
-      return { ok: false, erros: erros, avisos: avisos }
+      erros.push(
+        erro(
+          CODIGOS.SCHEMA,
+          'pacote',
+          null,
+          'objeto JSON',
+          'Pacote ausente ou não é um objeto JSON válido.',
+        ),
+      )
+      return { ok: false, erros: erros, avisos: avisos, contagens: null }
     }
-    const prj = Array.isArray(p.projetos) ? p.projetos : null
-    if (!prj || prj.length !== 6) {
-      erros.push({
-        codigo: 'PACOTE_V2_PRJ_INVALIDO_408',
-        mensagem: 'Quantidade de projetos divergente.',
-        detalhe: { encontrado: prj ? prj.length : null, esperado: 6 },
-      })
-    }
-    const pac = Array.isArray(p.planos_acao) ? p.planos_acao : null
-    if (!pac || pac.length !== 12) {
-      erros.push({
-        codigo: 'PACOTE_V2_PAC_INVALIDO_409',
-        mensagem: 'Quantidade de planos de ação divergente.',
-        detalhe: { encontrado: pac ? pac.length : null, esperado: 12 },
-      })
-    }
-    let totalEtapas = 0
-    if (Array.isArray(pac)) {
-      for (let i = 0; i < pac.length; i++) {
-        const pa = pac[i]
-        totalEtapas += pa && Array.isArray(pa.etapas) ? pa.etapas.length : 0
-      }
-      if (totalEtapas !== 116) {
-        erros.push({
-          codigo: 'PACOTE_V2_ETAPAS_INVALIDAS_410',
-          mensagem: 'Total de etapas divergente (soma dos planos de ação).',
-          detalhe: { encontrado: totalEtapas, esperado: 116 },
-        })
-      }
-    }
-    const okrs = Array.isArray(p.okrs) ? p.okrs : null
-    if (!okrs || okrs.length !== 7) {
-      erros.push({
-        codigo: 'PACOTE_V2_DESDOBRAMENTO_INVALIDO_413',
-        mensagem: 'Quantidade de OKRs divergente.',
-        detalhe: { encontrado: okrs ? okrs.length : null, esperado: 7 },
-      })
-    }
-    return { ok: erros.length === 0, erros: erros, avisos: avisos }
+    const norm = criarPacoteNormalizado(p).norm
+    validarR1(p, erros)
+    validarR7(norm, erros, avisos)
+    validarR8(norm, erros, avisos)
+    validarR9(norm, avisos)
+    validarR10(norm, erros)
+    validarR11(norm, p, erros)
+    validarBonus(norm, avisos)
+    return { ok: erros.length === 0, erros: erros, avisos: avisos, contagens: contagensNorm(norm) }
   }
 
-  // ---------- ETAPA E2-E: DETECÇÃO DE PARTE EM 4 NÍVEIS (cópia inline) ----------
+  // ---------- ETAPA E2-E: DETECÇÃO DE PARTE EM 4 NÍVEIS (cópia inline) ----
   function statusBlocoObjeto(v) {
     if (v === null) return 'null'
     if (v === undefined) return 'ausente'
@@ -1247,6 +2421,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       })
     }
 
+    // ETAPA E2-E — detecção em 4 níveis (INTACTA); null → 415
     const parteSolicitada =
       typeof body.parte === 'string' && body.parte.trim() ? body.parte.trim() : null
     const deteccao = analisarDeteccao(pacote)
@@ -1292,7 +2467,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       })
     }
 
-    // 3. Revalida inline (mesmo critério da rota /validar) ANTES de persistir
+    // 3. Revalida inline com PARTIÇÃO (E2-F) ANTES de persistir
     const resultadoA = regraDefensiva('validarParteA', function () {
       return validarParteAIng(pacote)
     })
@@ -1302,13 +2477,29 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
 
     const erros = []
     const avisos = []
+    const blocos = []
+    let contagens = null
     if (parte === 'A' || parte === 'AB') {
       for (let i = 0; i < (resultadoA.erros || []).length; i++) erros.push(resultadoA.erros[i])
       for (let i = 0; i < (resultadoA.avisos || []).length; i++) avisos.push(resultadoA.avisos[i])
+      blocos.push({
+        bloco: 'Parte A',
+        status: resultadoA.ok ? 'ok' : 'erro',
+        erros: resultadoA.erros,
+        avisos: resultadoA.avisos,
+      })
+      if (resultadoA.contagens) contagens = resultadoA.contagens
     }
     if (parte === 'B' || parte === 'AB') {
       for (let i = 0; i < (resultadoB.erros || []).length; i++) erros.push(resultadoB.erros[i])
       for (let i = 0; i < (resultadoB.avisos || []).length; i++) avisos.push(resultadoB.avisos[i])
+      blocos.push({
+        bloco: 'Parte B',
+        status: resultadoB.ok ? 'ok' : 'erro',
+        erros: resultadoB.erros,
+        avisos: resultadoB.avisos,
+      })
+      if (resultadoB.contagens) contagens = resultadoB.contagens
     }
 
     if (erros.length > 0) {
@@ -1316,21 +2507,9 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
         ok: false,
         valido: false,
         parte: parte,
+        regras_aplicadas: PARTITION_TABLE[parte] || [],
         dossie_id: dossieId,
-        blocos: [
-          {
-            bloco: 'Parte A',
-            status: resultadoA.ok ? 'ok' : 'erro',
-            erros: resultadoA.erros,
-            avisos: resultadoA.avisos,
-          },
-          {
-            bloco: 'Parte B',
-            status: resultadoB.ok ? 'ok' : 'erro',
-            erros: resultadoB.erros,
-            avisos: resultadoB.avisos,
-          },
-        ],
+        blocos: blocos,
         erros: erros,
         avisos: avisos,
         motivo: 'Ingestão bloqueada: validação reprovada.',
@@ -1338,6 +2517,7 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
 
     // 4. Persistência (registro NOVO por ingestão — histórico da E2-B)
+    //    O payload gravado é o pacote ORIGINAL (o adaptador nunca o altera).
     const colPacotes = $app.findCollectionByNameOrId('pacotes_v2')
     const recPacote = new Record(colPacotes)
     recPacote.set('dossie_id', dossieId)
@@ -1350,30 +2530,34 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     recPacote.set('importado_por', auth.id)
     $app.save(recPacote)
 
-    // 5. Contadores de propagação (resumo do que foi processado)
-    const prj = Array.isArray(pacote.projetos) ? pacote.projetos.length : 0
-    const pac = Array.isArray(pacote.planos_acao) ? pacote.planos_acao.length : 0
+    // 5. Contadores de propagação — lidos do pacote NORMALIZADO (E2-F corrige
+    //    a leitura antiga, que procurava okrs/hoshin/rituais na raiz V1)
+    const normInfo = criarPacoteNormalizado(pacote).norm
+    const prj = Array.isArray(normInfo.projetos) ? normInfo.projetos.length : 0
+    const pac = Array.isArray(normInfo.planos_acao) ? normInfo.planos_acao.length : 0
     let etapas = 0
-    if (Array.isArray(pacote.planos_acao)) {
-      for (let i = 0; i < pacote.planos_acao.length; i++) {
-        const p = pacote.planos_acao[i]
+    if (Array.isArray(normInfo.planos_acao)) {
+      for (let i = 0; i < normInfo.planos_acao.length; i++) {
+        const p = normInfo.planos_acao[i]
         if (p && Array.isArray(p.etapas)) etapas += p.etapas.length
       }
     }
-    const okrs = Array.isArray(pacote.okrs) ? pacote.okrs.length : 0
-    const hoshin = ehObjeto(pacote.matriz_hoshin) ? Object.keys(pacote.matriz_hoshin).length : 0
-    const rituais = Array.isArray(pacote.rituais) ? pacote.rituais.length : 0
+    const okrs = Array.isArray(normInfo.okrs) ? normInfo.okrs.length : 0
+    const hoshin = ehObjeto(normInfo.matriz_hoshin) ? Object.keys(normInfo.matriz_hoshin).length : 0
+    const rituais = Array.isArray(normInfo.rituais) ? normInfo.rituais.length : 0
 
     return e.json(200, {
       ok: true,
       valido: true,
       parte: parte,
+      regras_aplicadas: PARTITION_TABLE[parte] || [],
       prj: prj,
       pac: pac,
       etapas: etapas,
       okrs: okrs,
       hoshin: hoshin,
       rituais: rituais,
+      contagens: contagens,
       pacote_id: recPacote.id,
       dossie_id: dossieId,
       blocos: [
