@@ -1,1 +1,0 @@
-// TEMPORÁRIO E2-I — ARQUIVO VAZIO PENDENTE DE REMOÇÃO (delete_file)
