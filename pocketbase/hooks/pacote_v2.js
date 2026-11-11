@@ -2066,7 +2066,8 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
   }
 
   // E2-I: fonte = norm.objetivos_estrategicos (adaptador: pep ou raiz);
-  // o item pode trazer objetivo_estrategico_id ou objetivo_id.
+  // o item pode trazer objetivo_estrategico_id ou objetivo_id
+  // (cópias /validar e /ingestar sincronizadas).
   function validarR11(norm, pacote, erros) {
     const prj = Array.isArray(norm.projetos) ? norm.projetos : []
     const pac = Array.isArray(norm.planos_acao) ? norm.planos_acao : []
@@ -2084,8 +2085,10 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       temListaObjetivos = true
       for (let i = 0; i < objetivos.length; i++) {
         const o = objetivos[i]
-        if (ehObjeto(o) && o.objetivo_estrategico_id)
-          idsObjetivos[String(o.objetivo_estrategico_id)] = true
+        // E2-I: alinhado à cópia /validar — o item pode trazer
+        // objetivo_estrategico_id OU objetivo_id (JSON real da Aurora).
+        const idObj = ehObjeto(o) ? o.objetivo_estrategico_id || o.objetivo_id : null
+        if (idObj) idsObjetivos[String(idObj)] = true
       }
     }
 
