@@ -35,6 +35,11 @@
  *      R3 = DRE 15–18 linhas de conta com "fonte" (mantém E2-C);
  *      R4 = EREC A9 com 4 seções canônicas (contagem informativa);
  *      R5 = gabarito A8 aceita 7 OU 8 indicadores (total_indicadores);
+ *      (E2-G) R4/R5 leem estruturas NORMALIZADAS no adaptador:
+ *        erec vem de .secoes (case-insensitive), itens_por_secao e
+ *        total_itens reportados; contagem ≠ Aurora (4/5/5/6=20) não falha.
+ *        gabarito conta .indicadores (array); falha só se ausente, vazio
+ *        ou fora da faixa 7–8. Faixa dentro → sem aviso.
  *      R6 = nao_trafega com 4 booleanos true;
  *      R7/R8/R9/bônus (okrs/hoshin/rituais) = contagens INFORMATIVAS.
  *   4. MENSAGENS: cada erro/aviso carrega componente_validado (nome REAL
@@ -48,6 +53,8 @@
  * produção com 403/404/405/406/407/408/409/413. Corrigido.
  *
  * GARANTIAS E2-C/E2-E MANTIDAS (E2-E intacta — detecção em 4 níveis, 415/416):
+ * (E2-G) EREC normalizado (.secoes case-insensitive) e gabarito contando
+ * .indicadores; partição A ≠ B e detecção de parte NÃO alteradas.
  * 1. TODAS as respostas são JSON formatado — inclusive falha interna (500).
  * 2. Nenhuma regra lança throw (regraDefensiva converte exceção em erro).
  * 3. Detecção de parte em 4 níveis (E2-E) INTACTA — validada e não alterada.
@@ -240,7 +247,82 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
    * nomes que as 11 regras conhecem. NÃO muta nem clona o pacote original —
    * apenas lê caminhos aninhados dele. Mesma entrada → mesma saída.
    * Origem ausente → destino null; origem presente (mesmo vazia) → valor real.
+   *
+   * E2-G — NORMALIZAÇÃO DO EREC (R4) E DO GABARITO (R5) no adaptador:
+   *   erec: se existir .secoes, usa .secoes como fonte (JSON real da Aurora
+   *     coloca as 4 seções lá, capitalizadas); senão usa o próprio EREC.
+   *     As 4 chaves são procuradas CASE-INSENSITIVE ("Eliminar"/"eliminar").
+   *     Saída normalizada: { eliminar:[], reduzir:[], elevar:[], criar:[],
+   *     _erec_meta: { secoes_encontradas, itens_por_secao, total_itens } }.
+   *     Itens preservados como estão.
+   *   gabarito_auditoria: se o objeto tiver .indicadores (array), esse é o
+   *     array de indicadores; se NÃO tiver (array cru), é tratado como
+   *     array direto (compatibilidade). _gabarito_meta carrega
+   *     total_indicadores (do ARRAY, não das chaves do objeto pai),
+   *     faixa_aceita ("7-8") e nomes_dos_indicadores.
+   *     Ausente → null (e meta = null), como antes.
    */
+  function normalizarErec(erec) {
+    if (!ehObjeto(erec)) return { norm: null, meta: null }
+    const fonte = ehObjeto(erec.secoes) ? erec.secoes : erec
+    const mapa = {}
+    const chaves = Object.keys(fonte)
+    for (let i = 0; i < chaves.length; i++) {
+      mapa[String(chaves[i]).trim().toLowerCase()] = fonte[chaves[i]]
+    }
+    const secoes = ['eliminar', 'reduzir', 'elevar', 'criar']
+    const secoesEncontradas = []
+    const itensPorSecao = {}
+    const norm = {}
+    let totalItens = 0
+    for (let i = 0; i < secoes.length; i++) {
+      const s = secoes[i]
+      const v = mapa[s]
+      if (v === undefined) continue
+      secoesEncontradas.push(s)
+      const itens = Array.isArray(v) ? v : ehObjeto(v) ? Object.keys(v).length : []
+      const n = Array.isArray(itens) ? itens.length : itens
+      itensPorSecao[s] = n
+      totalItens += n
+      norm[s] = Array.isArray(v) ? v : ehObjeto(v) ? v : []
+    }
+    return {
+      norm: norm,
+      meta: {
+        secoes_encontradas: secoesEncontradas,
+        itens_por_secao: itensPorSecao,
+        total_itens: totalItens,
+      },
+    }
+  }
+
+  function normalizarGabarito(g) {
+    if (!ehObjeto(g) && !Array.isArray(g)) return { norm: null, meta: null }
+    const indicadores = Array.isArray(g) ? g : Array.isArray(g.indicadores) ? g.indicadores : null
+    const meta = {
+      total_indicadores: indicadores ? indicadores.length : 0,
+      faixa_aceita: '7-8',
+      nomes_dos_indicadores: [],
+    }
+    if (indicadores) {
+      const nomes = []
+      for (let i = 0; i < indicadores.length; i++) {
+        const it = indicadores[i]
+        nomes.push(
+          ehObjeto(it) && it.nome
+            ? String(it.nome)
+            : ehObjeto(it) && it.indicador
+              ? String(it.indicador)
+              : ehObjeto(it) && it.titulo
+                ? String(it.titulo)
+                : 'indicador ' + (i + 1),
+        )
+      }
+      meta.nomes_dos_indicadores = nomes
+    }
+    return { norm: g, meta: meta }
+  }
+
   function criarPacoteNormalizado(pacote) {
     const raiz = ehObjeto(pacote) ? pacote : null
     const af = raiz && ehObjeto(raiz.artefatos_financeiros) ? raiz.artefatos_financeiros : null
@@ -262,13 +344,18 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
       return v
     }
 
+    const erecNorm = normalizarErec(af ? af.erec_a9 : undefined)
+    const gabNorm = normalizarGabarito(af ? af.gabarito_a8 : undefined)
+
     return {
       original: pacote,
       norm: {
         fases: pegar(raiz ? raiz.conteudo_fases : undefined),
         dre: wrapDre(af ? af.dre_15_linhas : undefined),
-        erec: pegar(af ? af.erec_a9 : undefined),
-        gabarito_auditoria: pegar(af ? af.gabarito_a8 : undefined),
+        erec: erecNorm.norm,
+        erec_meta: erecNorm.meta,
+        gabarito_auditoria: gabNorm.norm,
+        gabarito_meta: gabNorm.meta,
         nao_trafega: pegar(raiz ? raiz.nao_trafega : undefined),
         projetos: pegar(pep ? pep.projetos : undefined),
         planos_acao: pegar(pep ? pep.planos_acao : undefined),
@@ -473,7 +560,10 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
     }
   }
 
-  // R4 — EREC A9: objeto com 4 seções canônicas; contagem INFORMATIVA
+  // R4 — EREC A9: normalizado (4 seções canônicas); contagem INFORMATIVA.
+  // E2-G: norm.erec já vem da fonte .secoes (case-insensitive) com as 4
+  // chaves minúsculas; faltando APÓS normalização é o único bloqueio de
+  // estrutura. R4 só falha também se as 4 presentes estiverem VAZIAS.
   function validarR4(norm, erros, avisos) {
     const erec = norm.erec
     if (!ehObjeto(erec)) {
@@ -482,82 +572,133 @@ routerAdd('POST', '/backend/v1/pacote-v2/validar', (e) => {
           CODIGOS.EREC,
           'artefatos_financeiros.erec_a9',
           descriptorDe(erec),
-          'objeto com 4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'objeto com 4 seções canônicas (Eliminar, Reduzir, Elevar, Criar) [fonte .secoes aceita]',
           'Bloco EREC (erec_a9) ausente ou inválido.',
         ),
       )
       return
     }
-    const mapaSecoes = {}
-    const chaves = Object.keys(erec)
-    for (let i = 0; i < chaves.length; i++) {
-      mapaSecoes[String(chaves[i]).trim().toLowerCase()] = erec[chaves[i]]
-    }
+    const meta = norm.erec_meta || { secoes_encontradas: [], itens_por_secao: {}, total_itens: 0 }
     const secoes = ['eliminar', 'reduzir', 'elevar', 'criar']
     const faltando = []
-    const porSecao = []
-    let totalItens = 0
+    const todasVazias = []
     for (let i = 0; i < secoes.length; i++) {
       const s = secoes[i]
-      const v = mapaSecoes[s]
-      if (v === undefined) {
+      const v = erec[s]
+      if (v === undefined || v === null) {
         faltando.push(s)
-        porSecao.push(s + ': ausente')
         continue
       }
       const n = Array.isArray(v) ? v.length : ehObjeto(v) ? Object.keys(v).length : 0
-      totalItens += n
-      porSecao.push(s + ': ' + n)
+      if (n === 0) todasVazias.push(s)
     }
     if (faltando.length > 0) {
       erros.push(
         erro(
           CODIGOS.EREC,
           'artefatos_financeiros.erec_a9',
-          'faltando seções: ' + faltando.join(', '),
-          '4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'faltando seções após normalização: ' + faltando.join(', '),
+          '4 seções canônicas (Eliminar, Reduzir, Elevar, Criar) em .secoes (case-insensitive)',
           'Bloco EREC sem as 4 seções canônicas.',
+          {
+            secoes_encontradas: meta.secoes_encontradas,
+            itens_por_secao: meta.itens_por_secao,
+            total_itens: meta.total_itens,
+          },
+        ),
+      )
+    } else if (todasVazias.length === 4) {
+      erros.push(
+        erro(
+          CODIGOS.EREC,
+          'artefatos_financeiros.erec_a9',
+          'as 4 seções presentes mas todas vazias',
+          'pelo menos um item em alguma seção do EREC',
+          'Bloco EREC com as 4 seções canônicas todas vazias.',
+          {
+            secoes_encontradas: meta.secoes_encontradas,
+            itens_por_secao: meta.itens_por_secao,
+            total_itens: meta.total_itens,
+          },
         ),
       )
     }
-    // Contagem de itens é INFORMATIVA (Aurora = 20: 4+5+5+6)
+    // Contagem de itens é INFORMATIVA (Aurora = 20: 4+5+5+6) — divergência
+    // da referência NÃO é falha (definido na E2-F).
     avisos.push(
       aviso(
         CODIGOS.EREC,
         'artefatos_financeiros.erec_a9',
-        totalItens + ' itens (' + porSecao.join(' · ') + ')',
+        meta.total_itens + ' itens (' + meta.secoes_encontradas.join(' · ') + ')',
         'contagem informativa (referência Aurora = 20 itens: 4+5+5+6)',
         'Contagem de itens do EREC (informativa, não bloqueia).',
+        { itens_por_secao: meta.itens_por_secao },
       ),
     )
   }
 
-  // R5 — gabarito A8: aceita 7 OU 8 indicadores (declara total_indicadores)
+  // R5 — gabarito A8: aceita 7 OU 8 indicadores (declara total_indicadores).
+  // E2-G: norm.gabarito_meta.total_indicadores conta o ARRAY .indicadores
+  // (não as chaves do objeto pai: titulo/indicadores/total_indicadores/
+  // veredito = 4 era o erro antigo). Falha só se ausente, vazio ou fora
+  // da faixa 7–8. Dentro da faixa → sem aviso.
   function validarR5(norm, erros) {
     const g = norm.gabarito_auditoria
+    const meta = norm.gabarito_meta
+    const total = meta && meta.total_indicadores !== undefined ? meta.total_indicadores : 0
     if (!ehObjeto(g) && !Array.isArray(g)) {
       erros.push(
         erro(
           CODIGOS.GABARITO,
           'artefatos_financeiros.gabarito_a8',
           descriptorDe(g),
-          'objeto (ou array) com 7 ou 8 indicadores',
+          'objeto com array ".indicadores" (ou array direto) com 7 ou 8 indicadores',
           'Bloco gabarito_a8 (gabarito de auditoria) ausente ou inválido.',
-          { total_indicadores: 0 },
+          { total_indicadores: 0, faixa_aceita: '7-8' },
         ),
       )
       return
     }
-    const total = Array.isArray(g) ? g.length : Object.keys(g).length
+    if (!meta || (!Array.isArray(g) && !(ehObjeto(g) && Array.isArray(g.indicadores)))) {
+      // estrutura sem array de indicadores identificável
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          typeof g,
+          'array ".indicadores" presente e não vazio (ou array direto)',
+          'Gabarito de auditoria (gabarito_a8) sem array ".indicadores" identificável.',
+          { total_indicadores: total, faixa_aceita: '7-8' },
+        ),
+      )
+      return
+    }
+    if (total < 1) {
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          0,
+          '7 ou 8 indicadores',
+          'Gabarito de auditoria (gabarito_a8) com array ".indicadores" vazio.',
+          { total_indicadores: 0, faixa_aceita: '7-8', nomes_dos_indicadores: [] },
+        ),
+      )
+      return
+    }
     if (total !== 7 && total !== 8) {
       erros.push(
         erro(
           CODIGOS.GABARITO,
           'artefatos_financeiros.gabarito_a8',
           total,
-          '7 ou 8 indicadores',
+          '7 ou 8 indicadores (faixa aceita: 7-8)',
           'Gabarito de auditoria (gabarito_a8) com quantidade de indicadores inválida.',
-          { total_indicadores: total },
+          {
+            total_indicadores: total,
+            faixa_aceita: '7-8',
+            nomes_dos_indicadores: meta.nomes_dos_indicadores,
+          },
         ),
       )
     }
@@ -1547,8 +1688,72 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
   }
 
-  // ---------------- E2-F — ADAPTADOR DE CAMPOS (V2.0 → normalizado) -------
+  // ---------------- E2-F/E2-G — ADAPTADOR DE CAMPOS (V2.0 → normalizado) --
   // Função PURA: não muta nem clona o pacote original (só lê caminhos).
+  // E2-G: normaliza EREC (fonte .secoes, case-insensitive) e GABARITO
+  // (conta o array .indicadores, não as chaves do objeto pai) —
+  // mesmas funções da rota /validar, cópia inline idêntica (padrão E2-F).
+  function normalizarErec(erec) {
+    if (!ehObjeto(erec)) return { norm: null, meta: null }
+    const fonte = ehObjeto(erec.secoes) ? erec.secoes : erec
+    const mapa = {}
+    const chaves = Object.keys(fonte)
+    for (let i = 0; i < chaves.length; i++) {
+      mapa[String(chaves[i]).trim().toLowerCase()] = fonte[chaves[i]]
+    }
+    const secoes = ['eliminar', 'reduzir', 'elevar', 'criar']
+    const secoesEncontradas = []
+    const itensPorSecao = {}
+    const norm = {}
+    let totalItens = 0
+    for (let i = 0; i < secoes.length; i++) {
+      const s = secoes[i]
+      const v = mapa[s]
+      if (v === undefined) continue
+      secoesEncontradas.push(s)
+      const itens = Array.isArray(v) ? v : ehObjeto(v) ? Object.keys(v).length : []
+      const n = Array.isArray(itens) ? itens.length : itens
+      itensPorSecao[s] = n
+      totalItens += n
+      norm[s] = Array.isArray(v) ? v : ehObjeto(v) ? v : []
+    }
+    return {
+      norm: norm,
+      meta: {
+        secoes_encontradas: secoesEncontradas,
+        itens_por_secao: itensPorSecao,
+        total_itens: totalItens,
+      },
+    }
+  }
+
+  function normalizarGabarito(g) {
+    if (!ehObjeto(g) && !Array.isArray(g)) return { norm: null, meta: null }
+    const indicadores = Array.isArray(g) ? g : Array.isArray(g.indicadores) ? g.indicadores : null
+    const meta = {
+      total_indicadores: indicadores ? indicadores.length : 0,
+      faixa_aceita: '7-8',
+      nomes_dos_indicadores: [],
+    }
+    if (indicadores) {
+      const nomes = []
+      for (let i = 0; i < indicadores.length; i++) {
+        const it = indicadores[i]
+        nomes.push(
+          ehObjeto(it) && it.nome
+            ? String(it.nome)
+            : ehObjeto(it) && it.indicador
+              ? String(it.indicador)
+              : ehObjeto(it) && it.titulo
+                ? String(it.titulo)
+                : 'indicador ' + (i + 1),
+        )
+      }
+      meta.nomes_dos_indicadores = nomes
+    }
+    return { norm: g, meta: meta }
+  }
+
   function criarPacoteNormalizado(pacote) {
     const raiz = ehObjeto(pacote) ? pacote : null
     const af = raiz && ehObjeto(raiz.artefatos_financeiros) ? raiz.artefatos_financeiros : null
@@ -1568,13 +1773,18 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
       return v
     }
 
+    const erecNorm = normalizarErec(af ? af.erec_a9 : undefined)
+    const gabNorm = normalizarGabarito(af ? af.gabarito_a8 : undefined)
+
     return {
       original: pacote,
       norm: {
         fases: pegar(raiz ? raiz.conteudo_fases : undefined),
         dre: wrapDre(af ? af.dre_15_linhas : undefined),
-        erec: pegar(af ? af.erec_a9 : undefined),
-        gabarito_auditoria: pegar(af ? af.gabarito_a8 : undefined),
+        erec: erecNorm.norm,
+        erec_meta: erecNorm.meta,
+        gabarito_auditoria: gabNorm.norm,
+        gabarito_meta: gabNorm.meta,
         nao_trafega: pegar(raiz ? raiz.nao_trafega : undefined),
         projetos: pegar(pep ? pep.projetos : undefined),
         planos_acao: pegar(pep ? pep.planos_acao : undefined),
@@ -2126,7 +2336,10 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
     }
   }
 
-  // R4 — EREC A9: objeto com 4 seções canônicas; contagem INFORMATIVA
+  // R4 — EREC A9: normalizado (4 seções canônicas); contagem INFORMATIVA.
+  // E2-G: norm.erec já vem da fonte .secoes (case-insensitive) com as 4
+  // chaves minúsculas; faltando APÓS normalização é o único bloqueio de
+  // estrutura. R4 só falha também se as 4 presentes estiverem VAZIAS.
   function validarR4(norm, erros, avisos) {
     const erec = norm.erec
     if (!ehObjeto(erec)) {
@@ -2135,81 +2348,133 @@ routerAdd('POST', '/backend/v1/pacote-v2/ingestar', (e) => {
           CODIGOS.EREC,
           'artefatos_financeiros.erec_a9',
           descriptorDe(erec),
-          'objeto com 4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'objeto com 4 seções canônicas (Eliminar, Reduzir, Elevar, Criar) [fonte .secoes aceita]',
           'Bloco EREC (erec_a9) ausente ou inválido.',
         ),
       )
       return
     }
-    const mapaSecoes = {}
-    const chaves = Object.keys(erec)
-    for (let i = 0; i < chaves.length; i++) {
-      mapaSecoes[String(chaves[i]).trim().toLowerCase()] = erec[chaves[i]]
-    }
+    const meta = norm.erec_meta || { secoes_encontradas: [], itens_por_secao: {}, total_itens: 0 }
     const secoes = ['eliminar', 'reduzir', 'elevar', 'criar']
     const faltando = []
-    const porSecao = []
-    let totalItens = 0
+    const todasVazias = []
     for (let i = 0; i < secoes.length; i++) {
       const s = secoes[i]
-      const v = mapaSecoes[s]
-      if (v === undefined) {
+      const v = erec[s]
+      if (v === undefined || v === null) {
         faltando.push(s)
-        porSecao.push(s + ': ausente')
         continue
       }
       const n = Array.isArray(v) ? v.length : ehObjeto(v) ? Object.keys(v).length : 0
-      totalItens += n
-      porSecao.push(s + ': ' + n)
+      if (n === 0) todasVazias.push(s)
     }
     if (faltando.length > 0) {
       erros.push(
         erro(
           CODIGOS.EREC,
           'artefatos_financeiros.erec_a9',
-          'faltando seções: ' + faltando.join(', '),
-          '4 seções canônicas (Eliminar, Reduzir, Elevar, Criar)',
+          'faltando seções após normalização: ' + faltando.join(', '),
+          '4 seções canônicas (Eliminar, Reduzir, Elevar, Criar) em .secoes (case-insensitive)',
           'Bloco EREC sem as 4 seções canônicas.',
+          {
+            secoes_encontradas: meta.secoes_encontradas,
+            itens_por_secao: meta.itens_por_secao,
+            total_itens: meta.total_itens,
+          },
+        ),
+      )
+    } else if (todasVazias.length === 4) {
+      erros.push(
+        erro(
+          CODIGOS.EREC,
+          'artefatos_financeiros.erec_a9',
+          'as 4 seções presentes mas todas vazias',
+          'pelo menos um item em alguma seção do EREC',
+          'Bloco EREC com as 4 seções canônicas todas vazias.',
+          {
+            secoes_encontradas: meta.secoes_encontradas,
+            itens_por_secao: meta.itens_por_secao,
+            total_itens: meta.total_itens,
+          },
         ),
       )
     }
+    // Contagem de itens é INFORMATIVA (Aurora = 20: 4+5+5+6) — divergência
+    // da referência NÃO é falha (definido na E2-F).
     avisos.push(
       aviso(
         CODIGOS.EREC,
         'artefatos_financeiros.erec_a9',
-        totalItens + ' itens (' + porSecao.join(' · ') + ')',
+        meta.total_itens + ' itens (' + meta.secoes_encontradas.join(' · ') + ')',
         'contagem informativa (referência Aurora = 20 itens: 4+5+5+6)',
         'Contagem de itens do EREC (informativa, não bloqueia).',
+        { itens_por_secao: meta.itens_por_secao },
       ),
     )
   }
 
-  // R5 — gabarito A8: aceita 7 OU 8 indicadores (declara total_indicadores)
+  // R5 — gabarito A8: aceita 7 OU 8 indicadores (declara total_indicadores).
+  // E2-G: norm.gabarito_meta.total_indicadores conta o ARRAY .indicadores
+  // (não as chaves do objeto pai: titulo/indicadores/total_indicadores/
+  // veredito = 4 era o erro antigo). Falha só se ausente, vazio ou fora
+  // da faixa 7–8. Dentro da faixa → sem aviso.
   function validarR5(norm, erros) {
     const g = norm.gabarito_auditoria
+    const meta = norm.gabarito_meta
+    const total = meta && meta.total_indicadores !== undefined ? meta.total_indicadores : 0
     if (!ehObjeto(g) && !Array.isArray(g)) {
       erros.push(
         erro(
           CODIGOS.GABARITO,
           'artefatos_financeiros.gabarito_a8',
           descriptorDe(g),
-          'objeto (ou array) com 7 ou 8 indicadores',
+          'objeto com array ".indicadores" (ou array direto) com 7 ou 8 indicadores',
           'Bloco gabarito_a8 (gabarito de auditoria) ausente ou inválido.',
-          { total_indicadores: 0 },
+          { total_indicadores: 0, faixa_aceita: '7-8' },
         ),
       )
       return
     }
-    const total = Array.isArray(g) ? g.length : Object.keys(g).length
+    if (!meta || (!Array.isArray(g) && !(ehObjeto(g) && Array.isArray(g.indicadores)))) {
+      // estrutura sem array de indicadores identificável
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          typeof g,
+          'array ".indicadores" presente e não vazio (ou array direto)',
+          'Gabarito de auditoria (gabarito_a8) sem array ".indicadores" identificável.',
+          { total_indicadores: total, faixa_aceita: '7-8' },
+        ),
+      )
+      return
+    }
+    if (total < 1) {
+      erros.push(
+        erro(
+          CODIGOS.GABARITO,
+          'artefatos_financeiros.gabarito_a8',
+          0,
+          '7 ou 8 indicadores',
+          'Gabarito de auditoria (gabarito_a8) com array ".indicadores" vazio.',
+          { total_indicadores: 0, faixa_aceita: '7-8', nomes_dos_indicadores: [] },
+        ),
+      )
+      return
+    }
     if (total !== 7 && total !== 8) {
       erros.push(
         erro(
           CODIGOS.GABARITO,
           'artefatos_financeiros.gabarito_a8',
           total,
-          '7 ou 8 indicadores',
+          '7 ou 8 indicadores (faixa aceita: 7-8)',
           'Gabarito de auditoria (gabarito_a8) com quantidade de indicadores inválida.',
-          { total_indicadores: total },
+          {
+            total_indicadores: total,
+            faixa_aceita: '7-8',
+            nomes_dos_indicadores: meta.nomes_dos_indicadores,
+          },
         ),
       )
     }
