@@ -401,7 +401,7 @@ routerAdd('POST', '/backend/v1/dossie/normalizar', (e) => {
 })
 
 routerAdd('GET', '/backend/v1/dossie/normalizar/{leadId}', (e) => {
-  const leadId = e.request.PathValue('leadId')
+  const leadId = e.request.pathValue('leadId')
   if (!leadId) {
     return e.json(400, { ok: false, codigo_erro: 'LEAD_ID_AUSENTE' })
   }

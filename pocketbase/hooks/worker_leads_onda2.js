@@ -1607,6 +1607,10 @@ cronAdd('cadencia_nutricao_leads', '0 9 * * *', () => {
         if (!modalidadeContratada) {
           const fmt = leadTeste.getString('formato_interesse') || ''
           if (fmt.indexOf('Bespoke') !== -1) {
+            // E3-A-1 (CS-63): "Bespoke" verificado ANTES de "CaaS" — mantém "Bespoke CaaS" correto
+            modalidadeContratada = 'Bespoke CaaS'
+          } else if (fmt.indexOf('CaaS') !== -1) {
+            // E3-A-1 (CS-63): "CaaS" isolado (sem "Bespoke") também resolve Bespoke CaaS
             modalidadeContratada = 'Bespoke CaaS'
           } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
             modalidadeContratada = 'MaaS Híbrido'
