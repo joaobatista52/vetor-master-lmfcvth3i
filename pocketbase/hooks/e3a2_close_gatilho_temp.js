@@ -7,9 +7,29 @@
 // cronRemove). EVIDÊNCIA: gravada em logs_auditoria (action='E3A2_CLOSE_TESTE5'),
 // pois o orçamento de leitura de logs da rodada se esgotou. Allowlist: lead
 // t8zia1qyovt9cof (Aurora Trading).
+// CLOSE-2: janela de re-exercício reaberta (Date.parse estendida) e guarda de
+// reexecução agora compara o id DO REGISTRO do marcador com o id a APAGAR
+// (0117), para que a deleção não rearme o gatilho indefinidamente.
 cronAdd('e3a2close_gatilho_temp2', '*/2 * * * *', () => {
-  if (Date.now() < Date.parse('2026-11-16T20:45:00.000Z')) return
-  // evita reexecução: marcador já gravado em logs_auditoria
+  if (Date.now() < Date.parse('2026-11-16T21:00:00.000Z')) return
+  // evita reexecução: SÓ o marcador desta rodada (tag close2) encerra. O
+  // marcador ANTIGO (rodada anterior, sem tag) é APAGADO aqui no runtime vivo
+  // (a migration 0117 só corre no boot do deploy — não alcança este runtime).
+  let marcadorAntigo = null
+  try {
+    marcadorAntigo = $app.findFirstRecordByFilter(
+      'logs_auditoria',
+      "action='E3A2_CLOSE_TESTE5' && details!~'close2'",
+    )
+  } catch (_) {
+    marcadorAntigo = null
+  }
+  if (marcadorAntigo) {
+    try {
+      $app.delete(marcadorAntigo)
+    } catch (_) {}
+    return
+  }
   try {
     $app.findFirstRecordByFilter('logs_auditoria', "action='E3A2_CLOSE_TESTE5'")
     try {
@@ -20,6 +40,7 @@ cronAdd('e3a2close_gatilho_temp2', '*/2 * * * *', () => {
   const LEAD_UNICO_AUTORIZADO = 't8zia1qyovt9cof'
   const evidencia = {
     gatilho: 'e3a2close_gatilho_temp2',
+    tag_close2: 'rodada E3-A-2-CLOSE-2',
     inicio: new Date().toISOString(),
     lead_efemera: null,
     lead_efemera_removida: false,
