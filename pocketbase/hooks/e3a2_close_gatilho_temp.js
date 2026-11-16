@@ -106,48 +106,40 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
   }
 
   // -------- 2. Montagem completa DIRETA NO HOOK (sem HTTP) --------
-  // CLOSE-4 passo 2: canal primário = globalThis.$e3a2MontarPacoteCore
-  // (require lança "Invalid module" no pb.js embutido do runtime). Prova
-  // 22:10: globalThis vazio no cron. Resolvedores tentados EM ORDEM:
-  // (a) globalThis (funciona se o core rodou no boot — rota core-ping);
-  // (b) require com ESPECIFICADORES diretos, sem template literal.
+  // CLOSE-5: resolvedores em ORDEM, com o require NO PADRÃO DO HELPER
+  // (template literal `${__hooks}/...`) como primeira via — espelhando
+  // sync_site_leads.js → dossie_versoes_helper.js (que carrega). globalThis
+  // mantido como via redundante.
   var __canalUsado = null
   var core = null
   try {
-    var __e3a2HostCron = typeof globalThis !== 'undefined' ? globalThis : this
-    if (__e3a2HostCron && __e3a2HostCron.$e3a2MontarPacoteCore) {
-      core = __e3a2HostCron.$e3a2MontarPacoteCore
-      __canalUsado = 'globalThis'
+    var mCandCron = require(`${__hooks}/dossie_montar_pacote_core.js`)
+    if (mCandCron && mCandCron.executarMontagemPacoteE3A2) {
+      core = mCandCron
+      __canalUsado = 'require(${__hooks}/dossie_montar_pacote_core.js)'
     }
-  } catch (_) {
+  } catch (errCronReq) {
+    console.log(
+      '[E3A2_CLOSE3] require do core falhou no cron: ' + (errCronReq && errCronReq.message),
+    )
     core = null
   }
   if (!core) {
-    var especificadores = [
-      './dossie_montar_pacote_core.js',
-      'dossie_montar_pacote_core.js',
-      'dossie_montar_pacote_core',
-      './dossie_montar_pacote_core',
-      __hooks + '/dossie_montar_pacote_core.js',
-      __hooks + '/dossie_montar_pacote_core',
-    ]
-    for (var ei = 0; ei < especificadores.length && !core; ei++) {
-      try {
-        var mCand = require(especificadores[ei])
-        if (mCand && mCand.executarMontagemPacoteE3A2) {
-          core = mCand
-          __canalUsado = 'require:' + especificadores[ei]
-        }
-      } catch (_) {
-        // especificador não resolvido — tenta o próximo
+    try {
+      var __e3a2HostCron = typeof globalThis !== 'undefined' ? globalThis : this
+      if (__e3a2HostCron && __e3a2HostCron.$e3a2MontarPacoteCore) {
+        core = __e3a2HostCron.$e3a2MontarPacoteCore
+        __canalUsado = 'globalThis'
       }
+    } catch (_) {
+      core = null
     }
   }
   if (!core) {
     console.log('[E3A2_CLOSE3] CORE_INDISPONIVEL — nenhum resolvedor funcionou.')
     gravarLogAuditoria('core_indisponivel', {
       resumo: 'CORE_INDISPONIVEL',
-      motivo: 'globalThis vazio e require falhou para todos os especificadores testados.',
+      motivo: 'require no padrão do helper e globalThis falharam.',
       duracao_ms: Date.now() - T0,
     })
     return

@@ -509,6 +509,9 @@ routerAdd('GET', '/backend/v1/dossie/montar-pacote-teste/{leadId}', (e) => {
 })
 
 // Rota de contrato (Etapa 4/5) — POST com lead_id no corpo.
+// E3-A-2-CLOSE-5: núcleo importado com o MESMO padrão do consumidor do helper
+// antigo (sync_site_leads.js → dossie_versoes_helper.js): require com
+// template literal `${__hooks}/...` DENTRO do callback, no topo do handler.
 routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
   // ADENDO 3: métodos de request camelCase na JSVM.
   let body = {}
@@ -526,48 +529,42 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
   if (!leadIdPost) {
     return e.json(400, { ok: false, codigo_erro: 'LEAD_ID_AUSENTE', motivo: 'Informe lead_id.' })
   }
-  // E3-A-2-CLOSE-3: núcleo Etapas 4+5 extraído para dossie_montar_pacote_core.js
-  // para permitir execução DIRETA pelo gatilho cron — sem chamada HTTP interna
-  // (context canceled aos ~44s).
-  // CLOSE-4 passo 2: require() lança "Invalid module" no runtime Skip Cloud
-  // (hooks empacotados em pb.js único) — canal primário = globalThis.
+  // E3-A-2-CLOSE-5: require do núcleo no MESMO padrão do consumidor do helper
+  // antigo (sync_site_leads.js → dossie_versoes_helper.js): template literal
+  // com ${__hooks}, DENTRO do callback. Canal requerido como PRIMEIRA via.
   var coreMontarPacote = null
+  var canalCore = null
   try {
-    var __e3a2HostPost = typeof globalThis !== 'undefined' ? globalThis : this
-    coreMontarPacote = __e3a2HostPost.$e3a2MontarPacoteCore || null
-  } catch (_) {
+    coreMontarPacote = require(`${__hooks}/dossie_montar_pacote_core.js`)
+    canalCore = 'require(${__hooks}/dossie_montar_pacote_core.js)'
+  } catch (errReqPost) {
     coreMontarPacote = null
+    console.log(
+      '[E3-A-2][montar-pacote] require do core falhou: ' + (errReqPost && errReqPost.message),
+    )
   }
+  // Via redundante: globalThis (registro feito pelo próprio core no boot).
   if (!coreMontarPacote) {
-    var especificadoresPost = [
-      './dossie_montar_pacote_core.js',
-      'dossie_montar_pacote_core.js',
-      'dossie_montar_pacote_core',
-      './dossie_montar_pacote_core',
-      __hooks + '/dossie_montar_pacote_core.js',
-      __hooks + '/dossie_montar_pacote_core',
-    ]
-    for (var pi = 0; pi < especificadoresPost.length && !coreMontarPacote; pi++) {
-      try {
-        var mCandPost = require(especificadoresPost[pi])
-        if (mCandPost && mCandPost.executarMontagemPacoteE3A2) {
-          coreMontarPacote = mCandPost
-        }
-      } catch (_) {
-        // especificador não resolvido — tenta o próximo
+    try {
+      var __e3a2HostPost = typeof globalThis !== 'undefined' ? globalThis : this
+      if (__e3a2HostPost && __e3a2HostPost.$e3a2MontarPacoteCore) {
+        coreMontarPacote = __e3a2HostPost.$e3a2MontarPacoteCore
+        canalCore = 'globalThis'
       }
+    } catch (_) {
+      coreMontarPacote = null
     }
   }
   if (!coreMontarPacote || !coreMontarPacote.executarMontagemPacoteE3A2) {
     return e.json(500, {
       ok: false,
       codigo_erro: 'CORE_INDISPONIVEL',
-      motivo:
-        'Núcleo Etapas 4+5 não registrado no globalThis e require falhou para todos os especificadores testados (caminhos ' +
-        especificadoresPost.join(', ') +
-        ').',
+      motivo: 'Núcleo Etapas 4+5 não carregou (require no padrão do helper e globalThis falharam).',
     })
   }
   const rPost = coreMontarPacote.executarMontagemPacoteE3A2(leadIdPost)
+  try {
+    rPost.payload.canal_core = canalCore
+  } catch (_) {}
   return e.json(rPost.status, rPost.payload)
 })

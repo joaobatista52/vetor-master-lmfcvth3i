@@ -1330,29 +1330,33 @@ function executarMontagemPacoteE3A2(leadId) {
   }
 }
 
-// E3-A-2-CLOSE-4 (passo 2): no runtime Skip Cloud os hooks são empacotados em
-// um único pb.js — __hooks não resolve em disco e require() lança
-// "Invalid module" (prova: cron e3a2_close3_montagem_completa falhou em 81 ms,
-// 2026-11-16 22:00). Canal primário entre arquivos = propriedade no globalThis
-// (mesma VM global compartilhada por todos os callbacks); module.exports é
-// mantido como via alternativa caso o runtime volte a expor require real.
+// E3-A-2-CLOSE-5: padrão dossie_versoes_helper.js aplicado ao pé da letra —
+// módulo puro-biblioteca, SEM routerAdd/cronAdd (a rota core-ping, que tirava
+// este arquivo do padrão do helper, foi removida). Exportação espelha o
+// helper: module.exports + registro no globalThis como canal redundante.
 var __e3a2Host = typeof globalThis !== 'undefined' ? globalThis : this
-__e3a2Host.$e3a2MontarPacoteCore = {
-  executarMontagemPacoteE3A2: executarMontagemPacoteE3A2,
-}
 try {
-  module.exports = __e3a2Host.$e3a2MontarPacoteCore
+  module.exports = { executarMontagemPacoteE3A2: executarMontagemPacoteE3A2 }
+} catch (_) {}
+try {
+  __e3a2Host.$e3a2MontarPacoteCore = module.exports
 } catch (_) {}
 
-// Registro de ENTRADA (health check, CLOSE-4 passo 2 — divergência declarada):
-// arquivo puro-biblioteca pode ser tratado pelo empacotador como módulo sob
-// demanda (nunca executado no boot) — e require() falha com "Invalid module"
-// (prova: cron 22:10, "globalThis vazio + require falhou"). Com uma rota
-// registrada, o arquivo é executado no boot e o registro no globalThis acontece.
-routerAdd('GET', '/backend/v1/dossie/core-ping', (e) => {
-  return e.json(200, {
-    ok: true,
-    modulo: 'dossie_montar_pacote_core',
-    execucao_no_boot: true,
-  })
+// E3-A-2-CLOSE-5 — PROVA DE CARGA (PASSO 4): rota de diagnóstico mínima, no
+// padrão do consumidor. Importa o núcleo via require() DENTRO do callback
+// (mesma forma de sync_site_leads.js → dossie_versoes_helper.js) e devolve
+// literalmente o que carregou (canal, tipo da função) — sem executar a
+// montagem. Prova aceitável: 200 com carregado=true.
+routerAdd('GET', '/backend/v1/dossie/core-prova-carga', (e) => {
+  const prova = { carregado: false, canal: null, tipo_fn: null, erro: null }
+  try {
+    const mod = require(`${__hooks}/dossie_montar_pacote_core.js`)
+    prova.carregado = !!(mod && mod.executarMontagemPacoteE3A2)
+    prova.canal = 'require(${__hooks}/dossie_montar_pacote_core.js)'
+    prova.tipo_fn = typeof (mod && mod.executarMontagemPacoteE3A2)
+  } catch (errProva) {
+    prova.carregado = false
+    prova.erro = (errProva && errProva.message) || String(errProva)
+  }
+  return e.json(200, prova)
 })
