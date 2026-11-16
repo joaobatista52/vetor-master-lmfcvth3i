@@ -1542,13 +1542,27 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     })
   }
 
-  const faseUnica =
-    body && body.fase_unica !== undefined && body.fase_unica !== null
-      ? Number(body.fase_unica)
-      : null
-
-  if (faseUnica !== null && (!Number.isInteger(faseUnica) || faseUnica < 1 || faseUnica > 13)) {
-    return e.json(400, { erro: 'FASE_UNICA_INVALIDA' })
+  // E3-A-1 / Etapa 1 (CS-58): parâmetro opcional fase_unica — número (1..13) ou "P1".."P13".
+  // Nulo/ausente => comportamento integral atual. Inválido => rejeição nomeada, sem executar nada.
+  let faseUnica = null
+  if (body && body.fase_unica !== undefined && body.fase_unica !== null && body.fase_unica !== '') {
+    const fRaw = body.fase_unica
+    if (typeof fRaw === 'string') {
+      const mFase = fRaw
+        .trim()
+        .toUpperCase()
+        .match(/^P(\d{1,2})$/)
+      faseUnica = mFase ? Number(mFase[1]) : NaN
+    } else {
+      faseUnica = Number(fRaw)
+    }
+    if (!Number.isInteger(faseUnica) || faseUnica < 1 || faseUnica > 13) {
+      return e.json(400, {
+        sucesso: false,
+        codigo_erro: 'FASE_UNICA_INVALIDA',
+        motivo: 'fase_unica deve ser um inteiro de 1 a 13 ou "P1".."P13". Nada foi executado.',
+      })
+    }
   }
 
   const dossie = body.dossie || {}
@@ -1586,6 +1600,11 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
         if (!nivelAssinaturaLead) {
           const fmt = lRec.getString('formato_interesse') || ''
           if (fmt.indexOf('Bespoke') !== -1) {
+            // E3-A-1 (CS-63): "Bespoke" verificado ANTES de "CaaS" —
+            // garante "Bespoke CaaS" e "Bespoke" no mesmo destino.
+            nivelAssinaturaLead = 'Bespoke CaaS'
+          } else if (fmt.indexOf('CaaS') !== -1) {
+            // E3-A-1 (CS-63): "CaaS" isolado (sem "Bespoke") também resolve Bespoke CaaS.
             nivelAssinaturaLead = 'Bespoke CaaS'
           } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
             nivelAssinaturaLead = 'MaaS Híbrido'
@@ -1600,6 +1619,10 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
   if (!nivelAssinaturaLead) {
     const fmt = (dossie && dossie.cliente && dossie.cliente.formato_interesse) || ''
     if (fmt.indexOf('Bespoke') !== -1) {
+      // E3-A-1 (CS-63): "Bespoke" ANTES de "CaaS" (mantém "Bespoke CaaS" correto)
+      nivelAssinaturaLead = 'Bespoke CaaS'
+    } else if (fmt.indexOf('CaaS') !== -1) {
+      // E3-A-1 (CS-63): "CaaS" isolado também resolve Bespoke CaaS
       nivelAssinaturaLead = 'Bespoke CaaS'
     } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
       nivelAssinaturaLead = 'MaaS Híbrido'
@@ -1711,12 +1734,32 @@ routerAdd('POST', '/backend/v1/servico-diagnostico', (e) => {
     proximoComandoAEnviar = pDef.comando_avanco_apos_validacao
   }
 
-  const custoUsdCalculado = (tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015
+  // E3-A-1 / Etapa 1 (CS-58): em modo fase_unica, retorna APENAS o resultado
+  // isolado da fase executada — sem relatório consolidado, sem blocos derivados
+  // e sem gravar diagnóstico completo (a gravação completa cabe ao worker).
+  if (faseUnica !== null) {
+    return e.json(200, {
+      sucesso: true,
+      modo: 'fase_unica',
+      fase_executada: faseUnica,
+      prompt_id: 'P' + faseUnica,
+      versao_servico: 'V7.2.3-A9-Skill13Prompts',
+      executor: 'jbp-gestao-master',
+      total_prompts_executados: outputPrompts.length,
+      output_fase: outputPrompts.length > 0 ? outputPrompts[0] : null,
+      output_fases: outputPrompts,
+      duracao_total_ms: Date.now() - tInicio,
+      diagnostico_completo_gravado: false,
+    })
+  }
+
   const custoGateway = {
     tokens_input: tokensInTotal,
     tokens_output: tokensOutTotal,
     tokens_total: tokensInTotal + tokensOutTotal,
-    custo_usd: Number(custoUsdCalculado.toFixed(4)),
+    custo_usd: Number(
+      ((tokensInTotal / 1000) * 0.003 + (tokensOutTotal / 1000) * 0.015).toFixed(4),
+    ),
     tempo_execucao_ms: tempoExecucaoAgenteTotalMs,
     tempo_execucao_segundos: Number((tempoExecucaoAgenteTotalMs / 1000).toFixed(2)),
     medicao_real_gateway: true,

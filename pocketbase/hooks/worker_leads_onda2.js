@@ -86,6 +86,10 @@ routerAdd('POST', '/backend/v1/teste-beatek-dryrun-fresco', (e) => {
   if (!modalidadeContratada) {
     const fmt = leadRecord.getString('formato_interesse') || ''
     if (fmt.indexOf('Bespoke') !== -1) {
+      // E3-A-1 (CS-63): "Bespoke" verificado ANTES de "CaaS" — mantém "Bespoke CaaS" correto
+      modalidadeContratada = 'Bespoke CaaS'
+    } else if (fmt.indexOf('CaaS') !== -1) {
+      // E3-A-1 (CS-63): "CaaS" isolado (sem "Bespoke") também resolve Bespoke CaaS
       modalidadeContratada = 'Bespoke CaaS'
     } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
       modalidadeContratada = 'MaaS Híbrido'
@@ -636,6 +640,10 @@ routerAdd('POST', '/backend/v1/worker/processar-lead/{id}', (e) => {
     if (!nivelAssinaturaLead) {
       const fmt = leadRecord.getString('formato_interesse') || ''
       if (fmt.indexOf('Bespoke') !== -1) {
+        // E3-A-1 (CS-63): "Bespoke" verificado ANTES de "CaaS" — mantém "Bespoke CaaS" correto
+        nivelAssinaturaLead = 'Bespoke CaaS'
+      } else if (fmt.indexOf('CaaS') !== -1) {
+        // E3-A-1 (CS-63): "CaaS" isolado (sem "Bespoke") também resolve Bespoke CaaS
         nivelAssinaturaLead = 'Bespoke CaaS'
       } else if (fmt.indexOf('MaaS') !== -1 || fmt.indexOf('Híbrido') !== -1) {
         nivelAssinaturaLead = 'MaaS Híbrido'
