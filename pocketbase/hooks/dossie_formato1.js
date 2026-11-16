@@ -530,22 +530,11 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
         benchmark_setorial: true,
         valuation: true,
       },
+      // CORREÇÃO E3-A-2-FIX-B (Tabela 2.1): SaaS Puro = Essencial e
+      // MaaS Híbrido = Completo — as duas linhas estavam trocadas.
+      // Buffett: Essencial = 4, Completo = 7 ou 8 (mantida a forma [min, max]).
+      // DRE: Essencial = 8 a 10 (intervalo), Completo = 15 (valor único).
       'MaaS Híbrido': {
-        projetos: 3,
-        planos_acao: 6,
-        okrs: 3,
-        objetivos_bsc: 4,
-        itens_erec: 8,
-        linhas_hoshin: 0,
-        ews: 2,
-        indicadores_buffett: [4, 4],
-        linhas_dre: [8, 10],
-        conselho_consultivo: false,
-        conselho_administracao: false,
-        benchmark_setorial: false,
-        valuation: false,
-      },
-      'SaaS Puro': {
         projetos: 4,
         planos_acao: 8,
         okrs: 7,
@@ -556,6 +545,21 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
         indicadores_buffett: [7, 8],
         linhas_dre: 15,
         conselho_consultivo: true,
+        conselho_administracao: false,
+        benchmark_setorial: false,
+        valuation: false,
+      },
+      'SaaS Puro': {
+        projetos: 3,
+        planos_acao: 6,
+        okrs: 3,
+        objetivos_bsc: 4,
+        itens_erec: 8,
+        linhas_hoshin: 0,
+        ews: 2,
+        indicadores_buffett: [4, 4],
+        linhas_dre: [8, 10],
+        conselho_consultivo: false,
         conselho_administracao: false,
         benchmark_setorial: false,
         valuation: false,
