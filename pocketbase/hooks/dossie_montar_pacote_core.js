@@ -1330,4 +1330,29 @@ function executarMontagemPacoteE3A2(leadId) {
   }
 }
 
-module.exports = { executarMontagemPacoteE3A2: executarMontagemPacoteE3A2 }
+// E3-A-2-CLOSE-4 (passo 2): no runtime Skip Cloud os hooks são empacotados em
+// um único pb.js — __hooks não resolve em disco e require() lança
+// "Invalid module" (prova: cron e3a2_close3_montagem_completa falhou em 81 ms,
+// 2026-11-16 22:00). Canal primário entre arquivos = propriedade no globalThis
+// (mesma VM global compartilhada por todos os callbacks); module.exports é
+// mantido como via alternativa caso o runtime volte a expor require real.
+var __e3a2Host = typeof globalThis !== 'undefined' ? globalThis : this
+__e3a2Host.$e3a2MontarPacoteCore = {
+  executarMontagemPacoteE3A2: executarMontagemPacoteE3A2,
+}
+try {
+  module.exports = __e3a2Host.$e3a2MontarPacoteCore
+} catch (_) {}
+
+// Registro de ENTRADA (health check, CLOSE-4 passo 2 — divergência declarada):
+// arquivo puro-biblioteca pode ser tratado pelo empacotador como módulo sob
+// demanda (nunca executado no boot) — e require() falha com "Invalid module"
+// (prova: cron 22:10, "globalThis vazio + require falhou"). Com uma rota
+// registrada, o arquivo é executado no boot e o registro no globalThis acontece.
+routerAdd('GET', '/backend/v1/dossie/core-ping', (e) => {
+  return e.json(200, {
+    ok: true,
+    modulo: 'dossie_montar_pacote_core',
+    execucao_no_boot: true,
+  })
+})

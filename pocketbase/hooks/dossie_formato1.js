@@ -46,9 +46,11 @@
  *
  * REGRA DE ESCOPO JSVM (PocketBase/Goja): callbacks rodam em pool isolado —
  * declaração top-level NÃO é visível dentro de callback. Desde E3-A-2-CLOSE-3
- * o núcleo das Etapas 4+5 reside no módulo CommonJS
- * dossie_montar_pacote_core.js (require dentro do callback do POST), que o
- * compartilha com o gatilho cron da E3-A-2-CLOSE-3.
+ * o núcleo das Etapas 4+5 reside no módulo dossie_montar_pacote_core.js,
+ * compartilhado com o gatilho cron — via globalThis.$e3a2MontarPacoteCore
+ * (CLOSE-4 passo 2): o runtime Skip Cloud empacota os hooks em um único pb.js
+ * e require() falha com "Invalid module" (prova: cron falhou em 81 ms em
+ * 2026-11-16 22:00).
  */
 
 routerAdd('POST', '/backend/v1/dossie/normalizar', (e) => {
@@ -524,10 +526,48 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
   if (!leadIdPost) {
     return e.json(400, { ok: false, codigo_erro: 'LEAD_ID_AUSENTE', motivo: 'Informe lead_id.' })
   }
-  // E3-A-2-CLOSE-3: núcleo Etapas 4+5 extraído para módulo CommonJS
-  // (dossie_montar_pacote_core.js) para permitir execução DIRETA pelo gatilho
-  // cron — sem chamada HTTP interna (context canceled aos ~44s).
-  const coreMontarPacote = require(`${__hooks}/dossie_montar_pacote_core.js`)
+  // E3-A-2-CLOSE-3: núcleo Etapas 4+5 extraído para dossie_montar_pacote_core.js
+  // para permitir execução DIRETA pelo gatilho cron — sem chamada HTTP interna
+  // (context canceled aos ~44s).
+  // CLOSE-4 passo 2: require() lança "Invalid module" no runtime Skip Cloud
+  // (hooks empacotados em pb.js único) — canal primário = globalThis.
+  var coreMontarPacote = null
+  try {
+    var __e3a2HostPost = typeof globalThis !== 'undefined' ? globalThis : this
+    coreMontarPacote = __e3a2HostPost.$e3a2MontarPacoteCore || null
+  } catch (_) {
+    coreMontarPacote = null
+  }
+  if (!coreMontarPacote) {
+    var especificadoresPost = [
+      './dossie_montar_pacote_core.js',
+      'dossie_montar_pacote_core.js',
+      'dossie_montar_pacote_core',
+      './dossie_montar_pacote_core',
+      __hooks + '/dossie_montar_pacote_core.js',
+      __hooks + '/dossie_montar_pacote_core',
+    ]
+    for (var pi = 0; pi < especificadoresPost.length && !coreMontarPacote; pi++) {
+      try {
+        var mCandPost = require(especificadoresPost[pi])
+        if (mCandPost && mCandPost.executarMontagemPacoteE3A2) {
+          coreMontarPacote = mCandPost
+        }
+      } catch (_) {
+        // especificador não resolvido — tenta o próximo
+      }
+    }
+  }
+  if (!coreMontarPacote || !coreMontarPacote.executarMontagemPacoteE3A2) {
+    return e.json(500, {
+      ok: false,
+      codigo_erro: 'CORE_INDISPONIVEL',
+      motivo:
+        'Núcleo Etapas 4+5 não registrado no globalThis e require falhou para todos os especificadores testados (caminhos ' +
+        especificadoresPost.join(', ') +
+        ').',
+    })
+  }
   const rPost = coreMontarPacote.executarMontagemPacoteE3A2(leadIdPost)
   return e.json(rPost.status, rPost.payload)
 })

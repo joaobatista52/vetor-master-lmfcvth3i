@@ -15,10 +15,20 @@
  * comércio internacional / trading company). Se não houver lead FORMATO 1,
  * registra E3A2_CLOSE3 com status SEM_LEAD_FORMATO1 (não falha o cron).
  *
- * Cron: 0 6 * * * (06:00 UTC — 03:00 BRT). Sem rota HTTP — só cronAdd.
+ * Cron: a cada minuto durante a rodada E3-A-2-CLOSE-4 passo 2 (antes: 0 6 * * *,
+ * 06:00 UTC — 03:00 BRT). Sem rota HTTP — só cronAdd.
+ *
+ * CLOSE-4 passo 2 (2026-11-16): require() lança "Invalid module" no runtime
+ * Skip Cloud — os hooks são empacotados em um único pb.js e __hooks não resolve
+ * em disco (prova: cron e3a2_close3_montagem_completa falhou em 81 ms às 22:00
+ * e em 1 ms às 21:55). O núcleo é consumido via globalThis.$e3a2MontarPacoteCore,
+ * registrado pelo próprio core quando o pb.js é carregado.
+ *
+ * PRAZO DE CÓDIGO (CLOSE-4 passo 2): reverte para '0 6 * * *' na 1ª rodada
+ * após o teste 5 comprovado.
  */
 
-cronAdd('e3a2_close3_montagem_completa', '*/5 * * * *', () => {
+cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
   const T0 = Date.now()
   const TAG = 'E3A2_CLOSE3'
 
@@ -96,10 +106,81 @@ cronAdd('e3a2_close3_montagem_completa', '*/5 * * * *', () => {
   }
 
   // -------- 2. Montagem completa DIRETA NO HOOK (sem HTTP) --------
-  const core = require(`${__hooks}/dossie_montar_pacote_core.js`)
+  // CLOSE-4 passo 2: canal primário = globalThis.$e3a2MontarPacoteCore
+  // (require lança "Invalid module" no pb.js embutido do runtime). Prova
+  // 22:10: globalThis vazio no cron. Resolvedores tentados EM ORDEM:
+  // (a) globalThis (funciona se o core rodou no boot — rota core-ping);
+  // (b) require com ESPECIFICADORES diretos, sem template literal.
+  var __canalUsado = null
+  var core = null
+  try {
+    var __e3a2HostCron = typeof globalThis !== 'undefined' ? globalThis : this
+    if (__e3a2HostCron && __e3a2HostCron.$e3a2MontarPacoteCore) {
+      core = __e3a2HostCron.$e3a2MontarPacoteCore
+      __canalUsado = 'globalThis'
+    }
+  } catch (_) {
+    core = null
+  }
+  if (!core) {
+    var especificadores = [
+      './dossie_montar_pacote_core.js',
+      'dossie_montar_pacote_core.js',
+      'dossie_montar_pacote_core',
+      './dossie_montar_pacote_core',
+      __hooks + '/dossie_montar_pacote_core.js',
+      __hooks + '/dossie_montar_pacote_core',
+    ]
+    for (var ei = 0; ei < especificadores.length && !core; ei++) {
+      try {
+        var mCand = require(especificadores[ei])
+        if (mCand && mCand.executarMontagemPacoteE3A2) {
+          core = mCand
+          __canalUsado = 'require:' + especificadores[ei]
+        }
+      } catch (_) {
+        // especificador não resolvido — tenta o próximo
+      }
+    }
+  }
+  if (!core) {
+    console.log('[E3A2_CLOSE3] CORE_INDISPONIVEL — nenhum resolvedor funcionou.')
+    gravarLogAuditoria('core_indisponivel', {
+      resumo: 'CORE_INDISPONIVEL',
+      motivo: 'globalThis vazio e require falhou para todos os especificadores testados.',
+      duracao_ms: Date.now() - T0,
+    })
+    return
+  }
+  // -------- 2b. Idempotência (cron a cada minuto — NÃO re-executa IA a cada rodada) --------
+  var jaExecutou = false
+  try {
+    var recsJa = $app.findRecordsByFilter(
+      'logs_auditoria',
+      "action = 'E3A2_CLOSE3'",
+      '-created',
+      1,
+      0,
+    )
+    if (recsJa && recsJa.length > 0) {
+      var detStr = String(recsJa[0].get('details') || '')
+      jaExecutou = detStr.indexOf('MONTAGEM_COMPLETA_EXECUTADA_SEM_HTTP') !== -1
+    }
+  } catch (errJa) {
+    console.log(
+      '[E3A2_CLOSE3] idempotência: falha ao ler logs_auditoria: ' + (errJa && errJa.message),
+    )
+  }
+  if (jaExecutou) {
+    console.log('[E3A2_CLOSE3] já executado — idempotência (nada a fazer).')
+    return
+  }
   let resultado = null
   try {
     resultado = core.executarMontagemPacoteE3A2(leadId)
+    try {
+      resultado.canal_core = __canalUsado
+    } catch (_) {}
   } catch (errCore) {
     console.log('[E3A2_CLOSE3] exceção no core: ' + (errCore && errCore.message))
     gravarLogAuditoria('excecao_core', {
@@ -126,7 +207,9 @@ cronAdd('e3a2_close3_montagem_completa', '*/5 * * * *', () => {
       ' chamadas_ia=' +
       (ia.chamadas || 0) +
       ' custo_usd=' +
-      (ia.custo_usd || 0),
+      (ia.custo_usd || 0) +
+      ' canal_core=' +
+      (__canalUsado || '(n/d)'),
   )
 
   // -------- 3. Verificação dos 4 blocos (critério CLOSE-3 item 3) --------
@@ -187,6 +270,7 @@ cronAdd('e3a2_close3_montagem_completa', '*/5 * * * *', () => {
       ref_orcamento_usd: 0.25,
       dentro_orcamento: ia.dentro_orcamento || false,
       detalhe_chamadas: ia.detalhe_chamadas || [],
+      canal_core: __canalUsado || null,
     },
     verificacao_blocos: verifBlocos,
     duracao_ms: duracaoMs,
