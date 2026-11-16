@@ -523,14 +523,13 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
   if (!leadIdPost) {
     return e.json(400, { ok: false, codigo_erro: 'LEAD_ID_AUSENTE', motivo: 'Informe lead_id.' })
   }
-  const rPost = executarMontagemPacoteE3A2(leadIdPost, e)
+  // E3-A-2-CLOSE-3: núcleo Etapas 4+5 extraído para módulo CommonJS
+  // (dossie_montar_pacote_core.js) para permitir execução DIRETA pelo gatilho
+  // cron — sem chamada HTTP interna (context canceled aos ~44s).
+  const coreMontarPacote = require(`${__hooks}/dossie_montar_pacote_core.js`)
+  const rPost = coreMontarPacote.executarMontagemPacoteE3A2(leadIdPost)
   return e.json(rPost.status, rPost.payload)
-
-  // ===== NÚCLEO Etapas 4+5 — DENTRO do callback (Bloqueio 1; hoisting permite
-  // a chamada acima). Inclui as helpers do Bloqueio 2: montarPacoteV2E3A2
-  // (Etapa 4 determinística), carregarSlotsContextoE3A2 e
-  // construirContextoCompactoE3A2 (Etapa 5, 5 Slots de Contexto).
-  function executarMontagemPacoteE3A2(leadId, e) {
+})
     const T0 = Date.now()
 
     // ---------- Tabela de contagens por nível (Comando E3-A-2 item 4b — Comando 0 V2.2) ----------
