@@ -1463,11 +1463,10 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
     // (recordQuery, não findAuthRecordByEmail — este lança "no rows").
     let idUsuarioServicoIa = null
     try {
-      idUsuarioServicoIa = $app
-        .recordQuery('users')
-        .andWhere($dbx.exp('email', '=', 'svc-pipeline@vetormaster.com.br'))
-        .build()
-        .one().id
+      idUsuarioServicoIa = $app.findFirstRecordByFilter(
+        'users',
+        "email = 'svc-pipeline@vetormaster.com.br'",
+      ).id
     } catch (_) {
       idUsuarioServicoIa = null
     }

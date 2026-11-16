@@ -236,7 +236,7 @@ routerAdd('GET', '/backend/v1/dossie/e3a2-exercitar-formato1/{leadId}', (e) => {
   leadEfemera.set('setor', strBase('setor', ''))
   leadEfemera.set('formato_interesse', strBase('formato_interesse', 'CaaS'))
   leadEfemera.set('nivel_assinatura', strBase('nivel_assinatura', ''))
-  leadEfemera.set('protocolo', 'VM-E3A2FIXC-EXERCICIO')
+  leadEfemera.set('protocolo', 'VM-E3A2FIXC-EXERCICIO-' + Date.now())
   leadEfemera.set('origem', 'exercicio_e3a2_fixc')
   leadEfemera.set('origem_tipo', 'exercicio')
   leadEfemera.set('status', 'teste')
