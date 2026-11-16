@@ -96,6 +96,22 @@ routerAdd('POST', '/backend/v1/dossie/normalizar', (e) => {
       return ''
     }
   }
+  // CORREÇÃO MÍNIMA E3-A-2-FIX-C (mesma divergência do núcleo E3): na JSVM,
+  // campos JSON lidos via findRecordById().get() chegam como BYTES UTF-8 crus.
+  function decodificarJsonBytesE3A(v) {
+    try {
+      if (v && typeof v === 'object' && typeof v.length === 'number' && v.length > 1) {
+        let hex = ''
+        for (let i = 0; i < v.length; i++) {
+          const h = (v[i] & 0xff).toString(16)
+          hex += h.length < 2 ? '0' + h : h
+        }
+        const dec = decodeURIComponent(hex.replace(/(.{2})/g, '%$1'))
+        return JSON.parse(dec)
+      }
+    } catch (_) {}
+    return null
+  }
   function recObj(nome) {
     try {
       const v = leadRec.get(nome)
@@ -105,6 +121,10 @@ routerAdd('POST', '/backend/v1/dossie/normalizar', (e) => {
         } catch (_) {
           return null
         }
+      }
+      if (v && typeof v === 'object' && typeof v.length === 'number') {
+        const d = decodificarJsonBytesE3A(v)
+        return d || null
       }
       return v || null
     } catch (_) {
@@ -1128,6 +1148,26 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
         return ''
       }
     }
+    // CORREÇÃO MÍNIMA E3-A-2-FIX-C (divergência declarada): na JSVM, campos JSON
+    // lidos via findRecordById().get() chegam como BYTES UTF-8 crus (objeto com
+    // length e índices numéricos — provado em runtime na lead Aurora
+    // t8zia1qyovt9cof: 3.421 bytes iniciando por 123,34,97,...). O parser
+    // anterior só tratava string/objeto e devolvia os bytes brutos, produzindo
+    // 422 FORMATO1_AUSENTE em TODO lead real. Decodificação byte→UTF-8→JSON:
+    function decodificarJsonBytesE3(v) {
+      try {
+        if (v && typeof v === 'object' && typeof v.length === 'number' && v.length > 1) {
+          let hex = ''
+          for (let i = 0; i < v.length; i++) {
+            const h = (v[i] & 0xff).toString(16)
+            hex += h.length < 2 ? '0' + h : h
+          }
+          const dec = decodeURIComponent(hex.replace(/(.{2})/g, '%$1'))
+          return JSON.parse(dec)
+        }
+      } catch (_) {}
+      return null
+    }
     function recObjE3(nome) {
       try {
         const v = leadRec.get(nome)
@@ -1137,6 +1177,14 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
           } catch (_) {
             return null
           }
+        }
+        if (v && typeof v === 'object') {
+          if (typeof v.length === 'number') {
+            // bytes crus: decodifica; se falhar, null (não vaza bytes como objeto)
+            const d = decodificarJsonBytesE3(v)
+            return d || null
+          }
+          return v || null
         }
         return v || null
       } catch (_) {
