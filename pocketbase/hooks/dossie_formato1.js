@@ -1456,14 +1456,36 @@ routerAdd('POST', '/backend/v1/dossie/montar-pacote', (e) => {
       }
     }
 
+    // E3-A-2-FIX-C: o guia de agentes exige user_id REAL (id da collection users)
+    // em toda chamada $ai.agent().chat — sem ele o gateway responde
+    // "user_id and message are required" (causa do teste 5 em v0.0.211).
+    // Resolve o id do usuário de serviço criado pela migration 0116
+    // (recordQuery, não findAuthRecordByEmail — este lança "no rows").
+    let idUsuarioServicoIa = null
+    try {
+      idUsuarioServicoIa = $app
+        .recordQuery('users')
+        .andWhere($dbx.exp('email', '=', 'svc-pipeline@vetormaster.com.br'))
+        .build()
+        .one().id
+    } catch (_) {
+      idUsuarioServicoIa = null
+    }
+    console.log('[E3-A-2][ETAPA5] user_id serviço IA=' + (idUsuarioServicoIa || '(AUSENTE)'))
+
     function chatIaE3A2(rotulo, pergunta, fase) {
       try {
+        // Sem user_id REAL a chamada falha no gateway — cai no fallback
+        // requer_verificacao, sem inferência (nada de chamar sabendo que falha).
+        if (!idUsuarioServicoIa) return null
         if (typeof $ai !== 'undefined' && $ai.agent) {
           // Os 5 Slots viajam em TODA chamada (comando E3-A-2, Etapa 5 — contexto),
           // comprimidos por relevância à fase — NUNCA os 5 inteiros (teto de custo).
           const contextoCompacto = construirContextoCompactoE3A2(slotsContexto, fase || rotulo)
           const msg = (contextoCompacto ? contextoCompacto + '\n\n---\n\n' : '') + pergunta
-          const resp = $ai.agent('jbp-gestao-master').chat({ message: msg })
+          const resp = $ai
+            .agent('jbp-gestao-master')
+            .chat({ user_id: idUsuarioServicoIa, message: msg })
           registrarCustoIa(resp)
           const texto = (resp && resp.content) || ''
           if (texto && texto.trim()) return texto.trim()

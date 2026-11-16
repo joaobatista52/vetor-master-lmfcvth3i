@@ -6,8 +6,21 @@
 migrate(
   (app) => {
     const users = app.findCollectionByNameOrId('users')
-    if (!app.findAuthRecordByEmail('users', 'svc-pipeline@vetormaster.com.br')) {
-      const svc = new Record(users)
+    // JSVM: findAuthRecordByEmail LANÇA "sql: no rows in result set" quando
+    // o registro não existe (não devolve null) — por isso a v1 da 0116 falhava.
+    // Busca por e-mail via recordQuery, que devolve null sem lançar.
+    let svc = null
+    try {
+      svc = app
+        .recordQuery('users')
+        .andWhere($dbx.exp('email', '=', 'svc-pipeline@vetormaster.com.br'))
+        .build()
+        .one()
+    } catch (_) {
+      svc = null
+    }
+    if (!svc) {
+      svc = new Record(users)
       svc.setEmail('svc-pipeline@vetormaster.com.br')
       svc.setPassword($security.randomString(32))
       svc.setVerified(true)
@@ -19,7 +32,11 @@ migrate(
   (app) => {
     // down: remove o usuário de serviço se existir
     try {
-      const svc = app.findAuthRecordByEmail('users', 'svc-pipeline@vetormaster.com.br')
+      const svc = app
+        .recordQuery('users')
+        .andWhere($dbx.exp('email', '=', 'svc-pipeline@vetormaster.com.br'))
+        .build()
+        .one()
       if (svc) app.delete(svc)
     } catch (_) {}
   },
