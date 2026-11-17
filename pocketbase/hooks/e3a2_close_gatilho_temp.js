@@ -25,6 +25,7 @@
  * Lead de teste: efêmera em FORMATO 1 das rodadas anteriores (Aurora Trading,
  * comércio internacional / trading company). Se não houver lead FORMATO 1,
  * registra E3A2_CLOSE3 com status SEM_LEAD_FORMATO1 (não falha o cron).
+ * E3-A-2-CLOSE-6: tag da evidência re-tagada para E3A2_CLOSE6 (rodada atual);
  *
  * Cron: a cada minuto durante a rodada E3-A-2-CLOSE-5 (antes: 0 6 * * *,
  * 06:00 UTC — 03:00 BRT). Sem rota HTTP — só cronAdd.
@@ -34,7 +35,7 @@
 
 cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
   const T0 = Date.now()
-  const TAG = 'E3A2_CLOSE3'
+  const TAG = 'E3A2_CLOSE6'
 
   // logs_auditoria: user (relation REQUIRED → users), action, resource, details
   // (text, máx 5000 chars — causa da falha da rodada anterior).
@@ -159,7 +160,6 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
         objetivos_bsc: 4,
         itens_erec: 8,
         linhas_dre: [8, 10],
-        itens_erec: 8,
         linhas_hoshin: 0,
         ews: 2,
         indicadores_buffett: [4, 4],
@@ -292,7 +292,12 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
         }
 
         // (b)+(d) Parte B — seis arrays com a contagem do nível derivado
-        const areasBsc = ['Financeira', 'Clientes', 'Processos Internos', 'Aprendizado e Crescimento']
+        const areasBsc = [
+          'Financeira',
+          'Clientes',
+          'Processos Internos',
+          'Aprendizado e Crescimento',
+        ]
         const objetivosEstrategicos = []
         for (let i = 1; i <= cont.objetivos_bsc; i++) {
           objetivosEstrategicos.push({
@@ -441,7 +446,8 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
         }
         for (let i = 0; i < okrs.length; i++) {
           if (!idxPrj[okrs[i].projeto_id]) fkOrfas.push('okrs[' + i + '].projeto_id')
-          if (okrs[i].plano_id && !idxPln[okrs[i].plano_id]) fkOrfas.push('okrs[' + i + '].plano_id')
+          if (okrs[i].plano_id && !idxPln[okrs[i].plano_id])
+            fkOrfas.push('okrs[' + i + '].plano_id')
         }
         for (let i = 0; i < matrizHoshin.length; i++) {
           if (!idxObj[matrizHoshin[i].objetivo_estrategico_id]) {
@@ -529,7 +535,10 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
       // Slot 1 + 4: System Prompt integral do agente nativo (agentes_versoes,
       // última versão do jbp-gestao-master). Slot 1 = Contexto Estratégico Global
       // V7.2; Slot 4 = Histórico Profissional Detalhado JBP (mesma fonte, fatias).
-      let slot1 = slotVazio('slot_1_contexto_estrategico_global_v72', 'agentes_versoes indisponível')
+      let slot1 = slotVazio(
+        'slot_1_contexto_estrategico_global_v72',
+        'agentes_versoes indisponível',
+      )
       let slot4 = slotVazio('slot_4_historico_profissional_jbp', 'agentes_versoes indisponível')
       try {
         const recsAg = $app.findRecordsByFilter(
@@ -924,7 +933,8 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
         payload: {
           ok: false,
           codigo_erro: 'FORMATO1_SECOES_VAZIAS',
-          motivo: 'FORMATO 1 inválido — secoes presente mas sem nenhuma seção. Nada foi processado.',
+          motivo:
+            'FORMATO 1 inválido — secoes presente mas sem nenhuma seção. Nada foi processado.',
         },
       }
     }
@@ -933,7 +943,8 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
       ok: true,
       lead_id: leadRec.getString('id'),
       identificacao: {
-        id_dossie: fcDossie.id || fcDossie.dossie_id || fcMeta.dossie_id || recStrE3('site_lead_id'),
+        id_dossie:
+          fcDossie.id || fcDossie.dossie_id || fcMeta.dossie_id || recStrE3('site_lead_id'),
         protocolo: fcDossie.protocolo || fcMeta.protocolo || recStrE3('protocolo'),
         razao_social: fcCliente.razao_social || fcCliente.empresa || recStrE3('razao_social'),
         cnpj: fcCliente.cnpj || recStrE3('cnpj'),
