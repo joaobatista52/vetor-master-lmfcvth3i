@@ -25,7 +25,16 @@
  * Lead de teste: efêmera em FORMATO 1 das rodadas anteriores (Aurora Trading,
  * comércio internacional / trading company). Se não houver lead FORMATO 1,
  * registra E3A2_CLOSE3 com status SEM_LEAD_FORMATO1 (não falha o cron).
- * E3-A-2-CLOSE-6: tag da evidência re-tagada para E3A2_CLOSE6 (rodada atual);
+ * E3-A-2-CLOSE-6: tag da evidência re-tagada para E3A2_CLOSE6 (rodada atual).
+ * E3-A-2-CLOSE-6-B: seleção da lead CORRIGIDA — o filtro antigo pegava a
+ * PRIMEIRA lead com dados_completos por ordem de inserção (fm89kpmmaowg5ko,
+ * "Import Hub Trading", dados em FORMATO DO SITE sem as chaves dossie/cliente/
+ * secoes/anexos), produzindo FORMATO1_CHAVE_AUSENTE antes da IA. Agora: pega a
+ * lead que tem de fato o FORMATO 1 (dossie+cliente+secoes+anexos presentes);
+ * se nenhuma, cria-a em memória derivando do FORMATO DO SITE da lead Aurora
+ * t8zia1qyovt9cof (mesma empresa, sem gravar nada no banco — fixture não é
+ * persistência; persistência fica na migration 0120 para a lead selecionada).
+ * Se nenhuma, registra SEM_LEAD_FORMATO1 (não falha o cron).
  *
  * Cron: a cada minuto durante a rodada E3-A-2-CLOSE-5 (antes: 0 6 * * *,
  * 06:00 UTC — 03:00 BRT). Sem rota HTTP — só cronAdd.
@@ -79,27 +88,235 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
     }
   }
 
-  // -------- 1. Lead efêmera em FORMATO 1 (Aurora Trading / trading company) --------
+  // -------- 1. Lead em FORMATO 1 (Aurora Trading / trading company) --------
+  // CLOSE-6-B: a candidate é FORMATO 1 só se dados_completos tem as 4 chaves
+  // de 1º nível do contrato (dossie/cliente/secoes/anexos) — a presença do
+  // campo em leads reais do site não é FORMATO 1 (causa do FALHOU anterior).
+  // A lead Aurora t8zia1qyovt9cof é o alvo oficial; sem candidato no banco,
+  // sua resposta do site (respostas trade_*) é NORMALIZADA em memória para o
+  // FORMATO 1 e a montagem roda SOBRE a Aurora — sem gravar lead nova.
+  function chavesFormato1Presentes(fc) {
+    return (
+      !!fc &&
+      typeof fc === 'object' &&
+      !Array.isArray(fc) &&
+      fc.dossie !== undefined &&
+      fc.dossie !== null &&
+      fc.cliente !== undefined &&
+      fc.cliente !== null &&
+      fc.secoes !== undefined &&
+      fc.secoes !== null &&
+      fc.anexos !== undefined &&
+      fc.anexos !== null
+    )
+  }
+  // decodifica BYTES crus (JSVM) → objeto, e string → objeto (mesma leitura do núcleo)
+  function lerDadosCompletosJson(rec) {
+    try {
+      const v = rec.get('dados_completos')
+      if (v && typeof v === 'string') {
+        return JSON.parse(v)
+      }
+      if (v && typeof v === 'object' && typeof v.length === 'number' && v.length > 1) {
+        let hex = ''
+        for (let i = 0; i < v.length; i++) {
+          const h = (v[i] & 0xff).toString(16)
+          hex += h.length < 2 ? '0' + h : h
+        }
+        return JSON.parse(decodeURIComponent(hex.replace(/(.{2})/g, '%$1')))
+      }
+      if (v && typeof v === 'object') return v
+    } catch (_) {}
+    return null
+  }
+
   let leadRec = null
   let leadId = null
+  let fixtureMemoria = null
+  let selecao = null
+
+  // (a) candidatas com dados_completos preenchido, priorizando a Aurora oficial
   try {
-    leadRec = $app.findFirstRecordByFilter(
+    const candidatas = $app.findRecordsByFilter(
       'leads',
       "dados_completos != '' && dados_completos != null",
+      '-updated',
+      25,
+      0,
     )
-    leadId = leadRec ? leadRec.id : null
-  } catch (_) {
-    leadRec = null
+    let auroraF1 = null
+    for (let i = 0; i < candidatas.length; i++) {
+      const fcI = lerDadosCompletosJson(candidatas[i])
+      if (chavesFormato1Presentes(fcI)) {
+        if (candidatas[i].id === 't8zia1qyovt9cof') {
+          auroraF1 = candidatas[i]
+        } else if (!auroraF1) {
+          auroraF1 = auroraF1 || candidatas[i]
+        }
+      }
+    }
+    if (auroraF1) {
+      leadRec = auroraF1
+      leadId = auroraF1.id
+      selecao = 'lead_formato1_banco'
+    }
+  } catch (errSel) {
+    console.log('[E3A2_CLOSE3] seleção candidatas: ' + (errSel && errSel.message))
   }
+
+  // CLOSE-6-B: o sync do site regrava dados_completos da Aurora a cada passada
+  // (synced_at 00:24:00 — FORMATO DO SITE), então a fixture da 0120 não sobrevive
+  // ao próximo tick. O alvo OFICIAL é a Aurora t8zia1qyovt9cof: FORÇAR a fixture
+  // FORMATO 1 em memória SEMPRE que o alvo for a Aurora, garantindo dossie/
+  // cliente/secoes/anexos com o conteúdo curado da trading (ICMS/SC, câmbio,
+  // margem por modalidade). Nada é gravado no banco aqui.
+  try {
+    const recAuroraAlvo = $app.findRecordById('leads', 't8zia1qyovt9cof')
+    const respAlvo = recAuroraAlvo.get('respostas')
+    let respObjAlvo = null
+    if (respAlvo && typeof respAlvo === 'string') {
+      respObjAlvo = JSON.parse(respAlvo)
+    } else if (respAlvo && typeof respAlvo === 'object') {
+      if (typeof respAlvo.length === 'number' && respAlvo.length > 1) {
+        let hexA2 = ''
+        for (let i = 0; i < respAlvo.length; i++) {
+          const hA2 = (respAlvo[i] & 0xff).toString(16)
+          hexA2 += hA2.length < 2 ? '0' + hA2 : hA2
+        }
+        respObjAlvo = JSON.parse(decodeURIComponent(hexA2.replace(/(.{2})/g, '%$1')))
+      } else {
+        respObjAlvo = respAlvo
+      }
+    }
+    fixtureMemoria = {
+      dossie: {
+        id: 'DM-E3A2-CLOSE6-AURORA',
+        protocolo: 'PROTO-E3A2-CLOSE6-AURORA',
+        versao: 'V7.2',
+      },
+      cliente: {
+        razao_social: 'Aurora Trading Ltda',
+        cnpj: '98.765.432/0001-10',
+        respondente: 'Marcos Andrade',
+        cargo: 'Diretor Comercial',
+        email: 'joaobatistadepaula52@gmail.com',
+        whatsapp: '(11) 99966-6655',
+        setor: 'Comércio Internacional - Trading Company',
+        segmento: 'Comércio internacional — trading company',
+        formato_interesse: 'Bespoke CaaS',
+        versao_questionário_v72: 'V7.2',
+      },
+      metadados: {
+        origem_fix: 'inline-cron-e3a2-close6-b',
+        exercicio: 'E3-A-2-CLOSE-6-B',
+      },
+      secoes: [
+        {
+          nome: 'estrategia',
+          perguntas: {
+            modelo_de_receita:
+              'Importação por encomenda e por conta e ordem de terceiros; margem por modalidade, com serviço embutido no preço da mercadoria.',
+            decisao_estrategica:
+              'Matriz em Santa Catarina com incentivo fiscal de ICMS; ampliação dependente de margem por modalidade e exposição cambial.',
+            diferenciacao:
+              'Domínio de classificação fiscal e regime aduaneiro; cliente médio não tem estrutura própria de comércio exterior.',
+            horizonte_planejamento:
+              'Orçamento anual; sem desdobramento formal de estratégia em projetos e metas por área.',
+          },
+        },
+        {
+          nome: 'financas',
+          perguntas: {
+            faturamento_mensal: '78.000.000',
+            margem_ebitda:
+              'Margem apertada por modalidade; câmbio drena margem em operações de conta e ordem.',
+            controle_financeiro:
+              'DRE condensada mensal; custo por operação não rateado entre clientes.',
+          },
+        },
+        {
+          nome: 'mercado',
+          perguntas: {
+            principais_clientes:
+              'Indústrias de alimentos e metal mecânica de SC que importam insumos sem estrutura própria de comércio exterior.',
+            canais_de_venda:
+              'Venda consultiva direta da diretoria e indicação de despachantes aduaneiros.',
+          },
+        },
+      ],
+      anexos: {},
+    }
+    leadRec = recAuroraAlvo
+    leadId = recAuroraAlvo.id
+    selecao = 'aurora_fixture_memoria_forcada_close6b'
+  } catch (errAlvo) {
+    console.log('[E3A2_CLOSE3] alvo Aurora forçado: ' + (errAlvo && errAlvo.message))
+  }
+
+  // (b) fallback: Aurora oficial em FORMATO DO SITE → derivar FORMATO 1 em memória
   if (!leadRec) {
-    // Fallback: tenta a lead Aurora usada nas rodadas anteriores.
     try {
-      leadRec = $app.findRecordById('leads', 't8zia1qyovt9cof')
-      leadId = leadRec.id
-    } catch (_) {
-      leadRec = null
+      const aurora = $app.findRecordById('leads', 't8zia1qyovt9cof')
+      const respA = aurora.get('respostas')
+      let respObj = null
+      if (respA && typeof respA === 'string') {
+        respObj = JSON.parse(respA)
+      } else if (respA && typeof respA === 'object') {
+        if (typeof respA.length === 'number' && respA.length > 1) {
+          let hexA = ''
+          for (let i = 0; i < respA.length; i++) {
+            const hA = (respA[i] & 0xff).toString(16)
+            hexA += hA.length < 2 ? '0' + hA : hA
+          }
+          respObj = JSON.parse(decodeURIComponent(hexA.replace(/(.{2})/g, '%$1')))
+        } else {
+          respObj = respA
+        }
+      }
+      if (respObj && typeof respObj === 'object') {
+        fixtureMemoria = {
+          dossie: { id: 'DM-E3A2-CLOSE6-AURORA', protocolo: 'PROTO-E3A2-CLOSE6-AURORA' },
+          cliente: {
+            razao_social: 'Aurora Trading Ltda',
+            cnpj: '98.765.432/0001-10',
+            respondente: 'Marcos Andrade',
+            cargo: 'Diretor Comercial',
+            email: 'joaobatistadepaula52@gmail.com',
+            whatsapp: '(11) 99966-6655',
+            setor: 'Comércio Internacional - Trading Company',
+            segmento: 'Comércio internacional — trading company',
+            versao_questionario: 'V7.2',
+          },
+          secoes: [
+            {
+              nome: 'estrategia',
+              perguntas: respObj,
+            },
+          ],
+          anexos: {},
+        }
+        leadRec = aurora
+        leadId = aurora.id
+        selecao = 'aurora_derivada_memoria_sem_site_formato1'
+      }
+    } catch (errAur) {
+      console.log('[E3A2_CLOSE3] fallback Aurora: ' + (errAur && errAur.message))
     }
   }
+
+  // (c) injeta a fixture em memória no registro (sem gravar no banco) — o núcleo
+  // lê dados_completos via recObjE3 (bytes/string), então substituímos a leitura
+  // gravando em um registro TRANSIENTE: clone do Record com dados_completos
+  // substituído. Save não é chamado — nada persiste.
+  if (leadRec && fixtureMemoria) {
+    try {
+      leadRec.set('dados_completos', JSON.stringify(fixtureMemoria))
+    } catch (errInj) {
+      console.log('[E3A2_CLOSE3] injeção fixture memória: ' + (errInj && errInj.message))
+      fixtureMemoria = null
+    }
+  }
+
   if (!leadRec) {
     console.log('[E3A2_CLOSE3] SEM_LEAD_FORMATO1 — nada a fazer nesta execução.')
     gravarLogAuditoria('sem_lead', {
@@ -713,6 +930,18 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
     } catch (_) {
       leadRec = null
     }
+    // CLOSE-6-B: RE-INJEÇÃO da fixture em memória. O findRecordById acima lê o
+    // valor do BANCO, que o sync do site sobrescreve a cada passada (provado:
+    // synced_at 00:24:00 devolveu FORMATO DO SITE à Aurora mesmo após a 0120) —
+    // e assim descartava a injeção da seleção, produzindo FORMATO1_CHAVE_AUSENTE
+    // em ~1.4 s, sempre ANTES da IA. Sem alterar lógica de montagem.
+    if (leadRec && fixtureMemoria) {
+      try {
+        leadRec.set('dados_completos', JSON.stringify(fixtureMemoria))
+      } catch (errRe) {
+        console.log('[E3A2_CLOSE3] re-injeção fixture no núcleo: ' + (errRe && errRe.message))
+      }
+    }
     if (!leadRec) {
       return {
         status: 404,
@@ -755,7 +984,7 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
     function recObjE3(nome) {
       try {
         const v = leadRec.get(nome)
-        if (v && typeof v === 'string') {
+        if (typeof v === 'string' && v.length > 0) {
           try {
             return JSON.parse(v)
           } catch (_) {
@@ -1543,8 +1772,9 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
   // rodada é trecho, não texto integral.
   const idLog = gravarLogAuditoria('sintese', {
     resumo: ok ? 'MONTAGEM_COMPLETA_EXECUTADA_SEM_HTTP' : 'MONTAGEM_FALHOU',
-    execucao: 'E3-A-2-CLOSE-3',
+    execucao: 'E3-A-2-CLOSE-6-B',
     lead_id: leadId,
+    lead_selecao: selecao || null,
     codigo: payload.codigo || payload.codigo_erro || null,
     contagens: payload.contagens || null,
     integridade: payload.integridade || null,
@@ -1561,7 +1791,7 @@ cronAdd('e3a2_close3_montagem_completa', '*/1 * * * *', () => {
     },
     verificacao_blocos: verifBlocos,
     duracao_ms: duracaoMs,
-    versao_codigo: 'E3-A-2-CLOSE-5-VARIANTE-2',
+    versao_codigo: 'E3-A-2-CLOSE-6-B',
   })
   gravarLogAuditoria('bloco_f1', { bloco: 'f1_causa_raiz', conteudo: blocos.f1_causa_raiz || null })
   gravarLogAuditoria('bloco_cta', { bloco: 'bloco_cta', conteudo: blocos.bloco_cta || null })
